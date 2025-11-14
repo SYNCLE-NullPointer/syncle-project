@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 // ------------------------------------
-// 가짜(Mock) 데이터 (4개로 축소 및 'invitation' 타입 추가)
+// 가짜(Mock) 데이터
 // ------------------------------------
 const mockNotificationGroups = [
   {
