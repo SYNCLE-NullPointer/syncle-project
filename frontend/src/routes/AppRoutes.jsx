@@ -1,14 +1,19 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
 import AuthRoutes from './AuthRoutes'
-import MainRoutes from './MainRoutes'
 import ProfileRoutes from './ProfileRoutes'
+import DashboardPage from '../pages/main/DashboardPage'
+import NotificationPage from '../pages/main/NotificationPage'
+import MainLayout from '../layouts/MainLayout'
 
 export default function AppRoutes() {
   return (
     <Routes>
       {/* 메인(대시보드) */}
-      <Route path="/*" element={<MainRoutes />} />
+      <Route element={<MainLayout />}>
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="notifications" element={<NotificationPage />} />
+      </Route>
       {/* 인증 */}
       <Route path="/auth/*" element={<AuthRoutes />} />
       {/* 프로필 */}
