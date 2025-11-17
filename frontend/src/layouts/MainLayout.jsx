@@ -34,7 +34,6 @@ function MainLayout() {
       )}
 
       {/* 프로필 메뉴 */}
-
       {openProfileMenu && (
         <ProfileMenu onClose={() => setOpenProfileMenu(false)} />
       )}
