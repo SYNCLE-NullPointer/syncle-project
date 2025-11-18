@@ -12,9 +12,7 @@ export default function EditModal({ title, fields, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <h3 className="mb-4 text-lg font-semibold text-gray-800">
-            개인 정보 수정
-          </h3>
+          <h3 className="mb-4 text-lg font-semibold text-gray-800">{title}</h3>
         )}
 
         <div className="flex flex-col gap-3">
