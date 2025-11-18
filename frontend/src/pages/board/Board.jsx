@@ -932,7 +932,7 @@ const Board = () => {
                 onClick={() => setIsShareOpen(true)}
                 className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
               >
-                Share
+                공유
               </button>
 
               {/* 새 보드 생성 */}
@@ -941,7 +941,7 @@ const Board = () => {
                 onClick={handleCreateBoard}
                 className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
               >
-                + New board
+                + 새 보드 추가
               </button>
 
               {/* Board Menu (우측 설정 패널) */}
@@ -950,7 +950,7 @@ const Board = () => {
                 onClick={() => setIsSettingsOpen(true)}
                 className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
               >
-                Board menu
+                보드 설정
               </button>
             </div>
           </div>
@@ -1098,7 +1098,7 @@ const Board = () => {
                       }}
                       className="mt-1 w-full rounded-lg border border-dashed border-gray-300 bg-gray-50 px-2 py-1.5 text-left text-xs text-gray-500 hover:border-blue-400 hover:text-blue-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-blue-500 dark:hover:text-blue-300"
                     >
-                      + Add card
+                      + 카드 추가
                     </button>
                   )}
                 </section>
@@ -1144,7 +1144,7 @@ const Board = () => {
                     onClick={() => setAddingList(true)}
                     className="flex h-full w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-xs font-medium text-gray-500 hover:border-blue-400 hover:text-blue-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-blue-500 dark:hover:text-blue-300"
                   >
-                    + Add another list
+                    + 리스트 추가
                   </button>
                 )}
               </div>
@@ -1163,7 +1163,7 @@ const Board = () => {
           <div className="relative z-50 w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-900">
             <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Share board
+                공유
               </h2>
               <button
                 type="button"
@@ -1196,19 +1196,19 @@ const Board = () => {
                     type="submit"
                     className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
                   >
-                    Invite
+                    초대
                   </button>
                 </div>
               </form>
 
               <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
                 <h3 className="mb-2 text-[11px] font-semibold text-gray-500 uppercase dark:text-gray-400">
-                  Board members
+                  보드 멤버
                 </h3>
                 <div className="max-h-56 space-y-1 overflow-y-auto">
                   {members.length === 0 ? (
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      No members yet.
+                      아직 멤버가 없습니다.
                     </p>
                   ) : (
                     members.map((m) => (
@@ -1245,6 +1245,7 @@ const Board = () => {
       )}
 
       {/* --- 카드 상세보기 모달 (Trello 스타일) --- */}
+      {/* --- 카드 상세보기 모달 (Trello 스타일, Actions = 드롭다운 / Add to card 위치 변경) --- */}
       {selectedCard && (
         <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto">
           <div
@@ -1271,13 +1272,47 @@ const Board = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCardActionsOpen(true)}
-                  className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-[11px] font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-                >
-                  Actions
-                </button>
+                {/* Actions 드롭다운 */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsCardActionsOpen((prev) => !prev)}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-[11px] font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                  >
+                    ・・・
+                  </button>
+                  {isCardActionsOpen && (
+                    <div className="absolute right-0 mt-1 w-32 rounded-md border border-gray-200 bg-white py-1 text-xs shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCardActionsOpen(false)
+                          setIsShareOpen(true)
+                        }}
+                        className="block w-full px-3 py-1.5 text-left text-gray-700 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700"
+                      >
+                        초대
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedCard && selectedCardColumnId) {
+                            handleArchiveCard(
+                              selectedCardColumnId,
+                              selectedCard.id,
+                            )
+                          }
+                          setIsCardActionsOpen(false)
+                          handleCloseCardModal()
+                        }}
+                        className="block w-full px-3 py-1.5 text-left text-gray-700 hover:bg-red-50 hover:text-red-600 dark:text-gray-100 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+                      >
+                        아카이브
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="button"
                   onClick={handleCloseCardModal}
@@ -1288,18 +1323,17 @@ const Board = () => {
               </div>
             </div>
 
-            {/* 내용: 좌측(상세/댓글) + 우측(Add to card) */}
-            <div className="flex flex-col gap-6 px-6 py-4 md:flex-row">
-              {/* 왼쪽 영역 */}
-              <div className="flex-1 space-y-6">
+            {/* 내용: 한 컬럼 레이아웃 (Current sprint → Add to card → Description → Checklist → Comments) */}
+            <div className="px-6 py-4">
+              <div className="space-y-6">
                 {/* Current sprint - Move card */}
                 <section>
                   <h3 className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                    Current sprint
+                    현재 상태
                   </h3>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                      Move card:
+                      카드 이동:
                     </span>
                     <select
                       value={selectedCardColumnId || ''}
@@ -1317,10 +1351,35 @@ const Board = () => {
                   </div>
                 </section>
 
+                {/* Add to card (Current sprint 아래, Description 위) */}
+                <section>
+                  <h3 className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                    항목 추가
+                  </h3>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {['멤버', '체크리스트', '날짜', '첨부파일'].map((label) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => {
+                          if (label === 'Checklist') {
+                            handleAddChecklistForSelectedCard()
+                          }
+                          // 나머지 버튼은 UI만 (필요하면 나중에 기능 붙이면 됨)
+                        }}
+                        className="flex items-center justify-between rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <span>{label}</span>
+                        <span className="ml-2">+</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
                 {/* Description */}
                 <section>
                   <h3 className="mb-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
-                    Description
+                    상세 설명
                   </h3>
                   <textarea
                     rows={3}
@@ -1337,7 +1396,7 @@ const Board = () => {
                 <section>
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                      Checklist
+                      체크리스트
                     </h3>
                     {checklistProgressText && (
                       <span className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -1347,10 +1406,10 @@ const Board = () => {
                   </div>
                   {checklistsForSelectedCard.length === 0 ? (
                     <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                      No checklist yet. Use{' '}
+                      아직 체크리스트가 없습니다. Use{' '}
                       <span className="font-medium">Checklist</span> in the{' '}
                       <span className="font-medium">Add to card</span> section
-                      on the right to create one.
+                      above to create one.
                     </p>
                   ) : (
                     checklistsForSelectedCard.map((cl) => (
@@ -1400,7 +1459,7 @@ const Board = () => {
                             type="submit"
                             className="rounded-md bg-blue-600 px-3 py-1 text-[11px] font-medium text-white hover:bg-blue-700"
                           >
-                            Add
+                            추가
                           </button>
                         </form>
                       </div>
@@ -1411,7 +1470,7 @@ const Board = () => {
                 {/* Comments & Activity */}
                 <section>
                   <h3 className="mb-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
-                    Comments
+                    댓글 및 활동 기록
                   </h3>
                   <form onSubmit={handleAddComment} className="mb-3 space-y-2">
                     <textarea
@@ -1425,17 +1484,17 @@ const Board = () => {
                       type="submit"
                       className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-blue-700"
                     >
-                      Save
+                      저장
                     </button>
                   </form>
 
                   <h4 className="mb-1 text-[11px] font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                    Activity
+                    활동 기록
                   </h4>
                   <div className="max-h-48 space-y-2 overflow-y-auto">
                     {commentsForSelectedCard.length === 0 ? (
                       <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                        No activity yet.
+                        아직 활동 기록이 없습니다.
                       </p>
                     ) : (
                       commentsForSelectedCard.map((c) => (
@@ -1459,86 +1518,6 @@ const Board = () => {
                   </div>
                 </section>
               </div>
-
-              {/* 오른쪽 영역: Add to card (Trello 스타일, Cover 제외) */}
-              <div className="w-full border-t border-gray-200 pt-4 md:w-72 md:border-t-0 md:border-l md:pl-4 dark:border-gray-800">
-                <div>
-                  <h3 className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                    Add to card
-                  </h3>
-                  <div className="mt-2 space-y-2">
-                    {['Members', 'Checklist', 'Dates', 'Attachment'].map(
-                      (label) => (
-                        <button
-                          key={label}
-                          type="button"
-                          onClick={() => {
-                            if (label === 'Checklist') {
-                              handleAddChecklistForSelectedCard()
-                            }
-                            // 다른 버튼들은 UI만, 동작은 생략 (Trello 스타일용)
-                          }}
-                          className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-                        >
-                          <span>{label}</span>
-                          <span>+</span>
-                        </button>
-                      ),
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- 카드 Actions 모달 (share / archive만) --- */}
-      {isCardActionsOpen && selectedCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setIsCardActionsOpen(false)}
-          />
-          <div className="relative z-50 w-full max-w-xs rounded-lg bg-white p-4 shadow-xl dark:bg-gray-900">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Actions
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsCardActionsOpen(false)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs text-gray-500 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsCardActionsOpen(false)
-                  setIsShareOpen(true)
-                }}
-                className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-              >
-                <span>Share</span>
-                <span>↗</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (selectedCard && selectedCardColumnId) {
-                    handleArchiveCard(selectedCardColumnId, selectedCard.id)
-                  }
-                  setIsCardActionsOpen(false)
-                  handleCloseCardModal()
-                }}
-                className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-red-900/30 dark:hover:text-red-300"
-              >
-                <span>Archive</span>
-                <span>⌫</span>
-              </button>
             </div>
           </div>
         </div>
@@ -1554,7 +1533,7 @@ const Board = () => {
           <aside className="relative z-40 flex h-full w-full max-w-xs flex-col border-l border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
             <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Board menu
+                보드 설정
               </h2>
               <button
                 type="button"
@@ -1567,7 +1546,7 @@ const Board = () => {
             </div>
 
             <div className="border-b border-gray-200 px-4 py-2 text-[11px] font-semibold text-gray-500 uppercase dark:border-gray-700 dark:text-gray-400">
-              Menu
+              메뉴
             </div>
 
             <div className="space-y-1 px-3 py-2">
@@ -1581,7 +1560,7 @@ const Board = () => {
                     : 'text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-800')
                 }
               >
-                About this board
+                이 보드에 관하여
               </button>
               <button
                 type="button"
@@ -1593,7 +1572,7 @@ const Board = () => {
                     : 'text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-800')
                 }
               >
-                Visibility
+                공개 설정
               </button>
               <button
                 type="button"
@@ -1605,7 +1584,7 @@ const Board = () => {
                     : 'text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-800')
                 }
               >
-                Archive
+                아카이브
               </button>
             </div>
 
@@ -1615,7 +1594,7 @@ const Board = () => {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      About this board
+                      이 보드에 관하여
                     </h3>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       이 보드의 이름과 설명을 설정해서 팀원들에게 컨텍스트를
@@ -1625,7 +1604,7 @@ const Board = () => {
 
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-gray-700 dark:text-gray-200">
-                      Board name
+                      보드 이름
                     </label>
                     <input
                       type="text"
@@ -1645,7 +1624,7 @@ const Board = () => {
 
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-gray-700 dark:text-gray-200">
-                      Description
+                      상세 설명
                     </label>
                     <textarea
                       rows={4}
@@ -1670,7 +1649,7 @@ const Board = () => {
                       onClick={handleDeleteBoard}
                       className="w-full rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-100 dark:border-red-500/60 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/40"
                     >
-                      Delete this board
+                      보드 삭제
                     </button>
                   </div>
                 </div>
@@ -1681,7 +1660,7 @@ const Board = () => {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      Visibility
+                      공개 설정
                     </h3>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       이 보드를 누가 볼 수 있는지 설정합니다.
@@ -1717,7 +1696,7 @@ const Board = () => {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      Archive
+                      아카이브
                     </h3>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       보드에서 아카이브한 카드 목록입니다. 다시 꺼내거나 완전히
