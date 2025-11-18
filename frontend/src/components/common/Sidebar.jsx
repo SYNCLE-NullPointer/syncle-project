@@ -13,7 +13,7 @@ function Sidebar() {
           대시보드
         </Link>
         <Link
-          to="Calender"
+          to="Calendar"
           className="block rounded-md px-3 py-2 font-semibold hover:bg-gray-200"
         >
           캘린더

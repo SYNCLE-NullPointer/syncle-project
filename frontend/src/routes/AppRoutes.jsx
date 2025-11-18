@@ -2,11 +2,11 @@ import React from 'react'
 import { Routes, Route } from 'react-router-dom'
 import AuthRoutes from './AuthRoutes'
 import ProfileRoutes from './ProfileRoutes'
-import DashboardPage from '../pages/main/DashboardPage'
 import NotificationPage from '../pages/main/NotificationPage'
 import MainLayout from '../layouts/MainLayout'
 import DashboardRoutes from './DashboardRoutes'
 import BoardRoutes from './BoardRoutes'
+import CalendarPage from '../pages/main/CalendarPage'
 
 export default function AppRoutes() {
   return (
@@ -15,6 +15,7 @@ export default function AppRoutes() {
       <Route element={<MainLayout />}>
         <Route path="/dashboard/*" element={<DashboardRoutes />} />
         <Route path="/notifications/*" element={<NotificationPage />} />
+        <Route path="/calendar/*" element={<CalendarPage />} />
       </Route>
       {/* 인증 */}
       <Route path="/auth/*" element={<AuthRoutes />} />

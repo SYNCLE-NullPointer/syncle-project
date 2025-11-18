@@ -3,3 +3,12 @@
   font-family: Outfit, sans-serif;
   background-color: oklch(0.97 0 0);
 }
+
+.fc-event-title {
+  white-space: nowrap !important;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+.fc-event-time {
+  font-weight: 600;
+}
