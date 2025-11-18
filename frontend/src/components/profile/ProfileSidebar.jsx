@@ -46,7 +46,7 @@ export default function ProfileSidebar() {
       ),
     },
     {
-      label: '알림',
+      label: '알림 설정',
       path: '/profile/notifications',
       icon: (
         <svg
