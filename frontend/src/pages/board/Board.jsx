@@ -263,6 +263,10 @@ const Board = () => {
   const [cardComments, setCardComments] = useState({})
   const [newCommentText, setNewCommentText] = useState('')
 
+  // 카드별 체크리스트
+  const [cardChecklists, setCardChecklists] = useState({})
+  const [checklistInput, setChecklistInput] = useState('')
+
   const columnRefs = useRef({})
 
   const activeBoard = boards[activeBoardId]
@@ -674,6 +678,7 @@ const Board = () => {
     setSelectedCard(task)
     setSelectedCardColumnId(columnId)
     setNewCommentText('')
+    setChecklistInput('')
     setIsCardActionsOpen(false)
   }
 
@@ -681,6 +686,7 @@ const Board = () => {
     setSelectedCard(null)
     setSelectedCardColumnId(null)
     setNewCommentText('')
+    setChecklistInput('')
     setIsCardActionsOpen(false)
   }
 
@@ -782,6 +788,79 @@ const Board = () => {
     setNewCommentText('')
   }
 
+  // 체크리스트: Add to card → Checklist 버튼
+  const handleAddChecklistForSelectedCard = () => {
+    if (!selectedCard) return
+    setCardChecklists((prev) => {
+      const existing = prev[selectedCard.id] || []
+      if (existing.length > 0) return prev
+
+      const newChecklist = {
+        id: `chk-${Date.now().toString(36)}`,
+        title: 'Checklist',
+        items: [],
+      }
+
+      return {
+        ...prev,
+        [selectedCard.id]: [...existing, newChecklist],
+      }
+    })
+  }
+
+  const handleAddChecklistItem = (e) => {
+    e.preventDefault()
+    if (!selectedCard) return
+    const text = checklistInput.trim()
+    if (!text) return
+
+    setCardChecklists((prev) => {
+      const lists = prev[selectedCard.id] || []
+      if (lists.length === 0) return prev
+
+      const first = lists[0]
+      const rest = lists.slice(1)
+      const newItem = {
+        id: `item-${Date.now().toString(36)}`,
+        text,
+        done: false,
+      }
+      const updatedFirst = {
+        ...first,
+        items: [...first.items, newItem],
+      }
+
+      return {
+        ...prev,
+        [selectedCard.id]: [updatedFirst, ...rest],
+      }
+    })
+
+    setChecklistInput('')
+  }
+
+  const handleToggleChecklistItem = (checklistId, itemId) => {
+    if (!selectedCard) return
+
+    setCardChecklists((prev) => {
+      const lists = prev[selectedCard.id] || []
+      const updated = lists.map((cl) => {
+        if (cl.id !== checklistId) return cl
+        return {
+          ...cl,
+          items: cl.items.map((it) =>
+            it.id === itemId ? { ...it, done: !it.done } : it,
+          ),
+        }
+      })
+
+      return {
+        ...prev,
+        [selectedCard.id]: updated,
+      }
+    })
+  }
+
   const columnsArray = Object.values(columns)
   const currentColumnTitle =
     selectedCardColumnId && columns[selectedCardColumnId]
@@ -791,7 +870,22 @@ const Board = () => {
     selectedCard && cardComments[selectedCard.id]
       ? cardComments[selectedCard.id]
       : []
+  const checklistsForSelectedCard =
+    selectedCard && cardChecklists[selectedCard.id]
+      ? cardChecklists[selectedCard.id]
+      : []
   const members = activeBoard.members || []
+
+  // 체크리스트 진행률 계산 (간단)
+  let checklistProgressText = ''
+  if (checklistsForSelectedCard.length > 0) {
+    const cl = checklistsForSelectedCard[0]
+    const total = cl.items.length
+    const done = cl.items.filter((i) => i.done).length
+    if (total > 0) {
+      checklistProgressText = `${done}/${total}`
+    }
+  }
 
   return (
     <>
@@ -1059,7 +1153,7 @@ const Board = () => {
         </main>
       </div>
 
-      {/* --- Board Share 모달 (Trello의 Share 비슷하게) --- */}
+      {/* --- Board Share 모달 --- */}
       {isShareOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
@@ -1150,7 +1244,7 @@ const Board = () => {
         </div>
       )}
 
-      {/* --- 카드 상세보기 모달 (Trello 스타일, 요구한 항목만) --- */}
+      {/* --- 카드 상세보기 모달 (Trello 스타일) --- */}
       {selectedCard && (
         <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto">
           <div
@@ -1160,16 +1254,21 @@ const Board = () => {
           <div className="relative z-40 mt-10 mb-10 w-full max-w-4xl rounded-lg bg-gray-50 shadow-2xl dark:bg-gray-900">
             {/* 헤더 */}
             <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-800">
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {selectedCard.title}
-                </h2>
-                {currentColumnTitle && (
-                  <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                    in list{' '}
-                    <span className="font-medium">{currentColumnTitle}</span>
-                  </p>
-                )}
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 text-gray-500 dark:text-gray-400">
+                  📋
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {selectedCard.title}
+                  </h2>
+                  {currentColumnTitle && (
+                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                      in list{' '}
+                      <span className="font-medium">{currentColumnTitle}</span>
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -1189,7 +1288,7 @@ const Board = () => {
               </div>
             </div>
 
-            {/* 내용: 좌측(상세/댓글) + 우측(+Add 영역) */}
+            {/* 내용: 좌측(상세/댓글) + 우측(Add to card) */}
             <div className="flex flex-col gap-6 px-6 py-4 md:flex-row">
               {/* 왼쪽 영역 */}
               <div className="flex-1 space-y-6">
@@ -1232,6 +1331,81 @@ const Board = () => {
                     placeholder="Add a more detailed description..."
                     className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                   />
+                </section>
+
+                {/* Checklist (Description 아래) */}
+                <section>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                      Checklist
+                    </h3>
+                    {checklistProgressText && (
+                      <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                        {checklistProgressText}
+                      </span>
+                    )}
+                  </div>
+                  {checklistsForSelectedCard.length === 0 ? (
+                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                      No checklist yet. Use{' '}
+                      <span className="font-medium">Checklist</span> in the{' '}
+                      <span className="font-medium">Add to card</span> section
+                      on the right to create one.
+                    </p>
+                  ) : (
+                    checklistsForSelectedCard.map((cl) => (
+                      <div key={cl.id} className="mt-2">
+                        <p className="text-xs font-medium text-gray-800 dark:text-gray-100">
+                          {cl.title}
+                        </p>
+                        <ul className="mt-2 space-y-1">
+                          {cl.items.map((item) => (
+                            <li
+                              key={item.id}
+                              className="flex items-center gap-2"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={item.done}
+                                onChange={() =>
+                                  handleToggleChecklistItem(cl.id, item.id)
+                                }
+                                className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span
+                                className={
+                                  'text-[11px] ' +
+                                  (item.done
+                                    ? 'text-gray-400 line-through'
+                                    : 'text-gray-700 dark:text-gray-200')
+                                }
+                              >
+                                {item.text}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                        <form
+                          onSubmit={handleAddChecklistItem}
+                          className="mt-2 flex gap-2"
+                        >
+                          <input
+                            type="text"
+                            value={checklistInput}
+                            onChange={(e) => setChecklistInput(e.target.value)}
+                            placeholder="Add an item"
+                            className="flex-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                          />
+                          <button
+                            type="submit"
+                            className="rounded-md bg-blue-600 px-3 py-1 text-[11px] font-medium text-white hover:bg-blue-700"
+                          >
+                            Add
+                          </button>
+                        </form>
+                      </div>
+                    ))
+                  )}
                 </section>
 
                 {/* Comments & Activity */}
@@ -1286,29 +1460,31 @@ const Board = () => {
                 </section>
               </div>
 
-              {/* 오른쪽 영역: + Add 영역 (Labels/Location/Custom Fields 제외) */}
-              <div className="w-full border-t border-gray-200 pt-4 md:w-64 md:border-t-0 md:border-l md:pl-4 dark:border-gray-800">
+              {/* 오른쪽 영역: Add to card (Trello 스타일, Cover 제외) */}
+              <div className="w-full border-t border-gray-200 pt-4 md:w-72 md:border-t-0 md:border-l md:pl-4 dark:border-gray-800">
                 <div>
                   <h3 className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                    + Add
+                    Add to card
                   </h3>
                   <div className="mt-2 space-y-2">
-                    {[
-                      'Members',
-                      'Checklist',
-                      'Dates',
-                      'Attachment',
-                      'Cover',
-                    ].map((label) => (
-                      <button
-                        key={label}
-                        type="button"
-                        className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <span>{label}</span>
-                        <span>+</span>
-                      </button>
-                    ))}
+                    {['Members', 'Checklist', 'Dates', 'Attachment'].map(
+                      (label) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => {
+                            if (label === 'Checklist') {
+                              handleAddChecklistForSelectedCard()
+                            }
+                            // 다른 버튼들은 UI만, 동작은 생략 (Trello 스타일용)
+                          }}
+                          className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <span>{label}</span>
+                          <span>+</span>
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
               </div>
@@ -1317,7 +1493,7 @@ const Board = () => {
         </div>
       )}
 
-      {/* --- 카드 Actions 모달 (Trello Actions, share/archive만) --- */}
+      {/* --- 카드 Actions 모달 (share / archive만) --- */}
       {isCardActionsOpen && selectedCard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
