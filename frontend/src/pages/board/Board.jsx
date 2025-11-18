@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import Sortable from 'sortablejs'
 
-// 초기 보드가 사용할 기본 컬럼/카드 구조
+/**
+ * 기본 컬럼/카드 구조
+ */
 const createInitialColumns = () => ({
   backlog: {
     id: 'backlog',
@@ -200,6 +202,24 @@ const createInitialColumns = () => ({
   },
 })
 
+/**
+ * 기본 멤버 (보드 share 모달용)
+ */
+const defaultMembers = [
+  {
+    id: 'm-1',
+    name: '승욱',
+    email: 'you@example.com',
+    role: 'Admin',
+  },
+  {
+    id: 'm-2',
+    name: 'Teammate',
+    email: 'teammate@example.com',
+    role: 'Member',
+  },
+]
+
 const Board = () => {
   // 여러 Board 상태
   const [boards, setBoards] = useState(() => {
@@ -211,21 +231,37 @@ const Board = () => {
         description: '',
         visibility: 'Private',
         columns: createInitialColumns(),
-        archive: { cards: [] }, // 아카이브된 카드들
+        archive: { cards: [] },
+        members: defaultMembers,
       },
     }
   })
   const [activeBoardId, setActiveBoardId] = useState('board-1')
 
-  // 새 List / 새 Card 입력 상태
+  // 리스트 / 카드 추가 상태
   const [addingList, setAddingList] = useState(false)
   const [newListTitle, setNewListTitle] = useState('')
   const [addingCardColumnId, setAddingCardColumnId] = useState(null)
   const [newCardTitle, setNewCardTitle] = useState('')
 
-  // Board 설정 (Trello Menu 스타일)
+  // Board 설정 (우측 메뉴)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [settingsTab, setSettingsTab] = useState('about') // about | visibility | archive
+  const [settingsTab, setSettingsTab] = useState('about')
+
+  // Board share 모달 (멤버 초대)
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [inviteInput, setInviteInput] = useState('')
+
+  // 카드 상세보기 모달
+  const [selectedCard, setSelectedCard] = useState(null)
+  const [selectedCardColumnId, setSelectedCardColumnId] = useState(null)
+
+  // 카드 Actions 모달 (Trello Actions 버튼)
+  const [isCardActionsOpen, setIsCardActionsOpen] = useState(false)
+
+  // 카드별 코멘트
+  const [cardComments, setCardComments] = useState({})
+  const [newCommentText, setNewCommentText] = useState('')
 
   const columnRefs = useRef({})
 
@@ -235,7 +271,7 @@ const Board = () => {
   const archivedCards = activeBoard?.archive?.cards || []
   const visibilityOptions = ['Private', 'Workspace', 'Public']
 
-  // 드래그 & 드롭 셋업
+  // 드래그 & 드롭 셋업 (Active board 기준)
   useEffect(() => {
     if (!activeBoard) return
 
@@ -309,6 +345,8 @@ const Board = () => {
     )
   }
 
+  // --- Board CRUD & 상태 업데이트 로직들 ---
+
   // 새 Board 생성
   const handleCreateBoard = () => {
     const id = `board-${Date.now().toString(36)}`
@@ -321,6 +359,7 @@ const Board = () => {
         visibility: 'Private',
         columns: createInitialColumns(),
         archive: { cards: [] },
+        members: defaultMembers,
       },
     }))
     setActiveBoardId(id)
@@ -348,7 +387,12 @@ const Board = () => {
 
       return newBoards
     })
+
     setIsSettingsOpen(false)
+    setIsShareOpen(false)
+    setSelectedCard(null)
+    setSelectedCardColumnId(null)
+    setIsCardActionsOpen(false)
   }
 
   // List 추가
@@ -394,7 +438,7 @@ const Board = () => {
     setAddingList(false)
   }
 
-  // List 삭제 (완전 삭제)
+  // List 삭제
   const handleDeleteList = (columnId) => {
     if (!window.confirm('이 리스트와 안의 카드들을 모두 삭제할까요?')) {
       return
@@ -462,7 +506,7 @@ const Board = () => {
     setAddingCardColumnId(null)
   }
 
-  // Card 아카이브 (삭제 대신 Archive로 보내기)
+  // Card 아카이브 (Archive 탭으로 이동)
   const handleArchiveCard = (columnId, taskId) => {
     setBoards((prev) => {
       const board = prev[activeBoardId]
@@ -504,7 +548,7 @@ const Board = () => {
     })
   }
 
-  // Archive → 원래 보드로 복원
+  // Archive → 보드로 복원
   const handleRestoreArchivedCard = (archivedId) => {
     setBoards((prev) => {
       const board = prev[activeBoardId]
@@ -520,7 +564,6 @@ const Board = () => {
       const targetId = archivedCard.originalColumnId
       let targetCol = columns[targetId]
 
-      // 원래 리스트가 없으면 첫 번째 리스트에 복원
       const fallbackId = targetCol ? targetId : Object.keys(columns)[0]
       if (!fallbackId) return prev
 
@@ -592,7 +635,163 @@ const Board = () => {
     }))
   }
 
+  // --- Share 모달 (Board 멤버 초대) 로직 ---
+
+  const handleInviteMember = (e) => {
+    e.preventDefault()
+    const value = inviteInput.trim()
+    if (!value) return
+
+    setBoards((prev) => {
+      const board = prev[activeBoardId]
+      if (!board) return prev
+
+      const members = board.members || []
+      const nextIndex = members.length + 1
+
+      const newMember = {
+        id: `m-${Date.now().toString(36)}-${nextIndex}`,
+        name: value.includes('@') ? value.split('@')[0] : value,
+        email: value.includes('@') ? value : '',
+        role: 'Member',
+      }
+
+      return {
+        ...prev,
+        [activeBoardId]: {
+          ...board,
+          members: [...members, newMember],
+        },
+      }
+    })
+
+    setInviteInput('')
+  }
+
+  // --- 카드 상세 모달 로직 ---
+
+  const handleOpenCardModal = (columnId, task) => {
+    setSelectedCard(task)
+    setSelectedCardColumnId(columnId)
+    setNewCommentText('')
+    setIsCardActionsOpen(false)
+  }
+
+  const handleCloseCardModal = () => {
+    setSelectedCard(null)
+    setSelectedCardColumnId(null)
+    setNewCommentText('')
+    setIsCardActionsOpen(false)
+  }
+
+  const handleUpdateCardDescription = (value) => {
+    if (!selectedCard || !selectedCardColumnId) return
+
+    setBoards((prev) => {
+      const board = prev[activeBoardId]
+      if (!board) return prev
+
+      const columns = { ...board.columns }
+      const col = { ...columns[selectedCardColumnId] }
+      const tasks = [...col.tasks]
+      const idx = tasks.findIndex((t) => t.id === selectedCard.id)
+      if (idx === -1) return prev
+
+      const updatedTask = { ...tasks[idx], description: value }
+      tasks[idx] = updatedTask
+      col.tasks = tasks
+      columns[selectedCardColumnId] = col
+
+      return {
+        ...prev,
+        [activeBoardId]: {
+          ...board,
+          columns,
+        },
+      }
+    })
+
+    setSelectedCard((prev) => (prev ? { ...prev, description: value } : prev))
+  }
+
+  // Move card (Current sprint - Move card: Inbox 제외)
+  const handleMoveCardFromModal = (newColumnId) => {
+    if (!selectedCard || !selectedCardColumnId) return
+    if (newColumnId === selectedCardColumnId) return
+
+    setBoards((prev) => {
+      const board = prev[activeBoardId]
+      if (!board) return prev
+
+      const columns = { ...board.columns }
+      const fromCol = columns[selectedCardColumnId]
+      const toCol = columns[newColumnId]
+      if (!fromCol || !toCol) return prev
+
+      const newFromCol = { ...fromCol }
+      const fromTasks = [...newFromCol.tasks]
+      const idx = fromTasks.findIndex((t) => t.id === selectedCard.id)
+      if (idx === -1) return prev
+
+      const [moved] = fromTasks.splice(idx, 1)
+      newFromCol.tasks = fromTasks
+
+      const newToCol = {
+        ...toCol,
+        tasks: [...toCol.tasks, moved],
+      }
+
+      const newColumns = {
+        ...columns,
+        [selectedCardColumnId]: newFromCol,
+        [newColumnId]: newToCol,
+      }
+
+      return {
+        ...prev,
+        [activeBoardId]: {
+          ...board,
+          columns: newColumns,
+        },
+      }
+    })
+
+    setSelectedCardColumnId(newColumnId)
+  }
+
+  // 댓글 추가 (Comments & Activity)
+  const handleAddComment = (e) => {
+    e.preventDefault()
+    const text = newCommentText.trim()
+    if (!text || !selectedCard) return
+
+    const entry = {
+      id: `c-${Date.now().toString(36)}`,
+      text,
+      createdAt: new Date().toISOString(),
+    }
+
+    setCardComments((prev) => {
+      const old = prev[selectedCard.id] || []
+      return {
+        ...prev,
+        [selectedCard.id]: [...old, entry],
+      }
+    })
+
+    setNewCommentText('')
+  }
+
   const columnsArray = Object.values(columns)
+  const currentColumnTitle =
+    selectedCardColumnId && columns[selectedCardColumnId]
+      ? columns[selectedCardColumnId].title
+      : ''
+  const commentsForSelectedCard =
+    selectedCard && cardComments[selectedCard.id]
+      ? cardComments[selectedCard.id]
+      : []
+  const members = activeBoard.members || []
 
   return (
     <>
@@ -620,6 +819,7 @@ const Board = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* 보드 셀렉터 */}
               <select
                 value={activeBoardId}
                 onChange={(e) => setActiveBoardId(e.target.value)}
@@ -631,6 +831,17 @@ const Board = () => {
                   </option>
                 ))}
               </select>
+
+              {/* Share / Invite 버튼 */}
+              <button
+                type="button"
+                onClick={() => setIsShareOpen(true)}
+                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                Share
+              </button>
+
+              {/* 새 보드 생성 */}
               <button
                 type="button"
                 onClick={handleCreateBoard}
@@ -638,6 +849,8 @@ const Board = () => {
               >
                 + New board
               </button>
+
+              {/* Board Menu (우측 설정 패널) */}
               <button
                 type="button"
                 onClick={() => setIsSettingsOpen(true)}
@@ -683,8 +896,9 @@ const Board = () => {
                     {col.tasks.map((task) => (
                       <article
                         key={task.id}
+                        onClick={() => handleOpenCardModal(col.id, task)}
                         className={
-                          'group rounded-lg border p-3 text-sm shadow-sm transition hover:border-blue-500 hover:shadow-md ' +
+                          'group cursor-pointer rounded-lg border p-3 text-sm shadow-sm transition hover:border-blue-500 hover:shadow-md ' +
                           (task.variant === 'dashed'
                             ? 'border-dashed border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
                             : col.id === 'inProgress'
@@ -705,7 +919,10 @@ const Board = () => {
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleArchiveCard(col.id, task.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleArchiveCard(col.id, task.id)
+                            }}
                             className="inline-flex h-5 w-5 items-center justify-center rounded text-[10px] text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
                             title="Archive card"
                           >
@@ -842,7 +1059,316 @@ const Board = () => {
         </main>
       </div>
 
-      {/* Trello 스타일 Board Menu (Settings) */}
+      {/* --- Board Share 모달 (Trello의 Share 비슷하게) --- */}
+      {isShareOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setIsShareOpen(false)}
+          />
+          <div className="relative z-50 w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-900">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Share board
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsShareOpen(false)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs text-gray-500 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="px-4 py-3">
+              <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                Invite people to{' '}
+                <span className="font-semibold">{activeBoard.name}</span>.
+              </p>
+
+              <form onSubmit={handleInviteMember} className="mb-4 space-y-2">
+                <label className="text-[11px] font-medium text-gray-700 dark:text-gray-200">
+                  Email or name
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={inviteInput}
+                    onChange={(e) => setInviteInput(e.target.value)}
+                    placeholder="name@example.com"
+                    className="flex-1 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                  >
+                    Invite
+                  </button>
+                </div>
+              </form>
+
+              <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
+                <h3 className="mb-2 text-[11px] font-semibold text-gray-500 uppercase dark:text-gray-400">
+                  Board members
+                </h3>
+                <div className="max-h-56 space-y-1 overflow-y-auto">
+                  {members.length === 0 ? (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      No members yet.
+                    </p>
+                  ) : (
+                    members.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between rounded-md px-2 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[11px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-100">
+                            {m.name?.[0]?.toUpperCase() || 'M'}
+                          </span>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">
+                              {m.name}
+                            </p>
+                            {m.email && (
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                {m.email}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                          {m.role}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- 카드 상세보기 모달 (Trello 스타일, 요구한 항목만) --- */}
+      {selectedCard && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={handleCloseCardModal}
+          />
+          <div className="relative z-40 mt-10 mb-10 w-full max-w-4xl rounded-lg bg-gray-50 shadow-2xl dark:bg-gray-900">
+            {/* 헤더 */}
+            <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {selectedCard.title}
+                </h2>
+                {currentColumnTitle && (
+                  <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                    in list{' '}
+                    <span className="font-medium">{currentColumnTitle}</span>
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCardActionsOpen(true)}
+                  className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-[11px] font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                >
+                  Actions
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseCardModal}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs text-gray-500 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* 내용: 좌측(상세/댓글) + 우측(+Add 영역) */}
+            <div className="flex flex-col gap-6 px-6 py-4 md:flex-row">
+              {/* 왼쪽 영역 */}
+              <div className="flex-1 space-y-6">
+                {/* Current sprint - Move card */}
+                <section>
+                  <h3 className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                    Current sprint
+                  </h3>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                      Move card:
+                    </span>
+                    <select
+                      value={selectedCardColumnId || ''}
+                      onChange={(e) => handleMoveCardFromModal(e.target.value)}
+                      className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                    >
+                      {columnsArray
+                        .filter((c) => c.title !== 'Inbox')
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.title}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </section>
+
+                {/* Description */}
+                <section>
+                  <h3 className="mb-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                    Description
+                  </h3>
+                  <textarea
+                    rows={3}
+                    value={selectedCard.description || ''}
+                    onChange={(e) =>
+                      handleUpdateCardDescription(e.target.value)
+                    }
+                    placeholder="Add a more detailed description..."
+                    className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  />
+                </section>
+
+                {/* Comments & Activity */}
+                <section>
+                  <h3 className="mb-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                    Comments
+                  </h3>
+                  <form onSubmit={handleAddComment} className="mb-3 space-y-2">
+                    <textarea
+                      rows={2}
+                      value={newCommentText}
+                      onChange={(e) => setNewCommentText(e.target.value)}
+                      placeholder="Write a comment..."
+                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                    />
+                    <button
+                      type="submit"
+                      className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-blue-700"
+                    >
+                      Save
+                    </button>
+                  </form>
+
+                  <h4 className="mb-1 text-[11px] font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                    Activity
+                  </h4>
+                  <div className="max-h-48 space-y-2 overflow-y-auto">
+                    {commentsForSelectedCard.length === 0 ? (
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        No activity yet.
+                      </p>
+                    ) : (
+                      commentsForSelectedCard.map((c) => (
+                        <div
+                          key={c.id}
+                          className="rounded-md bg-white px-2 py-1.5 text-xs shadow-sm dark:bg-gray-800"
+                        >
+                          <p className="text-gray-900 dark:text-gray-100">
+                            <span className="font-semibold">You</span>{' '}
+                            commented:
+                          </p>
+                          <p className="mt-1 text-gray-700 dark:text-gray-200">
+                            {c.text}
+                          </p>
+                          <p className="mt-1 text-[11px] text-gray-400">
+                            {new Date(c.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+              </div>
+
+              {/* 오른쪽 영역: + Add 영역 (Labels/Location/Custom Fields 제외) */}
+              <div className="w-full border-t border-gray-200 pt-4 md:w-64 md:border-t-0 md:border-l md:pl-4 dark:border-gray-800">
+                <div>
+                  <h3 className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                    + Add
+                  </h3>
+                  <div className="mt-2 space-y-2">
+                    {[
+                      'Members',
+                      'Checklist',
+                      'Dates',
+                      'Attachment',
+                      'Cover',
+                    ].map((label) => (
+                      <button
+                        key={label}
+                        type="button"
+                        className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <span>{label}</span>
+                        <span>+</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- 카드 Actions 모달 (Trello Actions, share/archive만) --- */}
+      {isCardActionsOpen && selectedCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setIsCardActionsOpen(false)}
+          />
+          <div className="relative z-50 w-full max-w-xs rounded-lg bg-white p-4 shadow-xl dark:bg-gray-900">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Actions
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsCardActionsOpen(false)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs text-gray-500 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCardActionsOpen(false)
+                  setIsShareOpen(true)
+                }}
+                className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+              >
+                <span>Share</span>
+                <span>↗</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedCard && selectedCardColumnId) {
+                    handleArchiveCard(selectedCardColumnId, selectedCard.id)
+                  }
+                  setIsCardActionsOpen(false)
+                  handleCloseCardModal()
+                }}
+                className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+              >
+                <span>Archive</span>
+                <span>⌫</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Trello 스타일 Board Menu (설정 패널) --- */}
       {isSettingsOpen && (
         <div className="fixed inset-0 z-30 flex justify-end">
           <div
