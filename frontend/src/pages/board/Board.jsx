@@ -1362,7 +1362,7 @@ const Board = () => {
                         key={label}
                         type="button"
                         onClick={() => {
-                          if (label === 'Checklist') {
+                          if (label === '체크리스트') {
                             handleAddChecklistForSelectedCard()
                           }
                           // 나머지 버튼은 UI만 (필요하면 나중에 기능 붙이면 됨)
