@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(body, ErrorCode.INVALID_INPUT_VALUE.getStatus());
     }
-    
+
 //    /**
 //     * 단일 파라미터 검증 실패(@RequestParam, @PathVariable 등)
 //     */
@@ -97,7 +97,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
-        log.error("서버 오류 발생", ex);
+        log.error("서버 오류 발생: ", ex);
 
         ApiResponse<Void> body = ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR);
 
