@@ -1,9 +1,6 @@
 package com.nullpointer.domain.auth.service.impl;
 
-import com.nullpointer.domain.auth.service.AuthService;
-import com.nullpointer.domain.auth.service.EmailService;
-import com.nullpointer.domain.auth.service.EmailVerificationService;
-import com.nullpointer.domain.auth.service.RefreshTokenService;
+import com.nullpointer.domain.auth.service.*;
 import com.nullpointer.domain.user.dto.LoginRequest;
 import com.nullpointer.domain.user.dto.LoginResponse;
 import com.nullpointer.domain.user.dto.SignupRequest;
@@ -16,69 +13,59 @@ import com.nullpointer.global.exception.BusinessException;
 import com.nullpointer.global.exception.ErrorCode;
 import com.nullpointer.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final PasswordEncoder passwordEncoder;
-    private final UserMapper userMapper;
-    private final EmailVerificationService emailVerificationService; // Redis 서비스
+    private final RegistrationService registrationService;
     private final EmailService emailService; // 이메일 전송
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
+    private final EmailVerificationService emailVerificationService; // Redis 서비스
 
     /**
-     * 이메일 로그인으로 가정
-     * 회원가입 -> 이메일 인증 -> (PENDING => VERIFIED) -> 로그인 가능
-     * 추가) 인증하지 않은 계정 정리 기능
+     * 이메일 회원가입
+     * 추가) 인증하지 않은 계정 정리, 메일 발송 실패 시 후처리
      */
     @Override
-    @Transactional
     public void signup(SignupRequest req) {
 
-        // 1) 이메일/닉네임 최종 중복 확인
-        if (userMapper.existsByEmail(req.getEmail())) {
-            throw new BusinessException(ErrorCode.USER_EMAIL_DUPLICATE);
-        }
-
-        if (userMapper.existsByNickname(req.getNickname())) {
-            throw new BusinessException(ErrorCode.USER_NICKNAME_DUPLICATE);
-        }
-
-        // 2) 비밀번호 암호화
-        String encodedPassword = passwordEncoder.encode(req.getPassword());
-
-        // 3) DTO -> VO(provider=LOCAL, verifyStatus=PENDING, userStatus=ACTIVATED)
-        UserVo user = UserVo.builder()
-                .email(req.getEmail())
-                .password(encodedPassword)
-                .nickname(req.getNickname())
-                .build();
-
-        /*
-          추가) 팀+보드+리스트 생성 트랜잭션
+        /**
+         * 회원가입과 메일 발송을 같은 트랜잭션에 두면,
+         * 메일 발송 실패 시 롤백되어 DB INSERT가 취소됨
+         * -> 회원가입과 메일 발송을 별도 메서드로 분리
          */
-
-        // 4) DB 저장
-        userMapper.insertUser(user);
-
-        // 5) 이메일 인증 토큰 생성
-        String token = UUID.randomUUID().toString();
-
-        // 6) Redis에 token -> userId 저장
-        emailVerificationService.saveToken(token, user.getId());
+        // 회원가입 트랜잭션
+        RegistrationService.RegistrationResult result =
+                registrationService.registerLocalUser(req);
 
         // 7) 인증 메일 발송
-        emailService.sendVerificationEmail(user.getEmail(), token);
+        try {
+            emailService.sendVerificationEmail(
+                    result.user().getEmail(),
+                    result.emailVerificationToken());
+        } catch (MailException ex) {
+            /**
+             * 추가) 재발송 기능
+             */
+            log.error("인증 메일 전송 실패", ex);
+        }
     }
 
+    /**
+     * 이메일 인증 토큰 검증
+     */
     @Override
     @Transactional
     public void verifyEmailToken(String token) {
@@ -87,10 +74,10 @@ public class AuthServiceImpl implements AuthService {
         Long userId = emailVerificationService.getUserIdByToken(token);
         LocalDateTime expireTime = emailVerificationService.getExpireTimeByToken(token);
 
-        // -- 만료 여부 확인 --
-        if (expireTime == null) {
+        // 2) 토큰 존재, 만료 여부 확인
+        if (userId == null || expireTime == null) {
             // TTL 종료 -> 완전히 만료된 토큰
-            throw new BusinessException(ErrorCode.EXPIRED_VERIFICATION_TOKEN);
+            throw new BusinessException(ErrorCode.INVALID_VERIFICATION_TOKEN);
         }
 
         /**
@@ -99,32 +86,35 @@ public class AuthServiceImpl implements AuthService {
          * -> 만료된 토큰인데도 정상 인증이 가능해지는 경우를 방지
          */
         if (LocalDateTime.now().isAfter(expireTime)) {
+            emailVerificationService.deleteToken(token); // 토큰 정리
             throw new BusinessException(ErrorCode.EXPIRED_VERIFICATION_TOKEN);
         }
 
-        // -- 잘못된 토큰 --
-        if (userId == null) {
-            throw new BusinessException(ErrorCode.INVALID_VERIFICATION_TOKEN);
-        }
-
-        // 2) 사용자 조회
+        // 3) 사용자 조회
         UserVo user = userMapper.findById(userId);
 
+        // 존재하지 않는 사용자인 경우
         if (user == null) {
-            // 존재하지 않는 사용자인 경우
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
+        // 이미 인증된 사용자인 경우
         if (user.getVerifyStatus() == VerifyStatus.VERIFIED) {
-            // 이미 인증된 사용자인 경우
+            emailVerificationService.deleteToken(token); // 토큰 정리
             throw new BusinessException(ErrorCode.ALREADY_VERIFIED);
         }
 
         // -- 인증 성공 --
-        // 3) user.verifyStatus 업데이트 (PENDING -> VERIFIED)
-        userMapper.updateVerifyStatus(userId, VerifyStatus.VERIFIED);
+        // 4) user.verifyStatus 조건부 업데이트 (PENDING -> VERIFIED)
+        // 현재 상태가 PENDING이면 VERIFIED 변경 후 1 반환
+        int updated = userMapper.updateVerifyStatusIfCurrent(userId, VerifyStatus.PENDING, VerifyStatus.VERIFIED);
 
-        // 4) Redis에서 토큰 삭제
+        // 이미 다른 요청에서 상태가 바뀐 경우
+        if (updated == 0) {
+            throw new BusinessException(ErrorCode.ALREADY_VERIFIED);
+        }
+
+        // 5) 인증 성공 후 Redis에서 토큰 삭제
         emailVerificationService.deleteToken(token);
     }
 
