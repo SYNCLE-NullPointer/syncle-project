@@ -3,7 +3,7 @@ package com.nullpointer.domain.auth.service;
 public interface RefreshTokenService {
 
     // Redis에 RefreshToken 저장
-    void saveRefreshToken(Long userId, String refreshToken, Long expiration);
+    void saveRefreshToken(Long userId, String refreshToken);
 
     // userId 조회
     Long getUserIdByRefreshToken(String refreshToken);

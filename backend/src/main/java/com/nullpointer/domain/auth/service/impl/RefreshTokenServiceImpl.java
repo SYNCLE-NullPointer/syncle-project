@@ -2,6 +2,7 @@ package com.nullpointer.domain.auth.service.impl;
 
 import com.nullpointer.domain.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -16,15 +17,19 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private static final String PREFIX = "refresh:";
 
+    @Value("${app.jwt.refresh-expiration}")
+    private long refreshTokenExpirationMillis; // 유효 시간
+
+
     // RefreshToken 저장
     @Override
-    public void saveRefreshToken(Long userId, String refreshToken, Long expiration) {
+    public void saveRefreshToken(Long userId, String refreshToken) {
         String key = PREFIX + refreshToken;
 
         stringRedisTemplate.opsForValue().set(
                 key,
                 String.valueOf(userId),
-                expiration,
+                refreshTokenExpirationMillis,
                 TimeUnit.MILLISECONDS
         );
     }
@@ -41,7 +46,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     public void deleteRefreshToken(String refreshToken) {
         String key = PREFIX + refreshToken;
-
         stringRedisTemplate.delete(key);
     }
 }
