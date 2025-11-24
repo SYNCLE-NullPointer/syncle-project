@@ -8,7 +8,7 @@ import java.util.List;
 public interface TeamService {
 
     // 팀 생성
-    void createTeam(CreateTeamRequest req);
+    void createTeam(CreateTeamRequest req, Long userId);
 
     // 팀 조회
     List<TeamResponse> getTeams(Long userId);

@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum Role {
-    OWNER("팀 관리자"), MEMBER("팀 멤버"), VIEWER("조회 전용");
+    OWNER("관리자"), MEMBER("멤버"), VIEWER("조회 전용");
 
     private final String label;
 

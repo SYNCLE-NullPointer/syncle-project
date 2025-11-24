@@ -5,7 +5,7 @@
 <mapper namespace="com.nullpointer.domain.board.mapper.BoardMapper">
 
     <!-- 보드 생성 -->
-    <insert id="insertBoard" parameterType="BoardVo">
+    <insert id="insertBoard" parameterType="BoardVo"  useGeneratedKeys="true" keyProperty="id">
         INSERT INTO board (title,
                           team_id,
                           description,
@@ -15,6 +15,17 @@
                 #{description},
                 #{visibility})
     </insert>
+
+    <!-- 보드 생성 시 생성자를 BoardMember 테이블에 OWNER로 등록 -->
+    <insert id="insertBoardMember">
+        INSERT INTO board_member (board_id,
+                                  user_id,
+                                  role)
+        VALUES (#{boardId},
+                #{userId},
+                #{role})
+    </insert>
+
 
     <!-- 내 보드 목록 조회-->
     <select id="findBoardById" parameterType="Long" resultType="BoardVo">

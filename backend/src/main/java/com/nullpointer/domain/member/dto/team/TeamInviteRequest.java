@@ -1,4 +1,4 @@
-package com.nullpointer.domain.member.dto;
+package com.nullpointer.domain.member.dto.team;
 
 import com.nullpointer.domain.member.vo.enums.Role;
 import lombok.Getter;
@@ -11,7 +11,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 
-public class InvitationMemberRequest {
+public class TeamInviteRequest {
     private Long teamId;
     private List<Long> userIds;
     private Role role;
