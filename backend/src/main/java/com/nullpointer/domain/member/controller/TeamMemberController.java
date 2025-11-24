@@ -3,6 +3,7 @@ package com.nullpointer.domain.member.controller;
 import com.nullpointer.domain.member.dto.team.TeamInviteRequest;
 import com.nullpointer.domain.member.service.TeamMemberService;
 import com.nullpointer.global.common.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class TeamMemberController {
     // 팀 멤버 초대
     @PostMapping("/{teamId}/members")
     public ApiResponse<String> inviteTeamMember(@PathVariable Long teamId,
-                                            @RequestBody TeamInviteRequest req) {
+                                            @Valid @RequestBody TeamInviteRequest req) {
 
         req.setTeamId(teamId);
         

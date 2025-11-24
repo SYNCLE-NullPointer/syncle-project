@@ -7,20 +7,45 @@
     <!-- 팀 생성 -->
     <insert id="insertTeam" parameterType="TeamVo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO team (name,
-                           description)
+                          description)
         VALUES (#{name},
                 #{description})
     </insert>
 
-    <!-- 팀 조회 -->
-    <select id="findTeamById" parameterType="Long" resultType="TeamVo">
+    <!-- 본인 소속 팀 전체 조회 -->
+    <select id="findTeamByUserId" parameterType="Long" resultType="TeamVo">
         SELECT a.id,
-               a.name,
-               a.description
+               a.name
         FROM team a,
              team_member b
-        WHERE a.team_id = b.id
+        WHERE a.id = b.team_id
           AND b.user_id = #{id}
           AND a.deleted_at IS NULL
     </select>
+
+    <!-- 팀 상세 조회 -->
+    <select id="findTeamByTeamId" parameterType="Long" resultType="TeamVo">
+        SELECT id,
+               name,
+               description
+        FROM team
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 팀 정보 수정 -->
+    <update id="updateTeam" parameterType="TeamVo">
+        UPDATE team
+        SET name        = #{name},
+            description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 팀 삭제 -->
+    <update id="softDeleteTeam">
+        UPDATE team
+        SET deleted_at = NOW()
+        WHERE id = #{id}
+    </update>
+
 </mapper>

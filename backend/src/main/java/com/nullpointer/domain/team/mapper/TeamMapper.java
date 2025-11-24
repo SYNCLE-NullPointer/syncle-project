@@ -9,6 +9,15 @@ public interface TeamMapper {
     // 팀 추가하기
     void insertTeam(TeamVo teamVo);
 
-    // 팀 조회
-    List<TeamVo> findTeamById(Long user_id);
+    // 본인 소속팀 전체 조회
+    List<TeamVo> findTeamByUserId(Long user_id);
+
+    // 팀 상세 조회
+    TeamVo findTeamByTeamId(Long team_id);
+
+    // 팀 정보 수정
+    void updateTeam(TeamVo teamVo);
+
+    // 팀 삭제
+    void softDeleteTeam(Long teamId);
 }

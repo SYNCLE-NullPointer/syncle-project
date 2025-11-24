@@ -1,10 +1,13 @@
 package com.nullpointer.domain.team.controller;
 
-import com.nullpointer.domain.team.dto.CreateTeamRequest;
-import com.nullpointer.domain.team.dto.TeamResponse;
+import com.nullpointer.domain.team.dto.request.CreateTeamRequest;
+import com.nullpointer.domain.team.dto.response.TeamDetailResponse;
+import com.nullpointer.domain.team.dto.response.TeamResponse;
+import com.nullpointer.domain.team.dto.request.UpdateTeamRequest;
 import com.nullpointer.domain.team.service.TeamService;
 import com.nullpointer.global.common.ApiResponse;
 import com.nullpointer.global.security.jwt.CustomUserDetails;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/teams")
 @RequiredArgsConstructor
 
 public class TeamController {
@@ -20,18 +23,43 @@ public class TeamController {
     private final TeamService teamService;
 
     // 팀 생성
-    @PostMapping("/teams")
-    public ApiResponse<String> createTeam(@RequestBody CreateTeamRequest req,
+    @PostMapping("/")
+    public ApiResponse<String> createTeam(@Valid @RequestBody CreateTeamRequest req,
                                           @AuthenticationPrincipal CustomUserDetails user) {
         Long userId = user.getUserId();
         teamService.createTeam(req, userId);
         return ApiResponse.success("팀 추가 성공");
     }
 
-    // 팀 조회
-    @GetMapping("/teams")
+    // 소속팀 조회
+    @GetMapping("")
     public ApiResponse<List<TeamResponse>> getTeams(@AuthenticationPrincipal CustomUserDetails user) {
         Long userId = user.getUserId();
         return ApiResponse.success(teamService.getTeams(userId));
+    }
+
+    // 팀 상세 조회
+    @GetMapping("/{teamId}")
+    public ApiResponse<TeamDetailResponse> getTeamDetail(@PathVariable Long teamId) {
+        return ApiResponse.success(teamService.getTeamDetail(teamId));
+    }
+
+    // 팀 정보 수정
+    @PutMapping("/{teamId}")
+    public ApiResponse<String> updateTeam(@PathVariable Long teamId,
+                                          @Valid @RequestBody UpdateTeamRequest req,
+                                          @AuthenticationPrincipal CustomUserDetails user) {
+        Long userId = user.getUserId();
+        teamService.updateTeam(teamId, req, userId);
+        return ApiResponse.success("팀 정보 수정 완료");
+    }
+
+    // 팀 삭제
+    @PatchMapping("/{teamId}")
+    public ApiResponse<String> deleteTeam(@PathVariable Long teamId,
+                                          @AuthenticationPrincipal CustomUserDetails user) {
+        Long userId =  user.getUserId();
+        teamService.deleteTeam(teamId, userId);
+        return ApiResponse.success("팀 삭제 성공");
     }
 }
