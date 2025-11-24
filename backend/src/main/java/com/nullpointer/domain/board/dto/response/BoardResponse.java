@@ -1,4 +1,4 @@
-package com.nullpointer.domain.board.dto;
+package com.nullpointer.domain.board.dto.response;
 
 import com.nullpointer.domain.board.vo.BoardVo;
 import com.nullpointer.domain.board.vo.enums.Visibility;

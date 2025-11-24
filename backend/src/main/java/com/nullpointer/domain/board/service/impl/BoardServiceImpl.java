@@ -1,14 +1,12 @@
 package com.nullpointer.domain.board.service.impl;
 
-import com.nullpointer.domain.board.dto.BoardResponse;
-import com.nullpointer.domain.board.dto.CreateBoardRequest;
+import com.nullpointer.domain.board.dto.response.BoardResponse;
+import com.nullpointer.domain.board.dto.request.CreateBoardRequest;
 import com.nullpointer.domain.board.mapper.BoardMapper;
 import com.nullpointer.domain.board.service.BoardService;
 import com.nullpointer.domain.board.vo.BoardVo;
 import com.nullpointer.domain.member.mapper.BoardMemberMapper;
 import com.nullpointer.domain.member.vo.BoardMemberVo;
-import com.nullpointer.domain.member.vo.TeamMemberVo;
-import com.nullpointer.domain.member.vo.enums.InvitationStatus;
 import com.nullpointer.domain.member.vo.enums.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,7 +35,7 @@ public class BoardServiceImpl implements BoardService {
         // 2. 방금 만든 보드 ID 가져오기
         Long createBoardId = boardVo.getId();
 
-        // 3. 팀 멤버 VO 생성 (DTO -> VO)
+        // 3. 보드 멤버 VO 생성 (DTO -> VO)
         BoardMemberVo boardMemberVo = BoardMemberVo.builder()
                 .boardId(createBoardId)
                 .userId(userId)
@@ -49,7 +47,8 @@ public class BoardServiceImpl implements BoardService {
 
     @Override
     public List<BoardResponse> getMyBoards(Long userId) {
-        List<BoardVo> boards = boardMapper.findBoardById(userId);
+        List<BoardVo> boards = boardMapper.findBoardByUserId(userId);
         return boards.stream().map(BoardResponse::from).toList();
     }
+
 }
