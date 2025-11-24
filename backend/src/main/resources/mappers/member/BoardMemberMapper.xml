@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nullpointer.domain.member.mapper.BoardMemberMapper">
+
+    <!-- 보드 멤버 초대 -->
+    <insert id="insertBoardMember" parameterType="BoardMemberVo">
+        INSERT INTO board_member (board_id,
+                                 user_id,
+                                 role)
+        VALUES (#{boardId},
+                #{userId},
+                #{role})
+    </insert>
+
+    <!-- 보드 멤버 조회 -->
+    <select id="findMembersByTeamId" parameterType="Long" resultType="BoardMemberResponse">
+        SELECT a.board_id,
+               a.user_id,
+               a.role,
+               b.email,
+               b.nickname,
+               b.position,
+               b.profile_img
+        FROM board_member a,
+             user b
+        WHERE a.board_id = #{boardId}
+          AND a.user_id = b.id
+          AND a.deleted_at IS NULL </select>
+
+</mapper>

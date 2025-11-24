@@ -1,6 +1,5 @@
 package com.nullpointer.domain.member.vo;
 
-import com.nullpointer.domain.member.vo.enums.InvitationStatus;
 import com.nullpointer.domain.member.vo.enums.Role;
 import lombok.*;
 
@@ -12,13 +11,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @ToString
 @Builder
-public class MemberVo {
-    private Long teamId;
-    private Long userId;
+public class BoardMemberVo {
     private Long boardId;
+    private Long userId;
 
-    private Role role;
-    private InvitationStatus invitationStatus;
+    @Builder.Default
+    private Role role = Role.MEMBER;
 
     private LocalDateTime joinedAt;
     private LocalDateTime deletedAt;

@@ -5,6 +5,11 @@ import com.nullpointer.domain.board.dto.CreateBoardRequest;
 import com.nullpointer.domain.board.mapper.BoardMapper;
 import com.nullpointer.domain.board.service.BoardService;
 import com.nullpointer.domain.board.vo.BoardVo;
+import com.nullpointer.domain.member.mapper.BoardMemberMapper;
+import com.nullpointer.domain.member.vo.BoardMemberVo;
+import com.nullpointer.domain.member.vo.TeamMemberVo;
+import com.nullpointer.domain.member.vo.enums.InvitationStatus;
+import com.nullpointer.domain.member.vo.enums.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,18 +20,31 @@ import java.util.List;
 public class BoardServiceImpl implements BoardService {
 
     private final BoardMapper boardMapper;
+    private final BoardMemberMapper boardMemberMapper;
 
     @Override
-    public void createBoard(Long teamId, CreateBoardRequest req) {
-        // 1. DTO -> VO
-        BoardVo board = BoardVo.builder()
+    public void createBoard(Long teamId, Long userId, CreateBoardRequest req) {
+        // 1. 보드 VO 생성 (DTO -> VO)
+        BoardVo boardVo = BoardVo.builder()
                 .title(req.getTitle())
                 .teamId(teamId)
                 .description(req.getDescription())
                 .visibility(req.getVisibility())
                 .build();
 
-        boardMapper.insertBoard(board);
+        boardMapper.insertBoard(boardVo);
+
+        // 2. 방금 만든 보드 ID 가져오기
+        Long createBoardId = boardVo.getId();
+
+        // 3. 팀 멤버 VO 생성 (DTO -> VO)
+        BoardMemberVo boardMemberVo = BoardMemberVo.builder()
+                .boardId(createBoardId)
+                .userId(userId)
+                .role(Role.OWNER)
+                .build();
+
+        boardMemberMapper.insertBoardMember(boardMemberVo);
     }
 
     @Override

@@ -5,7 +5,7 @@
 <mapper namespace="com.nullpointer.domain.team.mapper.TeamMapper">
 
     <!-- 팀 생성 -->
-    <insert id="insertTeam" parameterType="TeamVo">
+    <insert id="insertTeam" parameterType="TeamVo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO team (name,
                            description)
         VALUES (#{name},

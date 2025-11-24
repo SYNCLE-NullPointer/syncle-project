@@ -22,8 +22,10 @@ public class BoardController {
     // 보드 생성
     @PostMapping("/teams/{teamId}/boards")
     public ApiResponse<String> createBoard(@PathVariable Long teamId,
-                                           @RequestBody CreateBoardRequest req) {
-        boardService.createBoard(teamId, req);
+                                           @RequestBody CreateBoardRequest req,
+                                            @AuthenticationPrincipal CustomUserDetails user) {
+        Long userId = user.getUserId();
+        boardService.createBoard(teamId, userId, req);
         return ApiResponse.success("보드 추가 성공");
     }
 

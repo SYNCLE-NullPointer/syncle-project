@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.nullpointer.domain.member.mapper.MemberMapper">
+<mapper namespace="com.nullpointer.domain.member.mapper.TeamMemberMapper">
 
-    <!-- 멤버 초대 -->
-    <insert id="insertMember" parameterType="MemberVo">
-        INSERT INTO team_member (team_id, user_id,
-                                 role)
-        VALUES (#{teamId}, #{userId}, #{role}) </insert>
+    <!-- 팀 멤버 초대 -->
+    <insert id="insertTeamMember" parameterType="TeamMemberVo">
+        INSERT INTO team_member (team_id,
+                                 user_id,
+                                 role,
+                                 invitation_status)
+        VALUES (#{teamId},
+                #{userId},
+                #{role},
+                #{invitationStatus})
+    </insert>
 
     <!-- 팀 멤버 조회 -->
-    <select id="findMembersByTeamId" parameterType="Long" resultType="MemberResponse">
+    <select id="findMembersByTeamId" parameterType="Long" resultType="TeamMemberResponse">
         SELECT a.team_id,
                a.user_id,
                a.role,
