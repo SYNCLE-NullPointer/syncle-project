@@ -1,8 +1,8 @@
 package com.nullpointer.domain.file.service.impl;
 
 import com.nullpointer.domain.file.service.FileStorageService;
+import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.exception.BusinessException;
-import com.nullpointer.global.exception.ErrorCode;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
