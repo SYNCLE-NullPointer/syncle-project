@@ -40,8 +40,10 @@ public class TeamController {
 
     // 팀 상세 조회
     @GetMapping("/{teamId}")
-    public ApiResponse<TeamDetailResponse> getTeamDetail(@PathVariable Long teamId) {
-        return ApiResponse.success(teamService.getTeamDetail(teamId));
+    public ApiResponse<TeamDetailResponse> getTeamDetail(@PathVariable Long teamId,
+                                                         @AuthenticationPrincipal CustomUserDetails user) {
+        Long userId = user.getUserId();
+        return ApiResponse.success(teamService.getTeamDetail(teamId, userId));
     }
 
     // 팀 정보 수정
