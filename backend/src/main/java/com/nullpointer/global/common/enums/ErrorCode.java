@@ -1,6 +1,6 @@
 package com.nullpointer.global.common.enums;
 
-import lombok.Getter;
+import  lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 @Getter
@@ -32,10 +32,18 @@ public enum ErrorCode {
     LOGIN_PROVIDER_MISMATCH(HttpStatus.UNAUTHORIZED, "U006", "올바르지 않은 로그인 방식입니다."),
     USER_STATUS_NOT_ACTIVE(HttpStatus.FORBIDDEN, "U007", "현재 계정 상태에서는 로그인할 수 없습니다."),
 
+    // 팀
     TEAM_NOT_FOUND(HttpStatus.NOT_FOUND, "T001", "존재하지 않는 팀입니다."),
+    TEAM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "T002", "해당 팀에 대한 접근 권한이 없습니다."),
 
-    BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "B001", "존재하지 않는 보드입니다.");
-
+    // 보드
+    BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "B001", "존재하지 않는 보드입니다."),
+    BOARD_TEAM_MISMATCH(HttpStatus.BAD_REQUEST, "B002", "해당 팀에 속한 보드가 아닙니다."),
+    BOARD_DELETED(HttpStatus.GONE, "B003", "삭제된 보드입니다."),
+    BOARD_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "B004", "보드 수정 권한이 없습니다."),
+    BOARD_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "B005", "보드 삭제 권한이 없습니다."),
+    BOARD_ACCESS_DENIED(HttpStatus.FORBIDDEN, "B006", "보드 접근 권한이 없습니다."),
+    BOARD_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "B007", "팀 내 생성 가능한 보드 개수를 초과했습니다.");
 
     private final HttpStatus status;
     private final String code;
