@@ -26,7 +26,6 @@
                 #{role})
     </insert>
 
-
     <!-- 내 보드 목록 조회-->
     <select id="findBoardByUserId" parameterType="Long" resultType="BoardVo">
         SELECT a.id,
@@ -80,4 +79,12 @@
         SET deleted_at = NOW()
         WHERE id = #{id}
     </update>
+
+    <!-- 보드 개수 체크 -->
+    <select id="countBoardByTeamId">
+        SELECT COUNT(*)
+        FROM board
+        WHERE team_id = #{id}
+          AND deleted_at IS NULL
+    </select>
 </mapper>
