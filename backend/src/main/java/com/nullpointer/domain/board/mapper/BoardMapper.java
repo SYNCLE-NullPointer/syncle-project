@@ -24,4 +24,7 @@ public interface BoardMapper {
 
     // 보드 삭제
     void deleteBoard(Long boardId);
+
+    // 보드 개수 체크
+    int countBoardByTeamId(Long teamId);
 }

@@ -48,8 +48,8 @@ public class BoardController {
     }
 
     // 보드 상세 조회
-    @GetMapping("/teams/{teamId}/boards/{boardId}")
-    public ApiResponse<BoardDetailResponse> getBoard(@PathVariable Long teamId, @PathVariable Long boardId) {
+    @GetMapping("/boards/{boardId}")
+    public ApiResponse<BoardDetailResponse> getBoard(@PathVariable Long boardId) {
         return ApiResponse.success(boardService.getBoardDetail(boardId));
     }
 
