@@ -9,15 +9,17 @@ public class CardVo {
     private Long listId;
     private String title;
     private String description;
+    private Integer orderIndex; // order_index 컬럼
 
     public CardVo() {
     }
 
-    public CardVo(Long id, Long listId, String title, String description) {
+    public CardVo(Long id, Long listId, String title, String description, Integer orderIndex) {
         this.id = id;
         this.listId = listId;
         this.title = title;
         this.description = description;
+        this.orderIndex = orderIndex;
     }
 
     public Long getId() {
@@ -36,6 +38,10 @@ public class CardVo {
         return description;
     }
 
+    public Integer getOrderIndex() {
+        return orderIndex;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -50,5 +56,9 @@ public class CardVo {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setOrderIndex(Integer orderIndex) {
+        this.orderIndex = orderIndex;
     }
 }

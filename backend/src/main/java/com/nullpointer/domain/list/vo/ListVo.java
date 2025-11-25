@@ -8,14 +8,16 @@ public class ListVo {
     private Long id;
     private Long boardId;
     private String title;
+    private Integer orderIndex; // order_index 컬럼과 매핑 (정렬용)
 
     public ListVo() {
     }
 
-    public ListVo(Long id, Long boardId, String title) {
+    public ListVo(Long id, Long boardId, String title, Integer orderIndex) {
         this.id = id;
         this.boardId = boardId;
         this.title = title;
+        this.orderIndex = orderIndex;
     }
 
     public Long getId() {
@@ -30,6 +32,10 @@ public class ListVo {
         return title;
     }
 
+    public Integer getOrderIndex() {
+        return orderIndex;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -40,5 +46,9 @@ public class ListVo {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public void setOrderIndex(Integer orderIndex) {
+        this.orderIndex = orderIndex;
     }
 }

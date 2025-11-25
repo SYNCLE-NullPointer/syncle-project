@@ -6,15 +6,17 @@ public class CardResponse {
     private Long listId;
     private String title;
     private String description;
+    private Integer orderIndex;
 
     public CardResponse() {
     }
 
-    public CardResponse(Long id, Long listId, String title, String description) {
+    public CardResponse(Long id, Long listId, String title, String description, Integer orderIndex) {
         this.id = id;
         this.listId = listId;
         this.title = title;
         this.description = description;
+        this.orderIndex = orderIndex;
     }
 
     public Long getId() {
@@ -33,6 +35,10 @@ public class CardResponse {
         return description;
     }
 
+    public Integer getOrderIndex() {
+        return orderIndex;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -47,5 +53,9 @@ public class CardResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setOrderIndex(Integer orderIndex) {
+        this.orderIndex = orderIndex;
     }
 }

@@ -1,21 +1,23 @@
 package com.nullpointer.domain.list.dto;
 
 /**
- * 리스트 생성 후 클라이언트에게 돌려주는 응답 DTO
+ * 리스트 생성/조회 후 클라이언트에게 돌려주는 응답 DTO
  */
 public class ListResponse {
 
     private Long id;
     private Long boardId;
     private String title;
+    private Integer orderIndex; // 정렬 순서
 
     public ListResponse() {
     }
 
-    public ListResponse(Long id, Long boardId, String title) {
+    public ListResponse(Long id, Long boardId, String title, Integer orderIndex) {
         this.id = id;
         this.boardId = boardId;
         this.title = title;
+        this.orderIndex = orderIndex;
     }
 
     public Long getId() {
@@ -30,6 +32,10 @@ public class ListResponse {
         return title;
     }
 
+    public Integer getOrderIndex() {
+        return orderIndex;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -40,5 +46,9 @@ public class ListResponse {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public void setOrderIndex(Integer orderIndex) {
+        this.orderIndex = orderIndex;
     }
 }
