@@ -30,7 +30,6 @@
                description
         FROM team
         WHERE id = #{id}
-          AND deleted_at IS NULL
     </select>
 
     <!-- 팀 정보 수정 -->

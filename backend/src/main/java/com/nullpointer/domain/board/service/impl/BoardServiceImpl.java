@@ -65,6 +65,7 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BoardDetailResponse getBoardDetail(Long boardId) {
         // 1. 공통 검증 메서드로 보드 조회
         BoardVo boardVo = findValidBoard(boardId);
@@ -72,6 +73,7 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
+    @Transactional
     public void updateBoard(Long boardId, UpdateBoardRequest req, Long userId) {
 
         // 1. 공통 검증 메서드로 보드 조회
@@ -88,7 +90,7 @@ public class BoardServiceImpl implements BoardService {
     @Transactional
     public void deleteBoard(Long boardId, Long userId) {
         // 1. 공통 검증 메서드로 보드 조회
-        BoardVo board = findValidBoard(boardId);
+        findValidBoard(boardId);
 
 //        // 2. 권한 체크 (TODO 부분)
 //        validateOwner(boardId, userId);

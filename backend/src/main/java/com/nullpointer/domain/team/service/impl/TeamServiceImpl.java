@@ -15,6 +15,8 @@ import com.nullpointer.domain.team.dto.request.UpdateTeamRequest;
 import com.nullpointer.domain.team.mapper.TeamMapper;
 import com.nullpointer.domain.team.service.TeamService;
 import com.nullpointer.domain.team.vo.TeamVo;
+import com.nullpointer.global.common.enums.ErrorCode;
+import com.nullpointer.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,11 +37,7 @@ public class TeamServiceImpl implements TeamService {
     public void createTeam(CreateTeamRequest req, Long userId) {
 
         // 1. 팀 VO 생성 (DTO -> VO)
-        TeamVo teamVo = TeamVo.builder()
-                .name(req.getName())
-                .description(req.getDescription())
-                .build();
-
+        TeamVo teamVo = req.toVo();
         teamMapper.insertTeam(teamVo);
 
         // 2. 방금 만든 팀 ID 가져오기
@@ -64,34 +62,95 @@ public class TeamServiceImpl implements TeamService {
 
     // 팀 상세 조회
     @Override
-    public TeamDetailResponse getTeamDetail(Long teamId) {
-        // 1. 팀 기본 정보
-        TeamVo teamVo = teamMapper.findTeamByTeamId(teamId);
+    @Transactional(readOnly = true)
+    public TeamDetailResponse getTeamDetail(Long teamId, Long userId) {
+        // 1. 팀 유효성 검증 (존재 + 삭제 여부)
+        TeamVo teamVo = findValidTeam(teamId);
 
-        // 2. 팀 멤버 목록
+        // 2. 접근 권한 검증 (팀원인지 확인)
+        validateMember(teamId, userId);
+
+        // 3. 팀 멤버 목록
         List<TeamMemberResponse> members = teamMemberMapper.findMembersByTeamId(teamId);
 
-        // 3. 팀 보드 목록
+        // 4. 팀 보드 목록
         List<BoardVo> boardVoList = boardMapper.findBoardByTeamId(teamId);
 
-        // 4. VO -> DTO 변환
+        // 5. VO -> DTO 변환
         List<BoardResponse> boards = boardVoList.stream()
                 .map(BoardResponse::from)
                 .collect(Collectors.toList());
 
-        // 4. 하나의 DTO로 묶기
+        // 6. 하나의 DTO로 묶기
         return TeamDetailResponse.of(teamVo, members, boards);
     }
 
     @Override
+    @Transactional
     public void updateTeam(Long teamId, UpdateTeamRequest req, Long userId) {
+        // 1. 팀 유효성 검증
+        findValidTeam(teamId);
         TeamVo teamVo = req.teamVo(teamId);
+
+        // 2. 수정 권한 검증 (OWNER 여부)
+        validateOwner(teamId, userId, ErrorCode.TEAM_UPDATE_FORBIDDEN);
+
+        // 3. 업데이트 진행
         teamMapper.updateTeam(teamVo);
     }
 
     // 팀 삭제
     @Override
+    @Transactional
     public void deleteTeam(Long teamId, Long userId) {
+        // 1. 팀 유효성 검증
+        findValidTeam(teamId);
+
+        // 2. 삭제 권한 검증 (OWNER 여부)
+        validateOwner(teamId, userId, ErrorCode.TEAM_DELETE_FORBIDDEN);
+
+        // 3. 삭제 진행 (Soft Delete)
         teamMapper.deleteTeam(teamId);
+    }
+
+    /**
+     * 팀 존재 및 삭제 여부 확인
+     */
+    private TeamVo findValidTeam(Long teamId) {
+        TeamVo team = teamMapper.findTeamByTeamId(teamId);
+
+        if (team == null) {
+            throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
+        }
+        if (team.getDeletedAt() != null) {
+            throw new BusinessException(ErrorCode.TEAM_DELETED);
+        }
+        return team;
+    }
+
+    /**
+     * 팀 멤버인지 확인
+     */
+    private void validateMember(Long teamId, Long userId) {
+        // TODO: TeamMemberMapper에 해당 메서드 구현 필요 (existsByTeamIdAndUserId)
+        /*
+        boolean isMember = teamMemberMapper.existsByTeamIdAndUserId(teamId, userId);
+        if (!isMember) {
+            throw new BusinessException(ErrorCode.TEAM_ACCESS_DENIED);
+        }
+        */
+    }
+
+    /**
+     * 팀 소유자(OWNER)인지 확인
+     */
+    private void validateOwner(Long teamId, Long userId, ErrorCode errorCode) {
+        // TODO: TeamMemberMapper에 findMember 메서드 구현 필요
+        /*
+        TeamMemberVo member = teamMemberMapper.findMember(teamId, userId);
+        if (member == null || !member.getRole().equals(Role.OWNER)) {
+            throw new BusinessException(errorCode);
+        }
+        */
     }
 }

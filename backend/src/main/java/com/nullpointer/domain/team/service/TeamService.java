@@ -16,7 +16,7 @@ public interface TeamService {
     List<TeamResponse> getTeams(Long userId);
 
     // 팀 상세 조회
-    TeamDetailResponse getTeamDetail(Long teamId);
+    TeamDetailResponse getTeamDetail(Long teamId, Long userId);
 
     // 팀 정보 수정
     void updateTeam(Long teamId, UpdateTeamRequest req, Long userId);
