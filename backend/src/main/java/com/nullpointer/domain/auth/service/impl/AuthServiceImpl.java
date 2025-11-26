@@ -9,6 +9,7 @@ import com.nullpointer.domain.auth.helper.VerificationCodeHelper;
 import com.nullpointer.domain.auth.service.AuthService;
 import com.nullpointer.domain.auth.service.EmailService;
 import com.nullpointer.domain.auth.service.RegistrationService;
+import com.nullpointer.domain.team.service.TeamService;
 import com.nullpointer.domain.user.mapper.UserMapper;
 import com.nullpointer.domain.user.vo.UserVo;
 import com.nullpointer.domain.user.vo.enums.Provider;
@@ -43,6 +44,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RedisUtil redisUtil;
     private final GoogleTokenVerifier googleTokenVerifier;
+
+    private final TeamService teamService;
 
     // ==================================================================
     // 1. 회원가입 (Signup)
@@ -87,7 +90,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.ALREADY_VERIFIED);
         }
 
-        // 4) 자동 로그인 (토큰 발급)
+        // 4) 기본 팀/보드 세트 생성
+        teamService.createPersonalTeam(user.getId(), user.getNickname());
+
+        // 5) 자동 로그인 (토큰 발급)
         return createLoginResponse(user);
     }
 
@@ -144,9 +150,8 @@ public class AuthServiceImpl implements AuthService {
                     // DB 저장
                     userMapper.insertUser(newUser);
 
-                    /**
-                     * 추가) 기본 팀, 보드 생성
-                     */
+                    // 기본 팀/보드 세트 생성
+                    teamService.createPersonalTeam(newUser.getId(), newUser.getNickname());
 
                     return newUser;
                 });

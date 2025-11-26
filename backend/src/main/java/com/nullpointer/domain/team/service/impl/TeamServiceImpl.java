@@ -2,6 +2,7 @@ package com.nullpointer.domain.team.service.impl;
 
 import com.nullpointer.domain.board.dto.response.BoardResponse;
 import com.nullpointer.domain.board.mapper.BoardMapper;
+import com.nullpointer.domain.board.service.BoardService;
 import com.nullpointer.domain.board.vo.BoardVo;
 import com.nullpointer.domain.member.dto.team.TeamMemberResponse;
 import com.nullpointer.domain.member.mapper.TeamMemberMapper;
@@ -9,14 +10,13 @@ import com.nullpointer.domain.member.vo.TeamMemberVo;
 import com.nullpointer.domain.member.vo.enums.InvitationStatus;
 import com.nullpointer.domain.member.vo.enums.Role;
 import com.nullpointer.domain.team.dto.request.CreateTeamRequest;
+import com.nullpointer.domain.team.dto.request.UpdateTeamRequest;
 import com.nullpointer.domain.team.dto.response.TeamDetailResponse;
 import com.nullpointer.domain.team.dto.response.TeamResponse;
-import com.nullpointer.domain.team.dto.request.UpdateTeamRequest;
 import com.nullpointer.domain.team.mapper.TeamMapper;
 import com.nullpointer.domain.team.service.TeamService;
 import com.nullpointer.domain.team.vo.TeamVo;
 import com.nullpointer.global.common.enums.ErrorCode;
-import com.nullpointer.global.exception.BusinessException;
 import com.nullpointer.global.validator.member.MemberValidator;
 import com.nullpointer.global.validator.team.TeamValidator;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +35,8 @@ public class TeamServiceImpl implements TeamService {
     private final BoardMapper boardMapper;
     private final TeamValidator teamVal;
     private final MemberValidator memberVal;
+
+    private final BoardService boardService;
 
     @Override
     @Transactional
@@ -56,6 +58,34 @@ public class TeamServiceImpl implements TeamService {
                 .build();
 
         teamMemberMapper.insertTeamMember(teamMemberVo);
+    }
+
+    @Override
+    @Transactional
+    public void createPersonalTeam(Long userId, String nickname) {
+        // 1. 기본 팀 생성
+        TeamVo team = TeamVo.builder()
+                .name(nickname + "의 워크스페이스")
+                .description("기본으로 제공되는 개인용 공간입니다.")
+                .build();
+
+        teamMapper.insertTeam(team);
+
+        // 방금 만든 팀 ID 가져오기
+        Long teamId = team.getId();
+
+        // 2. 멤버 연결 (OWNER)
+        TeamMemberVo teamMember = TeamMemberVo.builder()
+                .teamId(teamId)
+                .userId(userId)
+                .role(Role.OWNER)
+                .invitationStatus(InvitationStatus.ACCEPTED)
+                .build();
+
+        teamMemberMapper.insertTeamMember(teamMember);
+
+        // 3. 기본 보드, 리스트 생성 -> BoardService에 위임
+        boardService.createDefaultBoard(teamId, userId);
     }
 
     @Override
@@ -99,6 +129,13 @@ public class TeamServiceImpl implements TeamService {
         memberVal.validateTeamOwner(teamId, userId, ErrorCode.TEAM_UPDATE_FORBIDDEN);
 
         // 3. 업데이트 진행
+        if (req.getName() != null) {
+            teamVo.setName(req.getName());
+        }
+        if (req.getDescription() != null) {
+            teamVo.setDescription(req.getDescription());
+        }
+        
         teamMapper.updateTeam(teamVo);
     }
 
