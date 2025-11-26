@@ -7,6 +7,9 @@ import com.nullpointer.domain.board.dto.response.BoardResponse;
 import com.nullpointer.domain.board.mapper.BoardMapper;
 import com.nullpointer.domain.board.service.BoardService;
 import com.nullpointer.domain.board.vo.BoardVo;
+import com.nullpointer.domain.board.vo.enums.Visibility;
+import com.nullpointer.domain.list.mapper.ListMapper;
+import com.nullpointer.domain.list.vo.ListVo;
 import com.nullpointer.domain.member.mapper.BoardMemberMapper;
 import com.nullpointer.domain.member.vo.BoardMemberVo;
 import com.nullpointer.domain.member.vo.enums.Role;
@@ -30,6 +33,8 @@ public class BoardServiceImpl implements BoardService {
     private final TeamValidator teamVal;
     private final MemberValidator memberVal;
     private final BoardValidator boardVal;
+
+    private final ListMapper listMapper;
 
     @Override
     @Transactional
@@ -66,6 +71,37 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
+    @Transactional
+    public void createDefaultBoard(Long teamId, Long userId) {
+        // 1. 기본 보드 생성
+        BoardVo board = BoardVo.builder()
+                .teamId(teamId)
+                .title("기본 보드")
+                .description("자유롭게 일정을 관리해보세요.")
+                .visibility(Visibility.PRIVATE)
+                .build();
+
+        boardMapper.insertBoard(board);
+
+        // 방금 만든 보드 ID 가져오기
+        Long boardId = board.getId();
+
+        // 2. 보드 멤버 연결
+        BoardMemberVo boardMember = BoardMemberVo.builder()
+                .boardId(boardId)
+                .userId(userId)
+                .role(Role.OWNER)
+                .build();
+
+        boardMemberMapper.insertBoardMember(boardMember);
+
+        // 3. 기본 리스트 3개 생성
+        listMapper.insertList(createDefaultList(boardId, "To Do", 1));
+        listMapper.insertList(createDefaultList(boardId, "In Progress", 2));
+        listMapper.insertList(createDefaultList(boardId, "Done", 3));
+    }
+
+    @Override
     public List<BoardResponse> getMyBoards(Long userId) {
         List<BoardVo> boards = boardMapper.findBoardByUserId(userId);
         return boards.stream().map(BoardResponse::from).toList();
@@ -95,6 +131,17 @@ public class BoardServiceImpl implements BoardService {
         // 2. 권한 체크 (OWNER)
         memberVal.validateTeamOwner(boardId, userId, ErrorCode.BOARD_UPDATE_FORBIDDEN);
 
+        // 3. 업데이트 진행
+        if (req.getTitle() != null) {
+            boardVo.setTitle(req.getTitle());
+        }
+        if (req.getDescription() != null) {
+            boardVo.setDescription(req.getDescription());
+        }
+        if (boardVo.getVisibility() != req.getVisibility()) {
+            boardVo.setVisibility(req.getVisibility());
+        }
+
         boardMapper.updateBoard(boardVo);
     }
 
@@ -109,6 +156,16 @@ public class BoardServiceImpl implements BoardService {
 
         // 3. 삭제 진행
         boardMapper.deleteBoard(boardId);
+    }
+
+    private ListVo createDefaultList(Long boardId, String title, int orderIndex) {
+        ListVo list = new ListVo();
+
+        list.setBoardId(boardId);
+        list.setTitle(title);
+        list.setOrderIndex(orderIndex);
+
+        return list;
     }
 
 }
