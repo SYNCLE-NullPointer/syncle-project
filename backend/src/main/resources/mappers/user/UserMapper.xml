@@ -129,7 +129,7 @@
           AND deleted_at IS NULL
     </update>
 
-    <!-- 다른 사용자 정보 조회 -->
+    <!-- 사용자 요약 정보 조회 -->
     <select id="getUserSummary" resultType="com.nullpointer.domain.user.dto.response.UserSummaryResponse">
         SELECT id,
                nickname,
@@ -139,5 +139,46 @@
         WHERE id = #{userId}
           AND deleted_at IS NULL
     </select>
+
+    <!-- 계정 비활성화 -->
+    <update id="deactivateUser">
+        UPDATE user
+        SET user_status = 'DEACTIVATED',
+            updated_at  = NOW()
+        WHERE id = #{id}
+          AND user_status = 'ACTIVATED'
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 계정 활성화 -->
+    <update id="reactivateUser">
+        UPDATE user
+        SET user_status = 'ACTIVATED',
+            updated_at  = NOW()
+        WHERE id = #{id}
+          AND user_status = 'DEACTIVATED'
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 계정 삭제 (Soft Delete) -->
+    <update id="deleteUser">
+        UPDATE user
+        <set>
+            email = CONCAT('deleted_', id, '_', UNIX_TIMESTAMP(), '@syncle.com'),
+            password = 'UNKNOWN',
+            nickname = '탈퇴한 사용자',
+            description = NULL,
+            position = NULL,
+            profile_img = NULL,
+            provider = 'LOCAL',
+            provider_id = NULL,
+            verify_status = 'EXPIRED',
+            user_status = 'DELETED',
+            updated_at = NOW(),
+            deleted_at = NOW()
+        </set>
+        WHERE id = #{id}
+        AND deleted_at IS NULL
+    </update>
 
 </mapper>

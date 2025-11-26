@@ -1,5 +1,6 @@
 package com.nullpointer.domain.user.controller;
 
+import com.nullpointer.domain.auth.dto.request.AuthRequest;
 import com.nullpointer.domain.auth.dto.request.PasswordRequest;
 import com.nullpointer.domain.user.dto.request.UpdateProfileRequest;
 import com.nullpointer.domain.user.dto.response.UserProfileResponse;
@@ -7,6 +8,7 @@ import com.nullpointer.domain.user.dto.response.UserSummaryResponse;
 import com.nullpointer.domain.user.service.UserService;
 import com.nullpointer.global.common.ApiResponse;
 import com.nullpointer.global.security.jwt.CustomUserDetails;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -56,11 +58,40 @@ public class UserController {
         return ApiResponse.success("비밀번호 변경 성공");
     }
 
-    // 다른 사용자 정보 조회
+    // 사용자 요약 정보 조회
     @GetMapping("/{userId}/summary")
     public ApiResponse<UserSummaryResponse> getUserSummary(@PathVariable Long userId) {
         UserSummaryResponse response = userService.getUserSummary(userId);
         return ApiResponse.success(response);
+    }
+
+    // 계정 비활성화
+    @PatchMapping("/deactivate")
+    public ApiResponse<String> deactivateUser(@AuthenticationPrincipal CustomUserDetails userDetails, HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+
+        // 헤더에서 Bearer 제거
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            String accessToken = bearerToken.substring(7);
+            userService.deactivateUser(userDetails.getUserId(), accessToken);
+        }
+
+        return ApiResponse.success("계정 비활성화 성공");
+    }
+
+    // 계정 복구
+    // 비활성 계정의 로그인 시도
+    @PostMapping("/reactivate")
+    public ApiResponse<String> reactivateUser(@Valid @RequestBody AuthRequest.Login req) {
+        userService.reactivateUser(req);
+        return ApiResponse.success("계정 복구 성공");
+    }
+
+    // 계정 삭제
+    @DeleteMapping("/me")
+    public ApiResponse<String> deleteUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.deleteUser(userDetails.getUserId());
+        return ApiResponse.success("계정 삭제 성공");
     }
 
 }
