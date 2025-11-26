@@ -52,7 +52,7 @@ public class TeamServiceImpl implements TeamService {
                 .teamId(createTeamId)
                 .userId(userId)
                 .role(Role.OWNER)
-                .invitationStatus(InvitationStatus.ACTIVE)
+                .invitationStatus(InvitationStatus.ACCEPTED)
                 .build();
 
         teamMemberMapper.insertTeamMember(teamMemberVo);
