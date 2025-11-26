@@ -37,6 +37,16 @@ public interface UserMapper {
     // 사용자 비밀번호 변경 (성공: 1, 실패: 0)
     void updatePassword(Long id, String newPassword);
 
+    // 사용자 요약 정보 조회
     Optional<UserSummaryResponse> getUserSummary(Long userId);
+
+    // 계정 비활성화
+    int deactivateUser(Long id);
+
+    // 계정 활성화
+    int reactivateUser(Long id);
+
+    // 계정 삭제
+    void deleteUser(Long id);
 
 }

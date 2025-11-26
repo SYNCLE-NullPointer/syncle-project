@@ -1,5 +1,6 @@
 package com.nullpointer.domain.user.service.impl;
 
+import com.nullpointer.domain.auth.dto.request.AuthRequest;
 import com.nullpointer.domain.auth.dto.request.PasswordRequest;
 import com.nullpointer.domain.file.service.FileStorageService;
 import com.nullpointer.domain.user.dto.request.UpdateProfileRequest;
@@ -8,9 +9,11 @@ import com.nullpointer.domain.user.dto.response.UserSummaryResponse;
 import com.nullpointer.domain.user.mapper.UserMapper;
 import com.nullpointer.domain.user.service.UserService;
 import com.nullpointer.domain.user.vo.UserVo;
+import com.nullpointer.domain.user.vo.enums.UserStatus;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.common.enums.RedisKeyType;
 import com.nullpointer.global.exception.BusinessException;
+import com.nullpointer.global.security.jwt.JwtTokenProvider;
 import com.nullpointer.global.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,6 +29,7 @@ public class UserServiceImpl implements UserService {
     private final FileStorageService fileStorageService;
     private final PasswordEncoder passwordEncoder;
     private final RedisUtil redisUtil;
+    private final JwtTokenProvider jwtTokenProvider;
 
     /**
      * 이메일 중복 확인
@@ -48,6 +52,8 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserProfileResponse getUserProfile(Long id) {
+        findActiveUser(id);
+
         return userMapper.getUserProfile(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
@@ -59,8 +65,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void updateProfile(Long id, UpdateProfileRequest req) {
         // 1) 사용자 조회
-        UserVo user = userMapper.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        UserVo user = findActiveUser(id);
 
         // 2) 닉네임 변경 시 중복 검사 (기존 닉네임과 다를 때만)
         // hasText : null, 문자열 길이, 공백 체크
@@ -104,8 +109,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void changePassword(Long id, PasswordRequest.Change req) {
         // 1) 사용자 조회
-        UserVo user = userMapper.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        UserVo user = findActiveUser(id);
 
         // 2) 현재 비밀번호 검증
         if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPassword())) {
@@ -127,12 +131,94 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 다른 사용자 정보 조회
+     * 사용자 요약 정보 조회
      */
     @Override
     public UserSummaryResponse getUserSummary(Long userId) {
         return userMapper.getUserSummary(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    /**
+     * 계정 비활성화 (로그인 상태)
+     */
+    @Override
+    @Transactional
+    public void deactivateUser(Long id, String accessToken) {
+        // 1) 사용자 조회
+        userMapper.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 2) 상태 변경 (ACTIVATED -> DEACTIVATED)
+        int updated = userMapper.deactivateUser(id);
+
+        if (updated != 1) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
+        // 3) 강제 로그아웃
+        redisUtil.deleteData(RedisKeyType.REFRESH_TOKEN.getKey(id));
+
+        long remainingTime = jwtTokenProvider.getExpiration(accessToken) - System.currentTimeMillis();
+
+        if (remainingTime > 0) {
+            redisUtil.setDataExpire(RedisKeyType.BLACKLIST.getKey(accessToken), "logout", remainingTime);
+        }
+    }
+
+    /**
+     * 계정 재활성화 (로그아웃 상태)
+     * - 비활성화된 계정으로 로그인 시도
+     */
+    @Override
+    @Transactional
+    public void reactivateUser(AuthRequest.Login req) {
+        // 1) 사용자 조회
+        // 계정이 삭제된 사용자는 조회 x
+        UserVo user = userMapper.findByEmail(req.getEmail())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 2) 비밀번호 검증
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        // 3) 상태 변경 (DEACTIVATED -> ACTIVATED)
+        int updated = userMapper.reactivateUser(user.getId());
+
+        if (updated != 1) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * 계정 영구삭제
+     */
+    @Override
+    @Transactional
+    public void deleteUser(Long id) {
+        // 1) 사용자 조회
+        userMapper.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 2) Soft Delete
+        userMapper.deleteUser(id);
+
+        // 3) 강제 로그아웃
+        redisUtil.deleteData(RedisKeyType.REFRESH_TOKEN.getKey(id));
+    }
+
+    /**
+     * 활성화 계정 조회
+     */
+    private UserVo findActiveUser(Long id) {
+        UserVo user = userMapper.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getUserStatus() != UserStatus.ACTIVATED) {
+            throw new BusinessException(ErrorCode.USER_STATUS_NOT_ACTIVE);
+        }
+        return user;
     }
 
 }
