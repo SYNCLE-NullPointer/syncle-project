@@ -9,7 +9,7 @@ const useUserStore = create((set) => ({
   fetchUser: async () => {
     set({ isLoading: true })
     try {
-      const response = await api.get('/api/users/me')
+      const response = await api.get('/users/me')
 
       // API 호출 성공 시 user 정보 저장
       set({ user: response.data.data })
