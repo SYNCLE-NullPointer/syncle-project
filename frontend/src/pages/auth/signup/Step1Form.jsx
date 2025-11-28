@@ -9,8 +9,17 @@ import useSignInStore from '../../../stores/useSignInStore'
 export default function Step1Form() {
   const navigate = useNavigate()
 
-  const { formData, errors, isLoading, setFormData, requestSignupCode } =
-    useSignUpStore()
+  const {
+    formData,
+    errors,
+    successes,
+    isLoading,
+    checkLoading,
+    setFormData,
+    requestSignupCode,
+    checkEmailDuplicate,
+    checkNicknameDuplicate,
+  } = useSignUpStore()
 
   const googleLogin = useSignInStore((state) => state.googleLogin)
 
@@ -64,6 +73,9 @@ export default function Step1Form() {
           placeholder="이메일을 입력해 주세요."
           onChange={handleChange}
           error={errors?.email}
+          success={successes?.email}
+          onCheck={checkEmailDuplicate}
+          isChecking={checkLoading.email}
         />
         {/* 비밀번호 */}
         <AuthInput
@@ -83,6 +95,9 @@ export default function Step1Form() {
           placeholder="닉네임을 입력해 주세요."
           onChange={handleChange}
           error={errors?.nickname}
+          success={successes?.nickname}
+          onCheck={checkNicknameDuplicate}
+          isChecking={checkLoading.nickname}
         />
         {/* 폼 제출 */}
         <FormButton type="submit" text="인증번호 받기" isLoading={isLoading} />

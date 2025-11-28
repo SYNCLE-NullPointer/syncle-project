@@ -9,10 +9,14 @@ const useSignUpStore = create((set, get) => ({
   step: 1,
   formData: { email: '', password: '', nickname: '' },
   authCode: '',
+  timeLeft: 300, // 5분
   isLoading: false,
   isResending: false, // 재전송 버튼 로딩 상태
-  timeLeft: 300, // 5분
-  errors: {},
+
+  checkLoading: { email: false, nickname: false }, // 중복 검사 로딩 상태
+
+  errors: {}, // 에러 메시지
+  successes: {}, // 성공 메시지
   globalError: '',
 
   // ==========================================
@@ -27,7 +31,8 @@ const useSignUpStore = create((set, get) => ({
     set((state) => ({
       formData: { ...state.formData, [name]: value },
       // 입력 시 해당 필드 에러 제거
-      errors: { ...state.errors, [name]: '' },
+      errors: { ...(state.errors || {}), [name]: '' },
+      successes: { ...(state.successes || {}), [name]: '' },
     })),
 
   setAuthCode: (code) => set({ authCode: code }),
@@ -47,14 +52,93 @@ const useSignUpStore = create((set, get) => ({
       authCode: '',
       timeLeft: 300,
       errors: {},
+      successes: {},
       globalError: '',
       isLoading: false,
       isResending: false,
+      checkLoading: { email: false, nickname: false },
     }),
 
   // =================================================
   // 3. 비동기 액션 (Async Actions) - API 호출
   // =================================================
+
+  // 이메일 중복 확인
+  checkEmailDuplicate: async () => {
+    const { formData } = get()
+    if (!formData.email) return
+
+    set((state) => ({ checkLoading: { ...state.checkLoading, email: true } }))
+
+    try {
+      const response = await api.get(
+        `/users/check-email?email=${formData.email}`,
+      )
+      const isDuplicate = response.data.data
+
+      if (isDuplicate) {
+        set((state) => ({
+          errors: { ...state.errors, email: '이미 사용 중인 이메일입니다.' },
+          successes: { ...state.successes, email: '' }, // 성공 메시지 제거
+        }))
+        return false
+      } else {
+        set((state) => ({
+          errors: { ...state.errors, email: '' },
+          successes: { ...state.successes, email: '사용 가능한 이메일입니다.' },
+        }))
+        return true
+      }
+    } catch (error) {
+      console.error(error)
+      alert('중복 확인 중 오류가 발생했습니다.')
+    } finally {
+      set((state) => ({
+        checkLoading: { ...state.checkLoading, email: false },
+      }))
+    }
+  },
+
+  // 닉네임 중복 확인
+  checkNicknameDuplicate: async () => {
+    const { formData } = get()
+    if (!formData.nickname) return
+
+    set((state) => ({
+      checkLoading: { ...state.checkLoading, nickname: true },
+    }))
+
+    try {
+      const response = await api.get(
+        `/users/check-nickname?nickname=${formData.nickname}`,
+      )
+      const isDuplicate = response.data.data
+
+      if (isDuplicate) {
+        set((state) => ({
+          errors: { ...state.errors, nickname: '이미 사용 중인 닉네임입니다.' },
+          successes: { ...state.successes, nickname: '' },
+        }))
+        return false
+      } else {
+        set((state) => ({
+          errors: { ...state.errors, nickname: '' },
+          successes: {
+            ...state.successes,
+            nickname: '사용 가능한 닉네임입니다.',
+          },
+        }))
+        return true
+      }
+    } catch (error) {
+      console.error(error)
+      alert('중복 확인 중 오류가 발생했습니다.')
+    } finally {
+      set((state) => ({
+        checkLoading: { ...state.checkLoading, nickname: false },
+      }))
+    }
+  },
 
   // 1단계 - 인증코드 발송 요청
   requestSignupCode: async () => {
@@ -135,7 +219,7 @@ const useSignUpStore = create((set, get) => ({
       } else if (errorCode === 'A004') {
         set({
           errors: {
-            authCode: '인증 코드가 일치하지 않습니다. 다시 확인해주세요.',
+            authCode: '인증번호가 일치하지 않습니다. 다시 확인해주세요.',
           },
         })
       } else {
