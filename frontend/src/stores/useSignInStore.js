@@ -33,6 +33,8 @@ const useSignInStore = create((set, get) => ({
   // =================================================
   // 3. 비동기 액션 (Async Actions) - API 호출
   // =================================================
+
+  // 이메일 로그인
   login: async (navigate) => {
     set({ isLoading: true })
     const { formData, isKeepLogin } = get()
@@ -79,6 +81,34 @@ const useSignInStore = create((set, get) => ({
       } else {
         alert(response?.message || '이메일 또는 비밀번호를 확인해주세요.')
       }
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+  // 구글 로그인
+  googleLogin: async (credentialResponse, navigate) => {
+    set({ isLoading: true })
+
+    try {
+      // 1) 구글에서 받은 ID Token (credential) 추출
+      const idToken = credentialResponse.credential
+
+      // 2) 백엔드 API 호출
+      const response = await api.post('/auth/login/google', {
+        token: idToken,
+      })
+
+      // 3) 로컬 스토리지에 토큰 저장
+      const { accessToken, refreshToken } = response.data.data
+      localStorage.setItem('accessToken', accessToken)
+      localStorage.setItem('refreshToken', refreshToken)
+
+      // 4) 메인 페이지로 이동
+      alert('로그인 성공!')
+      navigate('/dashboard')
+    } catch (error) {
+      console.error('구글 로그인 실패: ', error)
+      alert('구글 로그인 처리에 실패했습니다.')
     } finally {
       set({ isLoading: false })
     }

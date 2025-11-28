@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import googleIcon from '../../assets/icons/google.svg'
 import AuthInput from '../../components/auth/AuthInput'
 import useSignInStore from '../../stores/useSignInStore'
 import FormButton from '../../components/auth/FormButton'
+import { GoogleLogin } from '@react-oauth/google'
 
 export default function SignIn() {
   const navigate = useNavigate()
@@ -14,6 +14,7 @@ export default function SignIn() {
     setFormData,
     login,
     isLoading,
+    googleLogin,
     isKeepLogin,
     toggleKeepLogin,
     reset,
@@ -45,12 +46,19 @@ export default function SignIn() {
       </div>
 
       {/* Google로 로그인하기 */}
-      <FormButton
-        type="button"
+      <GoogleLogin
+        onSuccess={(credentialResponse) => {
+          // 로그인 성공 시 Store 액션 호출
+          googleLogin(credentialResponse, navigate)
+        }}
+        onError={() => {
+          alert('로그인에 실패했습니다.')
+        }}
+        theme="outline"
+        shape="rectangular"
+        size="large"
+        width={380}
         text="Google로 로그인하기"
-        variant="social"
-        icon={<img src={googleIcon} alt="Google" className="h-5 w-5" />}
-        onClick={() => (window.location.href = '')} // 추가) 구글 링크 이동
       />
 
       {/* 구분선 */}
@@ -69,7 +77,7 @@ export default function SignIn() {
         <AuthInput
           name="email"
           type="email"
-          value={formData.email}
+          value={formData?.email}
           onChange={handleChange}
           label="이메일"
           placeholder="이메일을 입력해 주세요."
@@ -78,7 +86,7 @@ export default function SignIn() {
         <AuthInput
           name="password"
           type="password"
-          value={formData.password}
+          value={formData?.password}
           onChange={handleChange}
           label="비밀번호"
           placeholder="비밀번호를 입력해 주세요."

@@ -39,11 +39,6 @@ const useSignUpStore = create((set, get) => ({
   // 로딩 상태
   setIsResending: (isResending) => set({ isResending }),
 
-  // 에러 처리
-  setErrors: (errors) => set({ errors }),
-  setGlobalError: (msg) => set({ globalError: msg }),
-  clearErrors: () => set({ errors: {}, globalError: '' }),
-
   // 초기화 (컨포넌트 언마운트 시 사용)
   reset: () =>
     set({

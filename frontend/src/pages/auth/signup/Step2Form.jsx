@@ -67,7 +67,7 @@ export default function Step2Form() {
           onChange={(e) => setAuthCode(e.target.value)}
           placeholder={'인증번호 6자리를 입력해주세요.'}
           maxLength={6}
-          error={errors.authCode}
+          error={errors?.authCode}
           className="text-center text-lg tracking-widest"
         >
           {/* 타이머 */}
