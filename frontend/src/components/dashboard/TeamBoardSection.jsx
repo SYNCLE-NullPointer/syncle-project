@@ -1,0 +1,38 @@
+import React from 'react'
+import BoardCard from '../common/BoardCard'
+import CreateBoardButton from '../common/CreateBoardButton'
+
+function TeamBoardSection({ team }) {
+  return (
+    <div className="mb-10">
+      {/* 팀 헤더 */}
+      <div className="mb-3 flex items-center gap-2">
+        <div
+          className={`flex h-6 w-6 items-center justify-center rounded-md text-sm font-bold text-white ${
+            team.teamName === '널포인터' ? 'bg-orange-500' : 'bg-green-500'
+            /* 색상 로직은 나중에 데이터 기반으로 고도화 가능 */
+          }`}
+        >
+          {team.teamName.charAt(0).toUpperCase()}
+        </div>
+        <h2 className="text-lg font-semibold">{team.teamName}</h2>
+      </div>
+
+      {/* 보드 그리드 */}
+      <div className="grid grid-cols-4 gap-4">
+        {team.boards.map((board) => (
+          <BoardCard
+            key={board.id}
+            imageUrl="https://picsum.photos/400/200"
+            title={board.title}
+          />
+        ))}
+
+        {/* 보드 생성 버튼 (팀 ID 전달) */}
+        <CreateBoardButton teamId={team.teamId} />
+      </div>
+    </div>
+  )
+}
+
+export default TeamBoardSection

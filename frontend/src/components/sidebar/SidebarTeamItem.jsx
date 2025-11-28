@@ -1,0 +1,68 @@
+import React from 'react'
+import { Link } from 'react-router-dom'
+
+function SidebarTeamItem({ team, isSelected, onToggle }) {
+  // team 객체에서 안전하게 id와 name 추출
+  const tId = team.id
+  const tName = team.name
+
+  return (
+    <div>
+      {/* 팀 헤더 버튼 */}
+      <button
+        onClick={() => onToggle(tId)}
+        className="flex w-full items-center justify-between rounded-md px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100"
+      >
+        <div className="flex items-center gap-2 overflow-hidden">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-indigo-500 text-[10px] font-bold text-white">
+            {tName ? tName.charAt(0).toUpperCase() : 'T'}
+          </span>
+          <span className="truncate text-sm font-medium">{tName}</span>
+        </div>
+
+        {/* 화살표 회전 애니메이션 */}
+        <svg
+          className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
+            isSelected ? 'rotate-180' : ''
+          }`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {/* 하위 메뉴 (펼쳐졌을 때만 렌더링) */}
+      {isSelected && (
+        <div className="mt-1 ml-9 space-y-1">
+          <Link
+            to={`/dashboard/teams/${tId}/boards`}
+            className="block rounded-md px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+          >
+            - 보드
+          </Link>
+          <Link
+            to={`/dashboard/teams/${tId}/members`}
+            className="block rounded-md px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+          >
+            - 팀 멤버
+          </Link>
+          <Link
+            to={`/dashboard/teams/${tId}/settings`}
+            className="block rounded-md px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+          >
+            - 설정
+          </Link>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default SidebarTeamItem
