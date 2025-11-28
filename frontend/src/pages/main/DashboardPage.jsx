@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import BoardCard from '../../components/common/BoardCard'
-import CreateBoardButton from '../../components/common/CreateBoardButton'
 import api from '../../api/AxiosInterceptor'
+import TeamBoardSection from '../../components/dashboard/TeamBoardSection'
 
 function DashboardPage() {
   const [teams, setTeams] = useState([]) // 팀별로 그룹화된 데이터
@@ -68,34 +68,17 @@ function DashboardPage() {
           </div>
         </section>
 
-        {/* ---------------- 각 팀별 보드 ---------------- */}
         <section className="space-y-10">
           {teams.length > 0 ? (
             teams.map((team) => (
-              <div key={team.teamId}>
-                {/* 팀 헤더 */}
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-orange-500 text-sm font-bold text-white">
-                    {team.teamName.charAt(0).toUpperCase()}
-                  </div>
-                  <h2 className="text-lg font-semibold">{team.teamName}</h2>
-                </div>
-                <div className="grid grid-cols-4 gap-4">
-                  {team.boards.map((board) => (
-                    <BoardCard
-                      key={board.id}
-                      imageUrl="https://picsum.photos/400/200"
-                      title={board.title}
-                    />
-                  ))}
-                  <CreateBoardButton teamId={team.teamId} />
-                </div>
-              </div>
+              // 분리한 컴포넌트 사용
+              <TeamBoardSection
+                key={team.teamId || team.teamName}
+                team={team}
+              />
             ))
           ) : (
-            <div className="text-center text-gray-500">
-              새로운 팀을 생성해보세요!
-            </div>
+            <div className="text-gray-500">소속된 팀이 없습니다.</div>
           )}
         </section>
       </div>
