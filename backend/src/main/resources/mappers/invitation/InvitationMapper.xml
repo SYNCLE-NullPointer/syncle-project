@@ -22,6 +22,7 @@
         SELECT *
         FROM invitation
         WHERE id = #{id}
+        AND status != 'ACCEPTED'
     </select>
 
     <!-- 상태 변경 -->
@@ -79,7 +80,7 @@
         ORDER BY i.created_at DESC
     </select>
 
-    <!-- 초대 삭제 -->
+    <!-- 초대 취소 -->
     <delete id="deleteInvitation" parameterType="long">
         DELETE
         FROM invitation

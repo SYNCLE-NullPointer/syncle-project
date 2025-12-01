@@ -16,4 +16,6 @@ public interface InvitationService {
     List<TeamInvitationResponse> getSentInvitations(Long teamId, Long userId);
 
     List<MyInvitationResponse> getMyInvitations(Long userId);
+
+    void removeInvitation(Long invitationId, Long userId);
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Search, UserPlus, X, Users } from 'lucide-react'
 import api from '../../api/AxiosInterceptor'
+import { useNavigate } from 'react-router-dom'
 
 // 더바운싱을 위한 커스텀 훅
 function useDebounce(value, delay) {
@@ -15,11 +16,31 @@ function useDebounce(value, delay) {
 function InviteMemberModal({ teamId, currentMembers = [], onClose }) {
   const [keyword, setKeyword] = useState('')
   const debouncedKeyword = useDebounce(keyword, 500) // 0.5초 디바운스
-
+  const navigate = useNavigate()
   const [searchResults, setSearchResults] = useState([])
   const [selectedUsers, setSelectedUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [inviting, setInviting] = useState(false)
+  const [pendingInvitees, setPendingInvitees] = useState([])
+
+  // 이미 초대장을 보낸 사람들 조회
+  useEffect(() => {
+    const fetchPendingInvitees = async () => {
+      try {
+        const response = await api.get(`/invitations/teams/${teamId}`)
+        const data = response.data.data || []
+        console.log('초대장 데이터:', data)
+        const pendingIds = data
+          .filter((invite) => invite.status === 'PENDING')
+          .map((invite) => invite.inviteeId)
+        setPendingInvitees(pendingIds)
+      } catch (error) {
+        console.error('초대장 조회 실패:', error)
+      }
+    }
+
+    fetchPendingInvitees()
+  }, [teamId])
 
   // 사용자 검색 API 호출
   useEffect(() => {
@@ -36,12 +57,19 @@ function InviteMemberModal({ teamId, currentMembers = [], onClose }) {
         )
         const data = response.data.data || []
 
-        // 이미 멤버이거나, 이미 선택된 사용자는 제외하고 표시
+        // 필터링 기준:
+        // 1. 이미 멤버인 사람 (currentMemberIds)
+        // 2. 현재 모달에서 선택한 사람 (selectedIds)
+        // 3. 이미 초대장을 보낸 사람 (pendingInvitees)
         const currentMemberIds = new Set(currentMembers.map((m) => m.userId))
         const selectedIds = new Set(selectedUsers.map((u) => u.id))
+        const pendingIds = new Set(pendingInvitees)
 
         const filtered = data.filter(
-          (u) => !currentMemberIds.has(u.id) && !selectedIds.has(u.id),
+          (u) =>
+            !currentMemberIds.has(u.id) &&
+            !selectedIds.has(u.id) &&
+            !pendingIds.has(u.id),
         )
         setSearchResults(filtered)
       } catch (error) {
@@ -52,7 +80,7 @@ function InviteMemberModal({ teamId, currentMembers = [], onClose }) {
     }
 
     searchUsers()
-  }, [debouncedKeyword, currentMembers, selectedUsers])
+  }, [debouncedKeyword, currentMembers, selectedUsers, pendingInvitees])
 
   // 사용자 선택
   const handleSelectUser = (user) => {
@@ -83,6 +111,7 @@ function InviteMemberModal({ teamId, currentMembers = [], onClose }) {
 
       alert('초대되었습니다.')
       onClose() // 모달 닫기
+      navigate(`/dashboard/teams/${teamId}/invitations`)
     } catch (error) {
       console.error('초대 실패:', error)
       alert(error.response?.data?.message || '초대에 실패했습니다.')

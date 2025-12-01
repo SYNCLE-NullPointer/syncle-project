@@ -201,4 +201,26 @@ public class InvitationServiceImpl implements InvitationService {
     public List<MyInvitationResponse> getMyInvitations(Long userId) {
         return invitationMapper.findAllByUserId(userId);
     }
+
+    // ========================================================
+    //  내 초대 리스트 조회
+    // ========================================================
+
+    @Override
+    public void removeInvitation(Long invitationId, Long userId) {
+        // 1. 초대 정보 조회
+        InvitationVo invitation = invitationMapper.findById(invitationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVITATION_NOT_FOUND));
+
+        // 2. 요청자가 팀장(OWNER)인지 확인
+        memberValidator.validateTeamOwner(invitation.getTeamId(), userId, ErrorCode.TEAM_ACCESS_DENIED);
+
+        // 3. 초대 삭제
+        invitationMapper.deleteInvitation(invitationId);
+
+        // 4. Redis 정리
+        if (invitation.getToken() != null) {
+            redisUtil.deleteData(RedisKeyType.INVITATION.getKey(invitation.getToken()));
+        }
+    }
 }
