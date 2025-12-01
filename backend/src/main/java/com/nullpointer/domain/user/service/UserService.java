@@ -6,6 +6,8 @@ import com.nullpointer.domain.user.dto.request.UpdateProfileRequest;
 import com.nullpointer.domain.user.dto.response.UserProfileResponse;
 import com.nullpointer.domain.user.dto.response.UserSummaryResponse;
 
+import java.util.List;
+
 public interface UserService {
 
     // 이메일 중복 확인
@@ -25,6 +27,9 @@ public interface UserService {
 
     // 사용자 요약 정보 조회
     UserSummaryResponse getUserSummary(Long userId);
+
+    // 사용자 검색
+    List<UserSummaryResponse> searchUsers(String keyword);
 
     // 계정 비활성화 (데이터 유지, 복구 가능)
     void deactivateUser(Long id, String accessToken);

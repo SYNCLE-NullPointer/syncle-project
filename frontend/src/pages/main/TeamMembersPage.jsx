@@ -2,16 +2,28 @@ import React, { useEffect, useState } from 'react'
 import defaultProfile from '../../assets/images/default.png'
 import api from '../../api/AxiosInterceptor'
 import { useParams } from 'react-router-dom'
+import InviteMemberModal from '../../components/modals/InviteMemberModal'
+import useUserStore from '../../stores/useUserStore'
 
 export default function TeamMembersPage() {
   const { teamId } = useParams()
   const [members, setMembers] = useState([])
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+
+  // 현재 로그인한 사용자 정보 가져오기
+  const { user } = useUserStore()
 
   // [변경] 현재 열려있는 메뉴의 ID를 저장 (예: 'role-1', 'board-2')
   const [activeMenu, setActiveMenu] = useState(null)
 
-  // [추가] 로딩 상태 관리 (어떤 멤버의 보드를 로딩 중인지)
+  // 로딩 상태 관리 (어떤 멤버의 보드를 로딩 중인지)
   const [loadingMemberId, setLoadingMemberId] = useState(null)
+
+  // 현재 사용자가 이 팀의 OWNER인지 확인
+  // members 배열이 로드된 후, 내 userId와 일치하는 멤버의 역할을 확인합니다.
+  const isOwner = members.some(
+    (member) => member.userId === user.id && member.role === 'OWNER',
+  )
 
   // 1. 초기 멤버 목록 조회
   useEffect(() => {
@@ -29,7 +41,7 @@ export default function TeamMembersPage() {
     fetchMembers()
   }, [teamId])
 
-  // [추가] 외부 클릭 시 메뉴 닫기
+  // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
     const closeMenu = () => setActiveMenu(null)
     window.addEventListener('click', closeMenu)
@@ -85,22 +97,53 @@ export default function TeamMembersPage() {
     }
   }
 
+  // 4. 멤버 내보내기 핸들러
+  const handleRemoveMember = async (memberId) => {
+    try {
+      await api.delete(`/teams/${teamId}/members/${memberId}`)
+      // 멤버 목록에서 제거
+      setMembers((prev) => prev.filter((m) => m.userId !== memberId))
+    } catch (error) {
+      console.error('멤버 내보내기 실패', error)
+    }
+  }
+
+  // 5. 멤버 역할 변경 핸들러
+  const handleRoleChange = async (memberId, newRole) => {
+    try {
+      await api.patch(`/teams/${teamId}/members/${memberId}/role`, {
+        role: newRole,
+      })
+      // 멤버 목록에서 역할 업데이트
+      setMembers((prev) =>
+        prev.map((m) => (m.userId === memberId ? { ...m, role: newRole } : m)),
+      )
+      // 메뉴 닫기
+      setActiveMenu(null)
+    } catch (error) {
+      console.error('멤버 역할 변경 실패', error)
+    }
+  }
+
   return (
     <main className="flex-1 overflow-y-auto bg-white p-8">
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <div className="mt-10 flex items-center justify-between px-2">
           <h3 className="text-xl font-semibold text-gray-800">팀 멤버 목록</h3>
 
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:cursor-pointer hover:bg-blue-700">
+          <button
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:cursor-pointer hover:bg-blue-700"
+            onClick={() => setIsInviteModalOpen(true)}
+          >
             멤버 추가
           </button>
         </div>
 
-        <div className="rounded-xl border border-gray-300">
-          <div className="min-h-[300px] max-w-full overflow-x-auto">
+        <div className="overflow-hidden rounded-xl border border-gray-300">
+          <div className="max-w-full overflow-x-auto">
             {/* 테이블 */}
             <table className="min-w-full">
-              <thead className="border-b border-gray-300">
+              <thead className="border-b border-gray-300 bg-gray-50">
                 <tr>
                   <th className="px-5 py-3 text-start text-sm font-medium text-gray-500">
                     멤버
@@ -117,9 +160,12 @@ export default function TeamMembersPage() {
                   <th className="px-5 py-3 text-start text-sm font-medium text-gray-500">
                     이메일
                   </th>
-                  <th className="px-5 py-3 text-start text-sm font-medium text-gray-500">
-                    관리
-                  </th>
+                  {/* OWNER일 때만 '관리' 컬럼 표시 */}
+                  {isOwner && (
+                    <th className="px-5 py-3 text-start text-sm font-medium text-gray-500">
+                      관리
+                    </th>
+                  )}
                 </tr>
               </thead>
 
@@ -128,18 +174,23 @@ export default function TeamMembersPage() {
                   // 현재 렌더링 중인 행의 메뉴 ID들
                   const roleMenuId = `role-${member.userId}`
                   const boardMenuId = `board-${member.userId}`
-
+                  const isMe = member.userId === user?.id
                   return (
                     <tr key={member.userId}>
                       {/* 유저 정보 */}
                       <td className="px-5 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 overflow-hidden rounded-full">
+                          <div className="relative h-10 w-10">
                             <img
                               src={member.profile_img || defaultProfile}
                               alt={member.nickname}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full rounded-full object-cover"
                             />
+                            {isMe && (
+                              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center text-[15px] font-bold text-yellow-400">
+                                Me
+                              </span>
+                            )}
                           </div>
                           <div>
                             <span className="block font-medium text-gray-800">
@@ -151,31 +202,45 @@ export default function TeamMembersPage() {
 
                       {/* 팀 역할 */}
                       <td className="relative px-4 py-3 text-sm text-gray-800">
-                        <button
-                          onClick={(e) => toggleMenu(e, 'role', member.userId)}
-                          className="rounded-lg border border-gray-300 px-3 py-1 hover:cursor-pointer hover:bg-gray-200"
-                        >
-                          {member.role || 'Member'}
-                        </button>
+                        {/*  OWNER일 경우만 역할 선택 버튼 */}
+                        {isOwner ? (
+                          <>
+                            <button
+                              onClick={(e) =>
+                                toggleMenu(e, 'role', member.userId)
+                              }
+                              className="rounded-lg border border-gray-300 px-3 py-1 hover:cursor-pointer hover:bg-gray-200"
+                            >
+                              {member.role || 'Member'}
+                            </button>
 
-                        {/* 역할 선택 드롭다운 (activeMenu가 일치할 때만 렌더링) */}
-                        {activeMenu === roleMenuId && (
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute top-1/2 left-[70%] z-20 w-36 -translate-y-1/2 rounded-lg border border-gray-300 bg-white shadow-md"
-                          >
-                            <div className="flex flex-col p-1 text-sm text-gray-800">
-                              {['OWNER', 'ADMIN', 'MEMBER'].map((role) => (
-                                <div
-                                  key={role}
-                                  className="cursor-pointer rounded-md px-3 py-2 hover:bg-gray-200"
-                                  // onClick={() => handleRoleChange(member.userId, role)}
-                                >
-                                  {role}
+                            {/* 역할 선택 드롭다운 (activeMenu가 일치할 때만 렌더링) */}
+                            {activeMenu === roleMenuId && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute top-1/2 left-[70%] z-20 w-36 -translate-y-1/2 rounded-lg border border-gray-300 bg-white shadow-md"
+                              >
+                                <div className="flex flex-col p-1 text-sm text-gray-800">
+                                  {['OWNER', 'MEMBER', 'VIEWER'].map((role) => (
+                                    <div
+                                      key={role}
+                                      className="cursor-pointer rounded-md px-3 py-2 hover:bg-gray-200"
+                                      onClick={() =>
+                                        handleRoleChange(member.userId, role)
+                                      }
+                                    >
+                                      {role}
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
-                          </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <span className="inline-block px-1 py-1 text-gray-600">
+                            {' '}
+                            {member.role || 'Member'}{' '}
+                          </span>
                         )}
                       </td>
 
@@ -244,12 +309,22 @@ export default function TeamMembersPage() {
                         {member.email}
                       </td>
 
-                      {/* 관리 (수정 버튼) */}
-                      <td className="px-4 py-3 text-sm">
-                        <button className="rounded-lg border border-gray-300 px-3 py-1 text-sm text-red-600 hover:cursor-pointer hover:bg-gray-200">
-                          내보내기
-                        </button>
-                      </td>
+                      {/* 관리 (내보내기) - OWNER만 표시 */}
+                      {isOwner && (
+                        <td className="px-4 py-3 text-sm">
+                          <button
+                            disabled={isMe}
+                            onClick={() => handleRemoveMember(member.userId)}
+                            className={`rounded-lg border px-3 py-1 text-sm ${
+                              isMe
+                                ? 'border-gray-200 bg-gray-100 text-gray-400'
+                                : 'border-gray-300 text-red-600 hover:cursor-pointer hover:bg-gray-200'
+                            }`}
+                          >
+                            내보내기
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   )
                 })}
@@ -258,6 +333,14 @@ export default function TeamMembersPage() {
           </div>
         </div>
       </div>
+      {/* 멤버 초대 모달 */}
+      {isInviteModalOpen && (
+        <InviteMemberModal
+          teamId={teamId}
+          currentMembers={members} // 이미 있는 멤버 제외용
+          onClose={() => setIsInviteModalOpen(false)}
+        />
+      )}
     </main>
   )
 }

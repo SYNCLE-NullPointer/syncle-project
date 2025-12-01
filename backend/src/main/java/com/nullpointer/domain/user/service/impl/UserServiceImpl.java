@@ -17,6 +17,9 @@ import com.nullpointer.global.exception.BusinessException;
 import com.nullpointer.global.security.jwt.JwtTokenProvider;
 import com.nullpointer.global.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -136,6 +139,18 @@ public class UserServiceImpl implements UserService {
     public UserSummaryResponse getUserSummary(Long userId) {
         return userMapper.getUserSummary(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    /**
+     * 사용자 검색
+     */
+    @Override
+    public List<UserSummaryResponse> searchUsers(String keyword) {
+        // 간단한 유효성 검사 (빈 문자열 검색 방지 등)
+        if (!StringUtils.hasText(keyword)) {
+            return List.of();
+        }
+        return userMapper.searchUsers(keyword.trim());
     }
 
     /**
