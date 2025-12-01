@@ -1,5 +1,6 @@
 package com.nullpointer.domain.user.dto.response;
 
+import com.nullpointer.domain.user.vo.enums.Provider;
 import com.nullpointer.domain.user.vo.enums.VerifyStatus;
 import lombok.*;
 
@@ -20,6 +21,7 @@ public class UserProfileResponse {
     private String position;
     private String profileImg;
     private VerifyStatus verifyStatus;
+    private Provider provider;
 
     // 활동 정보
     private LocalDateTime createdAt;

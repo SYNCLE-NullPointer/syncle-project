@@ -82,6 +82,7 @@
                u.position,
                u.profile_img,
                u.verify_status,
+               u.provider,
                u.created_at,
                u.updated_at,
                (SELECT COUNT(*)

@@ -11,6 +11,7 @@ public enum RedisKeyType {
 
     // Verification - 5분
     VERIFICATION_CODE("np:auth:code:%s:%s", 300_000L),
+    EMAIL_LINK_TOKEN("np:auth:link:%s", 1_800_000L), // {token} -> userId
 
     // Password Reset - 10분
     PASSWORD_RESET_TOKEN("np:auth:pw-token:%s", 600_000L),

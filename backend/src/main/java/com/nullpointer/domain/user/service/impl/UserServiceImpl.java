@@ -10,6 +10,7 @@ import com.nullpointer.domain.user.mapper.UserMapper;
 import com.nullpointer.domain.user.service.UserService;
 import com.nullpointer.domain.user.vo.UserVo;
 import com.nullpointer.domain.user.vo.enums.UserStatus;
+import com.nullpointer.domain.user.vo.enums.VerifyStatus;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.common.enums.RedisKeyType;
 import com.nullpointer.global.exception.BusinessException;
@@ -52,8 +53,6 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserProfileResponse getUserProfile(Long id) {
-        findActiveUser(id);
-
         return userMapper.getUserProfile(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
@@ -215,9 +214,14 @@ public class UserServiceImpl implements UserService {
         UserVo user = userMapper.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        if (user.getVerifyStatus() != VerifyStatus.VERIFIED) {
+            throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
         if (user.getUserStatus() != UserStatus.ACTIVATED) {
             throw new BusinessException(ErrorCode.USER_STATUS_NOT_ACTIVE);
         }
+
         return user;
     }
 

@@ -111,4 +111,22 @@ public class AuthController {
         return ApiResponse.success("비밀번호 재설정 성공");
     }
 
+    /**
+     * 이메일 인증 링크 발송
+     */
+    @PostMapping("/email/verification")
+    public ApiResponse<String> sendEmailVerificationLink(@Valid @RequestBody VerificationRequest.EmailOnly req) {
+        authService.sendEmailVerificationLink(req);
+        return ApiResponse.success("인증 메일 재발송 성공");
+    }
+
+    /**
+     * 인증 링크 검증
+     */
+    @GetMapping("/email/verification")
+    public ApiResponse<String> verifyEmailLink(@RequestParam String token) {
+        authService.verifyEmailLink(token);
+        return ApiResponse.success("이메일 인증 완료");
+    }
+
 }

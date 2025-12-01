@@ -37,6 +37,22 @@ public class EmailServiceImpl implements EmailService {
         String htmlContent = getVerificationHtml(subject, code);
 
         // MimeMessage 전송
+        sendMimeMessage(toEmail, subject, htmlContent);
+    }
+
+    @Async
+    @Override
+    public void sendVerificationLink(String toEmail, String token) {
+        String subject = "[SYNCLE] 이메일 재인증 링크";
+
+        String linkUrl = verifyBaseUrl + "?token=" + token;
+
+        String htmlContent = getLinkVerificationHtml(subject, linkUrl);
+
+        sendMimeMessage(toEmail, subject, htmlContent);
+    }
+
+    private void sendMimeMessage(String toEmail, String subject, String htmlContent) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
 
@@ -54,7 +70,6 @@ public class EmailServiceImpl implements EmailService {
             log.info("인증 메일 발송 성공: {}", toEmail);
         } catch (MessagingException e) {
             log.error("메일 생성 중 오류 발생: {}", e.getMessage());
-            throw new RuntimeException(e);
         }
     }
 
@@ -144,6 +159,44 @@ public class EmailServiceImpl implements EmailService {
                  </body>
                  </html>
                 \s""".formatted(subject, code);
+    }
+
+    private String getLinkVerificationHtml(String subject, String linkUrl) {
+        return """
+                 <!DOCTYPE html>
+                 <html lang="ko">
+                 <head>
+                     <meta charset="UTF-8">
+                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                     <title>%s</title>
+                 </head>
+                 <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;">
+                     <div style="background-color: #f9fafb; padding: 40px 20px; text-align: center;">
+                         <div style="max-width: 480px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb; padding: 40px 32px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); text-align: left;">
+                             <h1 style="color: #111827; font-size: 24px; font-weight: bold; margin: 0 0 8px 0;">NullPointer</h1>
+                             <div style="width: 100%%; height: 1px; background-color: #e5e7eb; margin: 24px 0;"></div>
+                             <p style="color: #374151; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
+                                 안녕하세요!<br>
+                                 <strong>SYNCLE</strong>입니다.<br>
+                                 아래 버튼을 클릭하여 이메일 인증을 완료해주세요.
+                             </p>
+                             <div style="text-align: center; margin: 32px 0;">
+                                 <a href="%s" target="_blank" style="display: inline-block; background-color: #3b82f6; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 6px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3); transition: background-color 0.2s;">
+                                     이메일 인증하기
+                                 </a>
+                             </div>
+                             <p style="color: #6b7280; font-size: 14px; line-height: 20px; margin-top: 32px; text-align: center;">
+                                 인증 링크는 <strong>30분간</strong> 유효합니다.<br>
+                                 본인이 요청하지 않았다면 이 메일을 무시해주세요.
+                             </p>
+                         </div>
+                         <div style="margin-top: 24px; text-align: center;">
+                             <p style="color: #9ca3af; font-size: 12px;">&copy; 2025 NullPointer Team. All rights reserved.</p>
+                         </div>
+                     </div>
+                 </body>
+                 </html>
+                """.formatted(subject, linkUrl);
     }
 
 }

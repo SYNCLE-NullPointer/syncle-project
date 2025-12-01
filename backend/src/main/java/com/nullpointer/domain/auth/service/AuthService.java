@@ -12,6 +12,12 @@ public interface AuthService {
     // 인증코드 발송
     void sendVerificationCode(String email, VerificationType type);
 
+    // 인증링크 발송
+    void sendEmailVerificationLink(VerificationRequest.EmailOnly req);
+
+    // 인증링크 검증
+    void verifyEmailLink(String token);
+    
     /**
      * 회원가입
      */
