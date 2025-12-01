@@ -79,6 +79,67 @@ public class AuthServiceImpl implements AuthService {
         emailService.sendVerificationEmail(email, code, type);
     }
 
+    /**
+     * 이메일 인증 링크 발송 (보안 설정 페이지)
+     */
+    @Override
+    public void sendEmailVerificationLink(VerificationRequest.EmailOnly req) {
+        UserVo user = userMapper.findByEmail(req.getEmail())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getVerifyStatus() == VerifyStatus.VERIFIED) {
+            throw new BusinessException(ErrorCode.ALREADY_VERIFIED);
+        }
+
+        // 토큰 생성
+        String token = UUID.randomUUID().toString();
+
+        // Redis 저장 (Key: "np:auth:link:{token}", Value: userId)
+        String redisKey = RedisKeyType.EMAIL_LINK_TOKEN.getKey(token);
+        redisUtil.setDataExpire(redisKey, String.valueOf(user.getId()), RedisKeyType.EMAIL_LINK_TOKEN.getDefaultTtl());
+
+        // 메일 발송
+        emailService.sendVerificationLink(user.getEmail(), token);
+    }
+
+    /**
+     * 인증 링크 검증 (링크 클릭 시 호출)
+     */
+    @Override
+    @Transactional
+    public void verifyEmailLink(String token) {
+        String redisKey = RedisKeyType.EMAIL_LINK_TOKEN.getKey(token);
+        String userIdStr = redisUtil.getData(redisKey);
+
+        // 1) 토큰 만료 확인
+        if (userIdStr == null) {
+            throw new BusinessException(ErrorCode.EXPIRED_VERIFICATION_TOKEN);
+        }
+
+        // 2) 사용자 조회
+        UserVo user = userMapper.findById(Long.valueOf(userIdStr))
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 3) 이미 인증된 경우 (중복 클릭 방지용)
+        if (user.getVerifyStatus() == VerifyStatus.VERIFIED) {
+            redisUtil.deleteData(redisKey);
+            return;
+        }
+
+        // 4) 상태 변경
+        int updated = userMapper.updateVerifyStatusIfCurrent(user.getId(), VerifyStatus.PENDING, VerifyStatus.VERIFIED);
+
+        if (updated == 0) {
+            throw new BusinessException(ErrorCode.ALREADY_VERIFIED);
+        }
+
+        // 5) 기본 팀/보드 세트 생성
+        teamService.createPersonalTeam(user.getId(), user.getNickname());
+
+        // 6) 토큰 삭제
+        redisUtil.deleteData(redisKey);
+    }
+
     // ==================================================================
     // 1. 회원가입 (Signup)
     // ==================================================================
@@ -332,11 +393,6 @@ public class AuthServiceImpl implements AuthService {
         // B. 비밀번호 검증
         if (!passwordEncoder.matches(inputPassword, user.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD);
-        }
-
-        // C. 이메일 인증 여부 확인 -> !VERIFIED이면 로그인 불가
-        if (user.getVerifyStatus() != VerifyStatus.VERIFIED) {
-            throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
 
         // D. 계정 활성화 상태 확인 -> !ACTIVATED이면 로그인 불가
