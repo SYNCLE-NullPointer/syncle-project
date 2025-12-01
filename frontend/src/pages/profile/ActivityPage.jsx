@@ -1,251 +1,253 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import SummaryItem from '../../components/profile/SummaryItem'
 import BoardCard from '../../components/profile/BoardCard'
 import DateRangePickerMenu from '../../components/modals/DateRangePickerMenu'
+import useActivityStore from '../../stores/useActivityStore'
 
 export default function ActivityPage() {
-  // 임시 활동 요약 데이터 (최근 7일)
-  const summary = {
-    createdCards7: 3,
-    completedTasks7: 12,
-    comments7: 5,
-  }
-
-  // 임시 인기 보드 데이터
-  const topBoards = [
-    {
-      id: 1,
-      title: '프로젝트 Alpha',
-      description: '웹 대시보드 UI/UX 개선 프로젝트',
-      activityCount: 24,
-      created_at: '2025-10-03',
-    },
-    {
-      id: 2,
-      title: 'Mobile App 리뉴얼',
-      description: '모바일 앱 화면 구조 리뉴얼',
-      activityCount: 19,
-      created_at: '2025-09-20',
-    },
-    {
-      id: 3,
-      title: '팀 운영 보드',
-      description: '팀 일정 및 작업을 논의하는 운영 보드',
-      activityCount: 17,
-      created_at: '2025-08-12',
-    },
-  ]
-
-  // 임시 로그 데이터
-  const allLogs = [
-    {
-      date: '2025/11/18',
-      logs: [
-        {
-          type: 'comment',
-          title: '댓글 작성',
-          desc: '"홈페이지 리디자인" 카드에 댓글을 남겼습니다.',
-          target: '홈페이지 리디자인',
-          board: '프로젝트 Alpha',
-        },
-        {
-          type: 'move',
-          title: '카드 이동',
-          desc: '"UI 디자인"을 To Do → Doing으로 이동했습니다.',
-          target: 'UI 디자인',
-          board: '디자인 팀 보드',
-        },
-      ],
-    },
-    {
-      date: '2025/11/14',
-      logs: [
-        {
-          type: 'create',
-          title: '카드 생성',
-          desc: '"백엔드 API 설계" 카드를 생성했습니다.',
-          target: '백엔드 API 설계',
-          board: '웹 리뉴얼',
-        },
-      ],
-    },
-  ]
-
-  // 필터 상태
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [searchText, setSearchText] = useState('')
+  const {
+    stats,
+    topBoards,
+    logs,
+    isLoading,
+    filter,
+    setFilter,
+    fetchActivityData,
+    reset,
+  } = useActivityStore()
 
   // 날짜 범위 (전체 기간 → null)
-  const [range, setRange] = useState(null)
+  const [range, setLocalRange] = useState(null)
   const [openCalendar, setOpenCalendar] = useState(false)
 
-  const fromDate = range?.[0].startDate
-  const toDate = range?.[0].endDate
+  // 마운트될 때마다 초기 데이터 로드 & 언마운트 시 리셋
+  useEffect(() => {
+    fetchActivityData()
+    return () => reset()
+  }, [fetchActivityData, reset])
 
-  // 필터링
-  const filteredLogs = allLogs
-    .map((group) => {
-      const logDate = new Date(group.date)
+  // 필터(타입, 날짜)가 바뀌면 데이터 다시 로드
+  useEffect(() => {
+    fetchActivityData()
+  }, [filter.type, filter.startDate, filter.endDate, fetchActivityData])
 
-      const logs = group.logs.filter((log) => {
-        const textMatch = log.desc
-          .toLowerCase()
-          .includes(searchText.toLowerCase())
-        const typeMatch = typeFilter === 'all' || log.type === typeFilter
-
-        const dateMatch =
-          !range ||
-          (logDate >= new Date(fromDate.setHours(0, 0, 0)) &&
-            logDate <= new Date(toDate.setHours(23, 59, 59)))
-
-        return textMatch && typeMatch && dateMatch
+  // 날짜 적용 핸들러 (적용 버튼 클릭 시 실행)
+  const handleDateApply = (newRange) => {
+    if (newRange && newRange[0]) {
+      setFilter({
+        startDate: format(newRange[0].startDate, 'yyyy-MM-dd'),
+        endDate: format(newRange[0].endDate, 'yyyy-MM-dd'),
       })
+    } else {
+      setFilter({ startDate: null, endDate: null })
+    }
+  }
 
-      return { ...group, logs }
-    })
-    .filter((g) => g.logs.length > 0)
+  // 검색어 엔터 처리
+  const handleSearch = (e) => {
+    if (e.key === 'Enter') {
+      fetchActivityData()
+    }
+  }
+
+  if (isLoading && !logs.length && !topBoards.length) {
+    return (
+      <div className="p-20 text-center text-gray-500">
+        데이터를 불러오는 중...
+      </div>
+    )
+  }
 
   return (
-    <div className="mx-auto max-w-(--breakpoint-2xl) p-4 pb-20 md:p-6 md:pb-24">
-      <div className="rounded-2xl border border-gray-300 bg-white p-5 lg:p-6">
-        <h3 className="mb-5 text-xl font-semibold text-gray-800 lg:mb-7">
-          활동 내역
-        </h3>
+    <div className="animate-fade-in mx-auto max-w-5xl p-4 pb-20 md:p-6 md:pb-24">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900">활동 내역</h2>
+        <p className="mt-2 text-gray-500">
+          나의 모든 활동 기록을 한눈에 확인하세요.
+        </p>
+      </div>
 
-        <div className="space-y-6">
-          {/* 1) 최근 7일 활동 */}
-          <div className="rounded-2xl border border-gray-300 p-5">
-            <h4 className="mb-4 text-lg font-semibold text-gray-800">
-              최근 7일 활동
-            </h4>
+      <div className="space-y-6">
+        {/* 1. 활동 요약 (Stats) */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <SummaryItem label="생성 카드" value={stats.createdCards7} />
+          <SummaryItem label="완료 작업" value={stats.completedTasks7} />
+          <SummaryItem label="작성 댓글" value={stats.comments7} />
+        </div>
 
+        {/* 2. 인기 보드 (Top Boards) */}
+        <div className="rounded-3xl border border-gray-300 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-bold text-gray-800">
+            가장 활발한 보드
+          </h3>
+
+          {topBoards.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <SummaryItem label="카드 생성" value={summary.createdCards7} />
-              <SummaryItem
-                label="완료한 작업"
-                value={summary.completedTasks7}
-              />
-              <SummaryItem label="댓글" value={summary.comments7} />
-            </div>
-          </div>
-
-          {/* 2) 활동이 많은 보드 */}
-          <div className="rounded-2xl border border-gray-300 p-5">
-            <h4 className="mb-4 text-lg font-semibold text-gray-800">
-              활동이 많은 보드
-            </h4>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {topBoards.map((board) => (
                 <BoardCard key={board.id} board={board} />
               ))}
-
-              {/* 빈 공간 */}
-              {topBoards.length < 3 &&
-                Array.from({ length: 3 - topBoards.length }).map((_, i) => (
-                  <div
-                    key={`empty-${i}`}
-                    className="rounded-xl border border-dashed border-gray-200 bg-gray-50"
-                  ></div>
-                ))}
             </div>
-          </div>
+          ) : (
+            <div className="flex h-32 items-center justify-center rounded-xl bg-gray-50 text-sm text-gray-400">
+              최근 활동한 보드가 없습니다.
+            </div>
+          )}
+        </div>
 
-          {/* 3) 타임라인 */}
-          <div className="rounded-2xl border border-gray-300 p-5">
-            <h4 className="mb-4 text-lg font-semibold text-gray-800">
-              타임라인
-            </h4>
+        {/* 3. 타임라인 (Logs) */}
+        <div className="rounded-3xl border border-gray-300 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <h3 className="text-lg font-bold text-gray-900">타임라인</h3>
 
-            {/* 필터 바 */}
-            <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+            {/* 필터링 도구 */}
+            <div className="flex flex-col items-center gap-2 sm:flex-row">
               {/* 검색 */}
-              <input
-                type="text"
-                placeholder="검색어를 입력해 주세요."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm md:w-1/3"
-              />
-
-              <div className="relative flex items-center gap-3">
-                {/* 날짜 버튼 */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setOpenCalendar(!openCalendar)
-                  }}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:cursor-pointer hover:bg-gray-100"
+              <div className="relative w-full sm:w-auto">
+                <input
+                  type="text"
+                  placeholder="내용 검색..."
+                  value={filter.keyword}
+                  onChange={(e) => setFilter({ keyword: e.target.value })}
+                  onKeyDown={handleSearch}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 pl-9 text-sm focus:border-blue-500 focus:outline-none sm:w-48"
+                />
+                <svg
+                  className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  {range
-                    ? `${format(range[0].startDate, 'yyyy-MM-dd')} ~ ${format(
-                        range[0].endDate,
-                        'yyyy-MM-dd',
-                      )}`
-                    : '전체 기간'}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+
+              {/* 날짜 선택 */}
+              <div className="relative">
+                <button
+                  onClick={() => setOpenCalendar(!openCalendar)}
+                  className="flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto"
+                >
+                  <span>
+                    {filter.startDate && filter.endDate
+                      ? `${format(
+                          new Date(filter.startDate),
+                          'MM.dd',
+                        )} ~ ${format(new Date(filter.endDate), 'MM.dd')}`
+                      : '전체 기간'}
+                  </span>
+                  <svg
+                    className="h-4 w-4 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
                 </button>
 
-                {/* 활동 유형 */}
-                <select
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm hover:cursor-pointer"
-                >
-                  <option value="all">전체</option>
-                  <option value="comment">댓글</option>
-                  <option value="move">카드 이동</option>
-                  <option value="create">카드 생성</option>
-                </select>
-
-                {/* 달력 모달 */}
                 <DateRangePickerMenu
                   isOpen={openCalendar}
                   onClose={() => setOpenCalendar(false)}
                   range={range}
-                  setRange={setRange}
-                  align="right"
+                  setRange={setLocalRange}
+                  onApply={handleDateApply}
                 />
               </div>
+
+              {/* 유형 필터 */}
+              <select
+                value={filter.type}
+                onChange={(e) => setFilter({ type: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:cursor-pointer focus:border-blue-500 focus:outline-none sm:w-auto"
+              >
+                <option value="all">모든 활동</option>
+                <option value="CREATE_CARD">카드 생성</option>
+                <option value="MOVE_CARD">카드 이동</option>
+                <option value="CREATE_COMMENT">댓글 작성</option>
+                <option value="UPDATE_CARD_STATUS">
+                  카드 상태 변경 (완료)
+                </option>
+                <option value="UPDATE_CARD_DUE_DATE">마감일 변경</option>
+                <option value="INVITE_MEMBER">멤버 초대</option>
+              </select>
             </div>
+          </div>
 
-            {/* 타임라인 목록 */}
-            <div className="space-y-8">
-              {filteredLogs.length === 0 && (
-                <p className="py-20 text-center text-sm text-gray-500">
-                  활동이 없습니다.
-                  <br />
-                  보드에 참여하거나 카드를 작성해보세요!
-                </p>
-              )}
-
-              {filteredLogs.map((group, idx) => (
-                <div key={idx}>
-                  <h4 className="mb-4 text-sm font-semibold text-gray-600">
-                    {group.date}
-                  </h4>
+          {/* 로그 리스트 */}
+          <div className="space-y-8">
+            {logs.length === 0 ? (
+              <div className="py-20 text-center">
+                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="h-6 w-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-gray-500">활동 내역이 없습니다.</p>
+              </div>
+            ) : (
+              logs.map((group) => (
+                <div
+                  key={group.date}
+                  className="relative border-l-2 border-gray-200 pl-4"
+                >
+                  <div className="mb-4 flex items-center">
+                    <div className="mr-4 -ml-[21px] h-3 w-3 rounded-full border border-gray-100 bg-gray-300 ring-4 ring-white"></div>
+                    <h4 className="text-sm font-bold text-gray-500">
+                      {group.date}
+                    </h4>
+                  </div>
 
                   <div className="space-y-3">
-                    {group.logs.map((item, i) => (
+                    {group.logs.map((item) => (
                       <div
-                        key={i}
-                        onClick={() => console.log('로그 클릭')}
-                        className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800 transition hover:cursor-pointer hover:bg-gray-100 hover:shadow-sm"
+                        key={item.id}
+                        className="group relative flex flex-col gap-1 rounded-xl border border-gray-200 bg-gray-100 p-4 shadow-sm transition hover:border-blue-200 hover:bg-blue-50"
                       >
-                        <div className="font-semibold">
-                          {item.title} —{' '}
-                          <span className="text-blue-600">{item.target}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-gray-800">
+                            {item.targetName}
+                            <span className="ml-2 text-xs font-normal text-gray-500">
+                              in {item.boardTitle}
+                            </span>
+                          </span>
+                          <span className="font-mono text-xs text-gray-400">
+                            {new Date(item.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
                         </div>
-                        <div className="mt-1 text-gray-600">{item.desc}</div>
-                        <div className="mt-1 text-xs text-gray-500">
-                          보드: {item.board}
-                        </div>
+                        <p className="text-sm text-gray-600">
+                          {item.description}
+                        </p>
                       </div>
                     ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              ))
+            )}
           </div>
         </div>
       </div>
