@@ -6,6 +6,7 @@ export default function DateRangePickerModal({
   onClose,
   range,
   setRange,
+  onApply,
 }) {
   const modalRef = useRef(null)
 
@@ -18,7 +19,6 @@ export default function DateRangePickerModal({
     }
 
     if (isOpen) document.addEventListener('mousedown', handleClickOutside)
-
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen, onClose])
 
@@ -28,7 +28,7 @@ export default function DateRangePickerModal({
     <>
       <div
         ref={modalRef}
-        className="absolute top-full right-0 z-50 mt-2 rounded-xl border border-gray-300 bg-white shadow-lg"
+        className="animate-fade-in absolute top-full right-0 z-50 mt-2 rounded-xl border border-gray-300 bg-white shadow-xl"
       >
         <DateRange
           editableDateInputs={true}
@@ -46,17 +46,27 @@ export default function DateRangePickerModal({
           rangeColors={['#3b82f6']}
         />
 
-        {/* 전체 기간 초기화 버튼 */}
-        <div className="border-t border-gray-300 p-3 text-right">
+        {/* 버튼 영역 */}
+        <div className="flex justify-end gap-2 border-t border-gray-200 p-3">
           <button
             onClick={() => {
-              // 전체 기간 모드 → range를 null로
+              // 초기화: range를 null로 설정
               setRange(null)
+              onApply(null)
               onClose()
             }}
-            className="rounded bg-gray-100 px-3 py-1 text-sm text-blue-600 hover:cursor-pointer hover:bg-gray-200"
+            className="rounded-md px-3 py-1.5 text-xs font-medium text-blue-500 hover:cursor-pointer hover:bg-blue-200"
           >
             초기화
+          </button>
+          <button
+            onClick={() => {
+              onApply(range)
+              onClose()
+            }}
+            className="rounded-md bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:cursor-pointer hover:bg-blue-600"
+          >
+            적용
           </button>
         </div>
       </div>
