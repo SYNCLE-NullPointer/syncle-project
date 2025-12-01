@@ -54,6 +54,12 @@ function SidebarTeamItem({ team, isSelected, onToggle }) {
             - 팀 멤버
           </Link>
           <Link
+            to={`/dashboard/teams/${tId}/invitations`}
+            className="block rounded-md px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+          >
+            - 초대 목록
+          </Link>
+          <Link
             to={`/dashboard/teams/${tId}/settings`}
             className="block rounded-md px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
           >

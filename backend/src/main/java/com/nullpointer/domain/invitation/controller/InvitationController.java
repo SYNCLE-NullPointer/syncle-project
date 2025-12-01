@@ -58,4 +58,12 @@ public class InvitationController {
         invitationService.rejectInvitation(token, userId);
         return ApiResponse.success("팀 초대를 거절했습니다.");
     }
+
+    // 초대 취소
+    @DeleteMapping("/{invitationId}")
+    public ApiResponse<String> removeInvitation(@PathVariable Long invitationId,
+                                                @LoginUser Long userId) {
+        invitationService.removeInvitation(invitationId, userId);
+        return ApiResponse.success("팀 초대를 취소했습니다.");
+    }
 }

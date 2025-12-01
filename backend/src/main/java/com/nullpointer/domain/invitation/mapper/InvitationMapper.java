@@ -34,4 +34,7 @@ public interface InvitationMapper {
     
     // 내 초대 목록
     List<MyInvitationResponse> findAllByUserId(Long userId);
+
+    // 초대 취소 (ADMIN 권한)
+    void deleteInvitation(Long invitationId);
 }
