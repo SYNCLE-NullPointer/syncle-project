@@ -10,6 +10,7 @@ import lombok.*;
 public class UserSummaryResponse {
 
     private Long id;
+    private String email;
     private String nickname;
     private String position;
     private String profileImg;

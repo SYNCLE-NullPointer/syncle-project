@@ -41,6 +41,9 @@ public interface UserMapper {
     // 사용자 요약 정보 조회
     Optional<UserSummaryResponse> getUserSummary(Long userId);
 
+    // nickname으로 사용자 검색 (팀 멤버 추가)
+    List<UserSummaryResponse> searchUsers(String keyword);
+
     // 계정 비활성화
     int deactivateUser(Long id);
 

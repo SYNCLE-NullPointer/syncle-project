@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -63,6 +65,12 @@ public class UserController {
     public ApiResponse<UserSummaryResponse> getUserSummary(@PathVariable Long userId) {
         UserSummaryResponse response = userService.getUserSummary(userId);
         return ApiResponse.success(response);
+    }
+
+    // 사용자 검색
+    @GetMapping("/search")
+    public ApiResponse<List<UserSummaryResponse>> searchUsers(@RequestParam String keyword) {
+        return ApiResponse.success(userService.searchUsers(keyword));
     }
 
     // 계정 비활성화

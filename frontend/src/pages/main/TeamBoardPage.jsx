@@ -1,13 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom' // URL 파라미터 읽기용
+import { useNavigate, useParams } from 'react-router-dom' // URL 파라미터 읽기용
 import api from '../../api/AxiosInterceptor' // API 설정 파일
 import BoardCard from '../../components/common/BoardCard'
 import CreateBoardButton from '../../components/common/CreateBoardButton'
 import defaultProfile from '../../assets/images/default.png'
+import useUserStore from '../../stores/useUserStore'
+import InviteMemberModal from '../../components/modals/InviteMemberModal'
 
 function TeamBoardPage() {
   // 1. URL에서 teamId 추출
   const { teamId } = useParams()
+  const navigate = useNavigate() // 페이지 이동을 위한 navigate
+  const { user } = useUserStore() // 현재 로그인한 사용자 정보
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
 
   const [team, setTeam] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -28,6 +33,18 @@ function TeamBoardPage() {
   useEffect(() => {
     if (teamId) fetchTeamDetail()
   }, [teamId, fetchTeamDetail])
+
+  // 팀 나가기 핸들러
+  const handleLeaveTeam = async () => {
+    if (!window.confirm(`'${team.name}' 팀에서 나가시겠습니까?`)) return
+    try {
+      await api.delete(`/teams/${team.id}/members/${user.id}`)
+      alert('팀에서 나갔습니다.')
+      navigate('/dashboard') // 대시보드로 이동
+    } catch (error) {
+      console.error('팀 나가기 실패:', error)
+    }
+  }
 
   if (loading) return <div className="p-8">Loading...</div>
   if (!team) return <div className="p-8">팀 정보를 찾을 수 없습니다.</div>
@@ -51,7 +68,10 @@ function TeamBoardPage() {
               </div>
             </div>
 
-            <button className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-red-600 hover:cursor-pointer hover:bg-gray-200">
+            <button
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-red-600 hover:cursor-pointer hover:bg-gray-200"
+              onClick={handleLeaveTeam}
+            >
               팀 나가기
             </button>
           </div>
@@ -75,7 +95,10 @@ function TeamBoardPage() {
                   title={member.name}
                 />
               ))}
-            <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">
+            <button
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
+              onClick={() => setIsInviteModalOpen(true)}
+            >
               +
             </button>
           </div>
@@ -104,6 +127,14 @@ function TeamBoardPage() {
           </div>
         </section>
       </div>
+      {/* 멤버 초대 모달 */}
+      {isInviteModalOpen && (
+        <InviteMemberModal
+          teamId={teamId}
+          currentMembers={team.members} // 이미 있는 멤버 제외용
+          onClose={() => setIsInviteModalOpen(false)}
+        />
+      )}
     </main>
   )
 }
