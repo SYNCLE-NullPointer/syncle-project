@@ -35,7 +35,7 @@ const useSignInStore = create((set, get) => ({
   // =================================================
 
   // 이메일 로그인
-  login: async (navigate) => {
+  login: async (navigate, targetPath = '/dashboard') => {
     set({ isLoading: true })
     const { formData, isKeepLogin } = get()
 
@@ -56,17 +56,9 @@ const useSignInStore = create((set, get) => ({
         localStorage.removeItem('refreshToken')
       }
 
-      // 성공 시 메인 페이지(대시보드)로 이동
-      navigate('/dashboard')
-    }
-
-    try {
-      // 백엔드 API 호출
-      // LoginResponse { status: "SUCCESS", data: {accessToken: {...}, refreshToken: {...}}}
-      const response = await api.post('/auth/login', formData)
-
-      handleLoginSuccess(response.data.data)
+      // 4) 메인 페이지(대시보드)로 이동
       alert('로그인 성공!')
+      navigate('/dashboard')
     } catch (error) {
       // 5) 에러 처리
       const response = error.response?.data
@@ -102,7 +94,11 @@ const useSignInStore = create((set, get) => ({
     }
   },
   // 구글 로그인
-  googleLogin: async (credentialResponse, navigate) => {
+  googleLogin: async (
+    credentialResponse,
+    navigate,
+    targetPath = '/dashboard',
+  ) => {
     set({ isLoading: true })
 
     try {
@@ -121,7 +117,7 @@ const useSignInStore = create((set, get) => ({
 
       // 4) 메인 페이지로 이동
       alert('로그인 성공!')
-      navigate('/dashboard')
+      navigate(targetPath, { replace: true })
     } catch (error) {
       console.error('구글 로그인 실패: ', error)
       alert('구글 로그인 처리에 실패했습니다.')
