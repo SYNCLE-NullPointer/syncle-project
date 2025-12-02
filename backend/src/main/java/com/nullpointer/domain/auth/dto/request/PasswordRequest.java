@@ -3,6 +3,7 @@ package com.nullpointer.domain.auth.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +12,7 @@ public class PasswordRequest {
     // 비밀번호 재설정 (로그아웃 상태)
     @Getter
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class Reset {
 
         @NotBlank(message = "이메일은 필수 입력 값입니다.")
@@ -30,6 +32,7 @@ public class PasswordRequest {
     // 비밀번호 변경 (로그인 상태 - 마이페이지)
     @Getter
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class Change {
 
         @NotBlank(message = "비밀번호는 필수 입력 값입니다.")
