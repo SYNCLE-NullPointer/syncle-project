@@ -2,6 +2,7 @@ package com.nullpointer.domain.auth.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +14,7 @@ public class VerificationRequest {
     // 이메일만 보내는 경우 (비밀번호 재설정 코드 요청 등)
     @Getter
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class EmailOnly {
 
         @NotBlank(message = "이메일은 필수 입력 값입니다.")
@@ -24,6 +26,7 @@ public class VerificationRequest {
     // 이메일 + 인증 코드 (회원가입, 비밀번호 재설정 인증 공용)
     @Getter
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class Code {
 
         @NotBlank(message = "이메일은 필수 입력 값입니다.")
@@ -38,6 +41,7 @@ public class VerificationRequest {
     // 토큰만 보내는 경우 (재발급, 구글 로그인, 로그아웃 등)
     @Getter
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class Token {
 
         @NotBlank
