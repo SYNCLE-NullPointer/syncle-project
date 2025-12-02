@@ -5,6 +5,7 @@ import TeamBoardSection from '../../components/dashboard/TeamBoardSection'
 
 function DashboardPage() {
   const [teams, setTeams] = useState([])
+  const [favoriteBoards, setFavoriteBoards] = useState([])
 
   // 데이터 불러오기
   const fetchDashboardData = useCallback(async () => {
@@ -12,6 +13,18 @@ function DashboardPage() {
       const response = await api.get('/boards/me')
       const rawData = response.data.data
 
+      // 즐겨찾기 목록 필터링
+      const favBoards = rawData
+        .filter((board) => board.isFavorite)
+        .map((board) => ({
+          id: board.id,
+          title: board.title,
+          imageUrl: board.imageUrl,
+          isFavorite: board.isFavorite,
+        }))
+      setFavoriteBoards(favBoards)
+
+      // 데이터 팀별 그룹화
       const groupedMap = rawData.reduce((acc, cur) => {
         const tName = cur.teamName || 'Unknown Team'
 
@@ -28,7 +41,7 @@ function DashboardPage() {
             id: cur.id,
             title: cur.title,
             imageUrl: cur.imageUrl,
-            isFaborite: cur.isFavorite,
+            isFavorite: cur.isFavorite,
           })
         }
         return acc
@@ -56,7 +69,22 @@ function DashboardPage() {
         <section className="mb-10">
           <h2 className="mb-3 text-lg font-semibold">즐겨찾기</h2>
 
-          <div className="grid grid-cols-4 gap-4"></div>
+          <div className="grid grid-cols-4 gap-4">
+            {favoriteBoards.length > 0 ? (
+              favoriteBoards.map((board) => (
+                <BoardCard
+                  key={board.id}
+                  id={board.id}
+                  imageUrl="https://picsum.photos/400/200"
+                  title={board.title}
+                  isFavorite={board.isFavorite}
+                  onToggleFavorite={fetchDashboardData}
+                />
+              ))
+            ) : (
+              <div className="text-gray-500">즐겨찾기한 보드가 없습니다.</div>
+            )}
+          </div>
         </section>
         <section className="space-y-10">
           {teams.length > 0 ? (
