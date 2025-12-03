@@ -59,6 +59,7 @@
     <!-- 보드 상세 조회 -->
     <select id="findBoardByBoardId" parameterType="Long" resultType="BoardVo">
         SELECT id,
+               team_id,
                title,
                description,
                visibility
