@@ -59,6 +59,8 @@ const useBoardStore = create((set, get) => ({
       const response = await api.get(`/boards/${boardId}/view`)
       const serverData = response.data.data
 
+      console.log('응답: ', response)
+
       // 백엔드 데이터를 프론트엔드 구조로 변환
       const formattedData = normalizeBoardData(serverData)
 
@@ -79,6 +81,11 @@ const useBoardStore = create((set, get) => ({
 // 2. 데이터 변환 (Server Array -> Client Object Map)
 // 백엔드: List<ListWithCardsResponse> -> 프론트: columns { id: { ... } }
 const normalizeBoardData = (dto) => {
+  if (!dto) {
+    console.error('dto is null or undefined')
+    return null
+  }
+
   const columns = {}
 
   if (dto.lists && Array.isArray(dto.lists)) {
@@ -89,19 +96,15 @@ const normalizeBoardData = (dto) => {
         order: list.orderIndex, // (백엔드에 순서 필드가 있다면)
 
         // 2. 카드(Card) 매핑
-        tasks: list.cards
-          ? list.cards.map((card) => ({
-              id: card.id,
-              title: card.title,
-              description: card.description,
-              variant: 'solid', // 프론트 전용 UI 속성
-
-              // 필요한 추가 필드들 매핑
-              assignee: card.assigneeName, // 예: 담당자 이름
-              dueDate: card.dueDate,
-              commentCount: card.commentCount || 0,
-            }))
-          : [],
+        tasks: (list.cards || []).map((card) => ({
+          id: card.id,
+          title: card.title,
+          description: card.description,
+          variant: 'solid',
+          assignee: card.assigneeName || '이름없음',
+          dueDate: card.dueDate,
+          commentCount: card.commentCount || 0,
+        })),
       }
     })
   }
