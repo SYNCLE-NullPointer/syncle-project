@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import Sortable from 'sortablejs'
-import useBoardStore from '../../stores/sample'
+import useBoardStore from '../../stores/useBoardStore'
 import BoardHeader from '../../components/board/BoardHeader'
 import BoardCanvas from '../../components/board/BoardCanvas'
 import BoardSettings from '../../components/modals/BoardSettings'
