@@ -191,6 +191,45 @@ const useBoardStore = create((set, get) => ({
     }
   },
 
+  // 카드 추가
+  addCard: async (listId, title) => {
+    const { activeBoard } = get()
+    if (!activeBoard) return
+    try {
+      // 백엔드 API 호출
+      const response = await api.post(`/lists/${listId}/cards`, {
+        title,
+      })
+      const newCard = response.data
+      // 프론트엔드 상태 업데이트
+      const updatedList = {
+        ...activeBoard.columns[listId],
+        tasks: [
+          ...activeBoard.columns[listId].tasks,
+          {
+            id: newCard.id,
+            listId: listId,
+            title: newCard.title,
+            description: newCard.description,
+            order: newCard.orderIndex,
+            dueDate: newCard.dueDate,
+            commentCount: 0,
+            assignee: null,
+            variant: 'solid',
+          },
+        ],
+      }
+      const updatedColumns = {
+        ...activeBoard.columns,
+        [listId]: updatedList,
+      }
+
+      set({ activeBoard: { ...activeBoard, columns: updatedColumns } })
+    } catch (error) {
+      console.error('카드 추가 실패:', error)
+    }
+  },
+
   // 보드 데이터 초기화 (페이지 나갈 때 사용)
   resetBoard: () => set({ activeBoard: null, error: null }),
 }))
