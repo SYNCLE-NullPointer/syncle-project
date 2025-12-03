@@ -10,6 +10,7 @@ import lombok.Getter;
 
 public class BoardDetailResponse {
     private Long id;
+    private Long teamId;
     private String title;
     private String description;
     private Visibility visibility;
@@ -17,6 +18,7 @@ public class BoardDetailResponse {
     public static BoardDetailResponse from(BoardVo vo) {
         return BoardDetailResponse.builder()
                 .id(vo.getId())
+                .teamId(vo.getTeamId())
                 .title(vo.getTitle())
                 .description(vo.getDescription())
                 .visibility(vo.getVisibility())
