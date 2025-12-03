@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/lists/{listId}/cards")
 @RequiredArgsConstructor
@@ -23,11 +22,10 @@ public class CardController {
 
     // 카드 생성
     @PostMapping
-    public ApiResponse<String> createCard(@PathVariable("listId") Long listId,
+    public ApiResponse<Long> createCard(@PathVariable("listId") Long listId,
                                           @RequestBody CreateCardRequest request,
                                           @LoginUser Long userId) {
-        cardService.createCard(listId, request, userId);
-        return ApiResponse.success("카드 생성 성공");
+        return ApiResponse.success(cardService.createCard(listId, request, userId));
     }
 
     // 카드 목록 조회

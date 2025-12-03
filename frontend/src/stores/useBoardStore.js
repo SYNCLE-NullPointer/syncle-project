@@ -200,19 +200,19 @@ const useBoardStore = create((set, get) => ({
       const response = await api.post(`/lists/${listId}/cards`, {
         title,
       })
-      const newCard = response.data
+      const newCardId = response.data.data
       // 프론트엔드 상태 업데이트
       const updatedList = {
         ...activeBoard.columns[listId],
         tasks: [
           ...activeBoard.columns[listId].tasks,
           {
-            id: newCard.id,
+            id: newCardId,
             listId: listId,
-            title: newCard.title,
-            description: newCard.description,
-            order: newCard.orderIndex,
-            dueDate: newCard.dueDate,
+            title: title,
+            description: '',
+            order: 0,
+            dueDate: null,
             commentCount: 0,
             assignee: null,
             variant: 'solid',

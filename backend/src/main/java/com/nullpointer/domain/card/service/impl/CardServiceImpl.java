@@ -19,11 +19,15 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @Transactional
-    public void createCard(Long listId, CreateCardRequest req, Long userId) {
+    public Long createCard(Long listId, CreateCardRequest req, Long userId) {
 
         // 1. 카드 VO 생성 (DTO -> VO)
         CardVo cardVo = req.toVo();
+        cardVo.setListId(listId);
+        cardVo.setAssigneeId(userId);
+
         cardMapper.insertCard(cardVo);
+        return cardVo.getId();
     }
 
     @Override

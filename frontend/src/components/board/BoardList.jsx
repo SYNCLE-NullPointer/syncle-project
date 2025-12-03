@@ -39,7 +39,7 @@ function BoardList({ column, innerRef }) {
     if (cardTitle.trim()) {
       addCard(column.id, cardTitle)
       setCardTitle('')
-      // setIsAdding(false) // 연속 추가를 위해 주석 처리 (원하면 해제)
+      setIsAdding(false)
     }
   }
 
