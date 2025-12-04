@@ -5,31 +5,51 @@ import {
   FileText,
   Shield,
   ActivityIcon,
+  LogOut,
+  File,
+  AlertTriangle,
 } from 'lucide-react'
 import React from 'react'
+import useBoardStore from '../../../stores/useBoardStore'
+import { useNavigate } from 'react-router-dom'
 
-function MainMenuView({ board, onChangeView, onDeleteBoard, isOwner }) {
+function MainMenuView({ board, onChangeView, onDeleteBoard, loginUser }) {
+  const navigate = useNavigate()
+  const { removeMember } = useBoardStore()
+
+  // 로그인 사용자의 role 판단
+  const isOwner = loginUser?.role === 'OWNER'
+
+  // 보드 탈퇴 핸들러 (본인이 Owner가 아닐 때 가능)
+  const handleLeaveBoard = async () => {
+    if (window.confirm(`정말 '${board.title}' 보드에서 탈퇴하시겠습니까?`)) {
+      await removeMember(board.id, loginUser.id)
+      alert('보드에서 탈퇴하였습니다.')
+      navigate('/dashboard')
+    }
+  }
+
   return (
     <div className="space-y-4 py-2">
       {/* 보드 요약 */}
       <div className="space-y-1">
         <button
           onClick={() => onChangeView('settings_info')}
-          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-100"
+          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200"
         >
           <FileText size={18} className="text-gray-500" />
           보드 정보
         </button>
         <button
           onClick={() => onChangeView('settings_visibility')}
-          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-100"
+          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200"
         >
           <Globe size={18} className="text-gray-500" />
           공개 범위
         </button>
         <button
           onClick={() => onChangeView('settings_permissions')}
-          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-100"
+          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200"
         >
           <Shield size={18} className="text-gray-500" />
           권한 설정
@@ -42,7 +62,7 @@ function MainMenuView({ board, onChangeView, onDeleteBoard, isOwner }) {
       <div className="space-y-1">
         <button
           onClick={() => onChangeView('members')}
-          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-100"
+          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200"
         >
           <Users size={18} className="text-gray-500" />
           멤버 관리
@@ -51,31 +71,49 @@ function MainMenuView({ board, onChangeView, onDeleteBoard, isOwner }) {
           </span>
         </button>
         <button
-          onClick={() => onChangeView('archive')}
-          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-100"
+          onClick={''}
+          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200"
         >
-          <Trash2 size={18} className="text-gray-500" />
-          아카이브 (휴지통)
+          <File size={18} className="text-gray-500" />
+          파일 관리
         </button>
         <button
           onClick={() => alert('활동 로그 기능 (준비중)')}
-          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-100"
+          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200"
         >
           <ActivityIcon size={18} className="text-gray-500" />
           활동 로그
         </button>
+        <button
+          onClick={() => onChangeView('archive')}
+          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200"
+        >
+          <Trash2 size={18} className="text-gray-500" />
+          아카이브 (휴지통)
+        </button>
       </div>
 
-      {/* 섹션 3: 위험 구역 (Owner만 가능) */}
+      {/* 섹션 3: 탈퇴 (Member, Viewer만 가능) */}
+      {!isOwner && (
+        <button
+          onClick={handleLeaveBoard}
+          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-red-600 transition-colors hover:cursor-pointer hover:bg-red-100"
+        >
+          <LogOut size={18} className="text-red-600" />
+          보드 탈퇴
+        </button>
+      )}
+
+      {/* 섹션 4: 위험 구역 (Owner만 가능) */}
       {isOwner && (
         <>
           <div className="h-px bg-gray-200"></div>
           <div>
             <button
               onClick={() => onDeleteBoard(board.id)}
-              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-red-600 transition-colors hover:cursor-pointer hover:bg-red-50"
+              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-red-600 transition-colors hover:cursor-pointer hover:bg-red-100"
             >
-              <div className="h-1.5 w-1.5 rounded-full bg-red-500"></div>
+              <AlertTriangle size={18} className="text-red-600" />
               보드 삭제
             </button>
           </div>
