@@ -1,10 +1,11 @@
 package com.nullpointer.domain.member.mapper;
 
-import java.util.List;
-
 import com.nullpointer.domain.member.dto.team.TeamMemberResponse;
 import com.nullpointer.domain.member.vo.TeamMemberVo;
+import com.nullpointer.domain.member.vo.enums.Role;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 
 public interface TeamMemberMapper {
@@ -14,6 +15,9 @@ public interface TeamMemberMapper {
 
     // 팀 멤버 조회
     List<TeamMemberResponse> findMembersByTeamId(Long teamId);
+
+    // 팀 멤버 조회(탈퇴 멤버 포함)
+    TeamMemberVo findMemberIncludeDeleted(@Param("teamId") Long teamId, @Param("userId") Long memberId);
 
     // 팀 역할 변경
     void updateTeamRole(TeamMemberVo vo);
@@ -26,4 +30,7 @@ public interface TeamMemberMapper {
 
     // 권한 확인용 조회
     TeamMemberVo findMember(@Param("teamId") Long teamId, @Param("userId") Long userId);
+
+    // 탈퇴 팀 멤버 복구
+    void restoreMember(@Param("teamId") Long teamId, @Param("userId") Long userId, @Param("role") Role role);
 }

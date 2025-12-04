@@ -68,8 +68,14 @@ public class MemberValidator {
      * 용도: 초대장 발송 시 이미 멤버라면 에러 발생
      */
     public void validateNotTeamMember(Long teamId, Long userId, ErrorCode errorCode) {
-        if (teamMemberMapper.existsByTeamIdAndUserId(teamId, userId)) {
+        // 탈퇴한 멤버 포함하여 팀 멤버 조회
+        TeamMemberVo member = teamMemberMapper.findMemberIncludeDeleted(teamId, userId);
+
+        // 멤버 데이터가 존재하고 deleted_at이 NULL이면 현재 활동 중인 팀 멤버 -> 예외
+        if (member != null && member.getDeletedAt() == null) {
             throw new BusinessException(errorCode); // 예: MEMBER_ALREADY_EXISTS
         }
+
+        // member가 null(신규)이거나 member.getDeleted_at이 null이 아니면(탈퇴) 통과
     }
 }

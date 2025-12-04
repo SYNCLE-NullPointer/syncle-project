@@ -74,10 +74,12 @@ const useBoardStore = create((set, get) => ({
   },
 
   // 보드 상세 정보 가져오기
-  fetchBoard: async (boardId) => {
-    set({ isLoading: true, error: null })
-
+  fetchBoard: async (boardId, showLoading = true) => {
+    set({ error: null })
     try {
+      if (showLoading) {
+        set({ isLoading: true })
+      }
       // 1. 백엔드에서 보드 뷰(보드+멤버+리스트+카드) 데이터 조회
       // GET /api/boards/{boardId}/view
       const response = await api.get(`/boards/${boardId}/view`)

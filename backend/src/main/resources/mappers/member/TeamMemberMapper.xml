@@ -28,6 +28,14 @@
           AND a.deleted_at IS NULL
     </select>
 
+    <!-- 탈퇴 포함 팀 멤버 조회 -->
+    <select id="findMemberIncludeDeleted" resultType="TeamMemberVo">
+        SELECT *
+        FROM team_member
+        WHERE team_id = #{teamId}
+          AND user_id = #{userId}
+    </select>
+
     <!-- 팀 역할 변경 -->
     <update id="updateTeamRole" parameterType="TeamMemberVo">
         UPDATE team_member
@@ -50,8 +58,7 @@
         SELECT COUNT(*) > 0
         FROM team_member
         WHERE team_id = #{teamId}
-        AND user_id = #{userId}
-        AND deleted_at IS NULL
+          AND user_id = #{userId}
     </select>
 
     <!-- 권한 확인용 조회 -->
@@ -62,4 +69,14 @@
           AND user_id = #{userId}
           AND deleted_at IS NULL
     </select>
+
+    <!-- 탈퇴 팀 멤버 복구 -->
+    <update id="restoreMember">
+        UPDATE team_member
+        SET role       = #{role},
+            deleted_at = NULL,
+            joined_at  = NOW()
+        WHERE team_id = #{teamId}
+          AND user_id = #{userId}
+    </update>
 </mapper>

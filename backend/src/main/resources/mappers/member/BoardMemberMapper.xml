@@ -5,8 +5,8 @@
     <!-- 보드 멤버 초대 -->
     <insert id="insertBoardMember" parameterType="BoardMemberVo">
         INSERT INTO board_member (board_id,
-                                 user_id,
-                                 role)
+                                  user_id,
+                                  role)
         VALUES (#{boardId},
                 #{userId},
                 #{role})
@@ -28,6 +28,23 @@
           AND a.deleted_at IS NULL
     </select>
 
+    <!-- 탈퇴 멤버 포함 조회 -->
+    <select id="findMemberIncludeDeleted" resultType="BoardMemberVo">
+        SELECT *
+        FROM board_member
+        WHERE board_id = #{boardId}
+          AND user_id = #{userId}
+    </select>
+
+    <!-- 탈퇴 멤버 복구 -->
+    <update id="restoreMember">
+        UPDATE board_member
+        SET deleted_at = NULL,
+            role       = 'MEMBER',
+            joined_at  = NOW()
+        WHERE board_id = #{boardId}
+          AND user_id = #{userId}
+    </update>
 
     <!-- 보드 역할 변경 -->
     <update id="updateBoardRole" parameterType="BoardVo">
