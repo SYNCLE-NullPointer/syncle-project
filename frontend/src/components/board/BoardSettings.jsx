@@ -18,10 +18,9 @@ function BoardSettings({ board }) {
   // 현재 보고 있는 뷰의 상태
   const [currentView, setCurrentView] = useState('root')
 
-  // 현재 로그인한 사용자의 권한 체크
-  const isOwner = useMemo(() => {
-    const me = board.members.find((m) => m.id === user?.id)
-    return me?.role === 'OWNER'
+  // 현재 로그인한 사용자 정보를 보드 멤버 목록에서 찾기
+  const loginUser = useMemo(() => {
+    return board.members.find((m) => m.id === user?.id)
   }, [board.members, user?.id])
 
   // 외부 클릭 시 닫기
@@ -69,9 +68,10 @@ function BoardSettings({ board }) {
 
   // 뷰 렌더링
   const renderContent = () => {
+    // 하위 콘텐츠에 전달되는 프로퍼티
     const props = {
       board,
-      isOwner,
+      loginUser,
       onChangeView: setCurrentView,
       onDeleteBoard: deleteBoard,
       boardId: board.id,

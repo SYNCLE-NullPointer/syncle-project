@@ -1,21 +1,31 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import useBoardStore from '../../../stores/useBoardStore'
 import { ChevronDown, X } from 'lucide-react'
 
-function MembersView({ board, isOwner }) {
+function MembersView({ board, loginUser }) {
   const { changeMemberRole, removeMember } = useBoardStore()
   const [members, setMembers] = useState(board.members)
 
-  const handleRoleChange = (userId, newRole) => {
-    changeMemberRole(board.id, userId, newRole)
+  // 보드 데이터가 변경되면 로컬 상태도 동기화
+  useEffect(() => {
+    setMembers(board.members)
+  }, [board.members])
+
+  // 로그인 사용자의 role 판단
+  const isOwner = loginUser?.role === 'OWNER'
+
+  // role 변경 핸들러 (Owner만 가능)
+  const handleRoleChange = async (userId, newRole) => {
+    await changeMemberRole(board.id, userId, newRole)
     setMembers((prev) =>
       prev.map((m) => (m.id === userId ? { ...m, role: newRole } : m)),
     )
   }
 
-  const handleKick = (userId) => {
-    if (window.confirm('추방하시겠습니까?')) {
-      removeMember(board.id, userId)
+  // 추방 핸들러 (Owner -> Others)
+  const handleKick = async (userId, userName) => {
+    if (window.confirm(`'${userName}'님을 추방하시겠습니까?`)) {
+      await removeMember(board.id, userId)
       setMembers((prev) => prev.filter((m) => m.id !== userId))
     }
   }
@@ -31,68 +41,83 @@ function MembersView({ board, isOwner }) {
       </div>
 
       <div className="space-y-2">
-        {members.map((member) => (
-          <div
-            key={member.id}
-            className="flex items-center justify-between border-b border-gray-100 py-2 last:border-0"
-          >
-            {/* 멤버 정보 */}
-            <div className="flex items-center gap-2 overflow-hidden">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">
-                {member.name[0]}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-gray-800">
-                  {member.name}
-                </p>
-                <p className="truncate text-xs text-gray-400">{member.email}</p>
-              </div>
-            </div>
+        {members.map((member) => {
+          // 리스트의 멤버가 '나'인지 확인
+          const isMe = loginUser?.id === member.id
 
-            <div className="flex shrink-0 items-center gap-2">
-              {isOwner && member.role !== 'OWNER' ? (
-                <div className="relative">
-                  <select
-                    className="cursor-pointer appearance-none rounded bg-gray-100 py-1 pr-5 pl-2 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    value={member.role}
-                    onChange={(e) =>
-                      handleRoleChange(member.id, e.target.value)
-                    }
-                  >
-                    <option value="MEMBER">MEMBER</option>
-                    <option value="VIEWER">VIEWER</option>
-                  </select>
-                  {/* 커스텀 화살표 */}
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
-                    <ChevronDown size={10} />
-                  </div>
+          // 추방/수정 권한 판단
+          // 내가 Owner이고 나를 제외한 상대가 Owner가 아니어야 함
+          const canManage = isOwner && member.role !== 'OWENR' && !isMe
+
+          return (
+            <div
+              key={member.id}
+              className={`flex items-center justify-between rounded-md px-2 py-2 transition-colors ${canManage && 'hover:cursor-pointer hover:bg-gray-200'} ${
+                isMe && 'bg-green-100 ring-1 ring-green-50'
+              }`}
+            >
+              {/* 왼쪽: 멤버 정보 */}
+              <div className="flex items-center gap-2 overflow-hidden">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">
+                  {member.name ? member.name[0] : '?'}
                 </div>
-              ) : (
-                // 읽기 전용 배지 (내가 Owner가 아니거나, 상대가 Owner일 때)
-                <span
-                  className={`rounded px-2.5 py-1 text-xs font-bold ${
-                    member.role === 'OWNER'
-                      ? 'border border-blue-200 bg-blue-100 text-blue-600'
-                      : 'border border-gray-200 bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {member.role}
-                </span>
-              )}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-gray-800">
+                    {member.name}
+                  </p>
+                  <p className="truncate text-xs text-gray-400">
+                    {member.email}
+                  </p>
+                </div>
+              </div>
 
-              {/* Owner만 역할 변경 및 추방 가능 (단, 자기 자신은 제외) */}
-              {isOwner && member.role !== 'OWNER' && (
-                <button
-                  onClick={() => handleKick(member.id)}
-                  className="rounded p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                  title="내보내기"
-                >
-                  <X size={14} />
-                </button>
-              )}
+              {/* 오른쪽: 조작 */}
+              <div className="flex shrink-0 items-center gap-2">
+                {/* 관리 권한이 있는 경우 */}
+                {canManage ? (
+                  <>
+                    <div className="relative">
+                      <select
+                        className="cursor-pointer appearance-none rounded bg-gray-100 py-1 pr-5 pl-2 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        value={member.role}
+                        onChange={(e) =>
+                          handleRoleChange(member.id, e.target.value)
+                        }
+                      >
+                        <option value="MEMBER">MEMBER</option>
+                        <option value="VIEWER">VIEWER</option>
+                      </select>
+                      {/* 커스텀 화살표 */}
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
+                        <ChevronDown size={10} />
+                      </div>
+                    </div>
+
+                    {/* 추방 버튼 */}
+                    <button
+                      onClick={() => handleKick(member.id, member.name)}
+                      className="rounded p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                      title="내보내기"
+                    >
+                      <X size={14} />
+                    </button>
+                  </>
+                ) : (
+                  // 관리 권한이 없는 경우
+                  <span
+                    className={`rounded px-2.5 py-1 text-xs font-bold ${
+                      member.role === 'OWNER'
+                        ? 'border border-blue-200 bg-blue-100 text-blue-600'
+                        : 'border border-gray-200 bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {member.role}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
