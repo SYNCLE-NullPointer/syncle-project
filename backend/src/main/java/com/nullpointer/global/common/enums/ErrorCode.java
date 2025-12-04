@@ -69,8 +69,11 @@ public enum ErrorCode {
     INVITATION_ALREADY_PROCESSED(HttpStatus.CONFLICT, "I008", "이미 처리된(수락/거절) 초대장입니다."),
 
     // 즐겨찾기
-    FAVORITE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "B007", "즐겨찾기 가능한 개수를 초과했습니다.");
-
+    FAVORITE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "B007", "즐겨찾기 가능한 개수를 초과했습니다."),
+    
+    // 카드
+    CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "CD001", "존재하지 않는 카드입니다.");
+    
     private final HttpStatus status;
     private final String code;
     private final String message;

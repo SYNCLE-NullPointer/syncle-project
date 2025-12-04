@@ -46,4 +46,18 @@
         WHERE id = #{id}
         AND deleted_at IS NULL
     </update>
+
+    <!-- 카드 조회 -->
+    <select id="findById" resultType="com.nullpointer.domain.card.vo.CardVo">
+        SELECT * FROM card WHERE id = #{id} AND deleted_at IS NULL
+    </select>
+
+    <!-- 카드 정렬 -->
+    <update id="updateOrderIndex">
+        UPDATE card
+        SET order_index = order_index + #{updateValue}
+        WHERE list_id = #{listId}
+          AND order_index BETWEEN #{startOrder} AND #{endOrder}
+          AND deleted_at IS NULL
+    </update>
 </mapper>

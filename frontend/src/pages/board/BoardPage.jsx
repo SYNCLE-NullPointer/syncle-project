@@ -65,7 +65,7 @@ function BoardPage() {
             cardId
           ) {
             // 카드 이동
-            moveCard(cardId, fromId, toId, oldIndex, newIndex)
+            moveCard(cardId, fromId, toId, newIndex)
           }
         },
       })

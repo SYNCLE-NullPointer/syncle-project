@@ -268,13 +268,14 @@ const useBoardStore = create((set, get) => ({
     // 백엔드 API 호출
     try {
       await api.patch(`/cards/${cardId}/move`, {
-        toListId,
-        newIndex,
+        listId: toListId,
+        orderIndex: newIndex,
       })
     } catch (error) {
       console.error('카드 이동 실패:', error)
       // 실패 시 간단히 알림 (복잡한 롤백 로직은 생략)
       alert('카드 이동에 실패했습니다.')
+      get().fetchBoard(activeBoard.id) // 보드 데이터 재로딩
     }
   },
 
