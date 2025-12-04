@@ -18,17 +18,21 @@ function TeamBoardPage() {
   const [loading, setLoading] = useState(true)
 
   // teamId가 바뀔 때마다 새로 데이터 요청
-  const fetchTeamDetail = useCallback(async () => {
-    try {
-      setLoading(true)
-      const response = await api.get(`/teams/${teamId}`)
-      setTeam(response.data.data)
-    } catch (error) {
-      console.error('팀 정보 조회 실패:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [teamId])
+  // 즐겨찾기 반영 시에는 로딩 없이 데이터만 교체
+  const fetchTeamDetail = useCallback(
+    async (showLoading = true) => {
+      try {
+        if (showLoading) setLoading(true) // showLoading이 true일 때만 로딩 표시
+        const response = await api.get(`/teams/${teamId}`)
+        setTeam(response.data.data)
+      } catch (error) {
+        console.error('팀 정보 조회 실패:', error)
+      } finally {
+        if (showLoading) setLoading(false)
+      }
+    },
+    [teamId],
+  )
 
   useEffect(() => {
     if (teamId) fetchTeamDetail()
@@ -116,6 +120,8 @@ function TeamBoardPage() {
                   id={board.id}
                   imageUrl={board.imageUrl || 'https://picsum.photos/400/200'}
                   title={board.title}
+                  isFavorite={board.isFavorite}
+                  onToggleFavorite={() => fetchTeamDetail(false)}
                 />
               ))}
 

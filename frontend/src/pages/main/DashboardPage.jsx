@@ -63,11 +63,7 @@ function DashboardPage() {
     <main className="flex-1 overflow-y-auto bg-white p-8">
       {/* ---------------- 최근 본 보드 ---------------- */}
       <div className="mx-auto max-w-5xl">
-        <section className="mb-10">
-          <h2 className="mb-3 text-lg font-semibold">최근에 본 목록</h2>
-
-          <div className="grid grid-cols-4 gap-4"></div>
-        </section>
+        <div className="grid grid-cols-4 gap-4"></div>
         <section className="mb-10">
           <h2 className="mb-3 text-lg font-semibold">즐겨찾기</h2>
 

@@ -1,6 +1,7 @@
 package com.nullpointer.domain.board.mapper;
 
 
+import com.nullpointer.domain.board.dto.response.BoardResponse;
 import com.nullpointer.domain.board.vo.BoardVo;
 import org.apache.ibatis.annotations.Param;
 
@@ -15,7 +16,7 @@ public interface BoardMapper {
     List<BoardVo> findBoardByUserId(Long userId);
 
     // 특정 팀 보드 목록 조회
-    List<BoardVo> findBoardByTeamId(Long teamId);
+    List<BoardResponse> findBoardWithFavoriteStatus(@Param("teamId") Long teamId, @Param("userId") Long userId);
 
     // 보드 상세 조회
     BoardVo findBoardByBoardId(Long boardId);
@@ -34,7 +35,10 @@ public interface BoardMapper {
 
     // 즐겨찾기 관련 메서드
     int countFavorite(Long userId);
+
     boolean existsFavorite(@Param("boardId") Long boardId, @Param("userId") Long userId);
+
     void insertFavorite(@Param("boardId") Long boardId, @Param("userId") Long userId);
+
     void deleteFavorite(@Param("boardId") Long boardId, @Param("userId") Long userId);
 }

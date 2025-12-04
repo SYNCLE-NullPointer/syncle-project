@@ -10,10 +10,10 @@ public interface TeamMapper {
     void insertTeam(TeamVo teamVo);
 
     // 본인 소속팀 전체 조회
-    List<TeamVo> findTeamByUserId(Long user_id);
+    List<TeamVo> findTeamByUserId(Long userId);
 
     // 팀 상세 조회
-    TeamVo findTeamByTeamId(Long team_id);
+    TeamVo findTeamByTeamId(Long teamId);
 
     // 팀 정보 수정
     void updateTeam(TeamVo teamVo);
