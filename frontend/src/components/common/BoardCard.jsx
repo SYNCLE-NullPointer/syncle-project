@@ -44,7 +44,7 @@ function BoardCard({
 
   return (
     <div
-      className="cursor-pointer overflow-hidden rounded-lg bg-white shadow-md transition-all duration-200 hover:scale-[1.03] hover:shadow-lg"
+      className="overflow-hidden rounded-lg bg-white shadow-md transition-all duration-200 hover:scale-[1.03] hover:cursor-pointer hover:shadow-lg"
       onClick={handleClick}
     >
       {/* 이미지 */}
@@ -53,7 +53,7 @@ function BoardCard({
         {/* 즐겨찾기 버튼 */}
         <button
           onClick={handleFavoriteClick}
-          className={`absolute top-2 right-2 rounded-full p-1.5 transition-all ${
+          className={`absolute top-2 right-2 rounded-full p-1.5 transition-all hover:cursor-pointer ${
             isFavorite
               ? 'text-yellow-400 hover:scale-110' // 활성화: 노란색 채움
               : 'bg-black/30 text-white hover:scale-110 hover:bg-black/50' // 비활성화: 반투명 검은 배경 + 흰색 테두리

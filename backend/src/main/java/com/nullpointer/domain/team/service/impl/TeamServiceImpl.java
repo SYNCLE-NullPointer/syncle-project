@@ -6,7 +6,6 @@ import com.nullpointer.domain.activity.vo.enums.ActivityType;
 import com.nullpointer.domain.board.dto.response.BoardResponse;
 import com.nullpointer.domain.board.mapper.BoardMapper;
 import com.nullpointer.domain.board.service.BoardService;
-import com.nullpointer.domain.board.vo.BoardVo;
 import com.nullpointer.domain.member.dto.team.TeamMemberResponse;
 import com.nullpointer.domain.member.mapper.TeamMemberMapper;
 import com.nullpointer.domain.member.vo.TeamMemberVo;
@@ -26,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -111,13 +109,8 @@ public class TeamServiceImpl implements TeamService {
         // 3. 팀 멤버 목록
         List<TeamMemberResponse> members = teamMemberMapper.findMembersByTeamId(teamId);
 
-        // 4. 팀 보드 목록
-        List<BoardVo> boardVoList = boardMapper.findBoardByTeamId(teamId);
-
-        // 5. VO -> DTO 변환
-        List<BoardResponse> boards = boardVoList.stream()
-                .map(BoardResponse::from)
-                .collect(Collectors.toList());
+        // 4. 팀 보드 목록 (즐겨찾기 반영)
+        List<BoardResponse> boards = boardMapper.findBoardWithFavoriteStatus(teamId, userId);
 
         // 6. 하나의 DTO로 묶기
         return TeamDetailResponse.of(teamVo, members, boards);

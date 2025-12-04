@@ -121,8 +121,8 @@ public class BoardServiceImpl implements BoardService {
     public List<BoardResponse> getTeamBoards(Long teamId, Long userId) {
         // 1. 권한 체크 (OWNER)
         memberVal.validateTeamOwner(teamId, userId, ErrorCode.TEAM_ACCESS_DENIED);
-        List<BoardVo> boards = boardMapper.findBoardByTeamId(teamId);
-        return boards.stream().map(BoardResponse::from).toList();
+        // 즐겨찾기 반영된 보드 반환
+        return boardMapper.findBoardWithFavoriteStatus(teamId, userId);
     }
 
     // 보드 상세 조회
