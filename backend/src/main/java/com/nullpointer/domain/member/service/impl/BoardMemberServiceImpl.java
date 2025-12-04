@@ -3,6 +3,8 @@ package com.nullpointer.domain.member.service.impl;
 import com.nullpointer.domain.activity.dto.request.ActivitySaveRequest;
 import com.nullpointer.domain.activity.service.ActivityService;
 import com.nullpointer.domain.activity.vo.enums.ActivityType;
+import com.nullpointer.domain.board.mapper.BoardMapper;
+import com.nullpointer.domain.board.vo.BoardVo;
 import com.nullpointer.domain.member.dto.board.BoardInviteRequest;
 import com.nullpointer.domain.member.dto.board.BoardMemberResponse;
 import com.nullpointer.domain.member.dto.board.BoardRoleUpdateRequest;
@@ -25,6 +27,7 @@ import java.util.List;
 public class BoardMemberServiceImpl implements BoardMemberService {
 
     private final BoardMemberMapper boardMemberMapper;
+    private final BoardMapper boardMapper;
     private final UserMapper userMapper;
     private final MemberValidator memberVal;
     private final ActivityService activityService;
@@ -34,16 +37,36 @@ public class BoardMemberServiceImpl implements BoardMemberService {
         // 1. 요청자가 초대 권한(OWNER)이 있는지 확인
         memberVal.validateBoardOwner(boardId, userId, ErrorCode.MEMBER_INVITE_FORBIDDEN);
 
+        /**
+         * TODO) 로그 로직 수정 필요
+         */
+        // 로그 저장을 위해 보드가 소속한 팀 id 필요
+        BoardVo board = boardMapper.findBoardByBoardId(boardId);
+
+        if (board == null) {
+            throw new BusinessException(ErrorCode.BOARD_NOT_FOUND);
+        }
+
+        Long teamId = board.getTeamId();
+
         for (Long targetUserId : req.getUserIds()) {
-            // 2. 이미 존재하는 멤버인지 확인
-            if (boardMemberMapper.existsByBoardIdAndUserId(boardId, targetUserId)) {
+            // 2. 기존 멤버 이력 조회 (탈퇴 멤버 포함)
+            BoardMemberVo existingMember = boardMemberMapper.findMemberIncludeDeleted(boardId, targetUserId);
+
+            if (existingMember == null) {
+                // 신규 멤버 -> INSERT
+                BoardMemberVo vo = req.toVo(boardId, targetUserId);
+                boardMemberMapper.insertBoardMember(vo);
+            } else if (existingMember.getDeletedAt() != null) {
+                // 탈퇴 멤버 -> UPDATE (deleted_at = null)
+                boardMemberMapper.restoreMember(boardId, targetUserId);
+            } else {
+                // 이미 활동 중인 멤버 -> 예외처리
                 throw new BusinessException(ErrorCode.MEMBER_ALREADY_EXISTS);
             }
-            BoardMemberVo vo = req.toVo(boardId, targetUserId);
-            boardMemberMapper.insertBoardMember(vo);
 
             // 팀 멤버 보드 초대 로그 저장
-            inviteMemberLog(targetUserId, userId, boardId);
+            inviteMemberLog(targetUserId, userId, boardId, teamId);
         }
     }
 
@@ -95,14 +118,14 @@ public class BoardMemberServiceImpl implements BoardMemberService {
      * 보드 멤버 관리 로그
      */
     // 팀 멤버 보드 초대 로그
-    private void inviteMemberLog(Long targetUserId, Long ownerId, Long boardId) {
+    private void inviteMemberLog(Long targetUserId, Long ownerId, Long boardId, Long teamId) {
         UserVo targetUser = userMapper.findById(targetUserId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         activityService.saveLog(
                 ActivitySaveRequest.builder()
                         .userId(ownerId)
-                        .teamId(null)
+                        .teamId(teamId)
                         .boardId(boardId)
                         .type(ActivityType.INVITE_MEMBER)
                         .targetId(targetUserId)

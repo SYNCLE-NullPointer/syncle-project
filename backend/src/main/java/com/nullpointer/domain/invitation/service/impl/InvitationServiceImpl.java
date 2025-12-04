@@ -74,7 +74,7 @@ public class InvitationServiceImpl implements InvitationService {
             UserVo targetUser = userMapper.findById(targetUserId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-            // 이미 팀 멤버인지 확인 (Validator 메서드명 변경 제안)
+            // 활동 중인 멤버인지 확인 -> 신규 OR 탈퇴 멤버는 초대 가능
             memberValidator.validateNotTeamMember(teamId, targetUserId, ErrorCode.MEMBER_ALREADY_EXISTS);
 
             // 이미 대기 중(PENDING)인 초대장이 있는지 확인
@@ -154,7 +154,7 @@ public class InvitationServiceImpl implements InvitationService {
         invitation.setStatus(Status.ACCEPTED);
         invitationMapper.updateStatus(invitation);
 
-        // 5. 실제 멤버로 등록
+        // 5. 실제 멤버로 등록 (신규 멤버 추가 or 탈퇴 멤버 복구)
         teamMemberService.addMember(invitation.getTeamId(), loginUserId, Role.MEMBER);
 
         // 팀 멤버 초대 로그 저장

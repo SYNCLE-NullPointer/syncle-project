@@ -33,18 +33,25 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     @Override
     @Transactional
     public void addMember(Long teamId, Long userId, Role role) {
-        // 중복 체크
-        if (teamMemberMapper.existsByTeamIdAndUserId(teamId, userId)) {
+        // 탈퇴한 멤버를 포함해서 기존 이력 조회
+        TeamMemberVo existingMember = teamMemberMapper.findMemberIncludeDeleted(teamId, userId);
+
+        if (existingMember == null) {
+            // 신규 멤버 -> INSERT
+            TeamMemberVo newMember = TeamMemberVo.builder()
+                    .teamId(teamId)
+                    .userId(userId)
+                    .role(role)
+                    .build();
+
+            teamMemberMapper.insertTeamMember(newMember);
+        } else if (existingMember.getDeletedAt() != null) {
+            // 탈퇴 멤버 -> UPDATE (deleted_at = null)
+            teamMemberMapper.restoreMember(teamId, userId, role);
+        } else {
+            // 이미 활동 중인 멤버 -> 예외처리
             throw new BusinessException(ErrorCode.MEMBER_ALREADY_EXISTS);
         }
-
-        TeamMemberVo newMember = TeamMemberVo.builder()
-                .teamId(teamId)
-                .userId(userId)
-                .role(role)
-                .build();
-
-        teamMemberMapper.insertTeamMember(newMember);
     }
 
     @Override

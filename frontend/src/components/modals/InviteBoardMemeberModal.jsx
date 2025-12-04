@@ -76,8 +76,8 @@ function InviteBoardMemeberModal({
         userIds: userIds,
       })
 
-      // 성공 시 보드 데이터 새로고침
-      await fetchBoard(boardId)
+      // 성공 시 보드 데이터 갱신
+      await fetchBoard(boardId, false)
       onClose()
     } catch (error) {
       console.error('보드 멤버 추가 실패:', error)
