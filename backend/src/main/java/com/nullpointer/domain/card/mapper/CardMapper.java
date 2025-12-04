@@ -17,4 +17,7 @@ public interface CardMapper {
 
     // 특정 리스트의 카드 목록 조회
     List<CardResponse> findCardsWithDetailsByListId(Long listId);
+
+    // 카드 이동
+    void updateCardLocation(CardVo cardVo);
 }
