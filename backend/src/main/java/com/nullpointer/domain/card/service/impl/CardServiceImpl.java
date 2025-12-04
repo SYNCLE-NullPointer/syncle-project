@@ -2,6 +2,7 @@ package com.nullpointer.domain.card.service.impl;
 
 import com.nullpointer.domain.card.dto.CardResponse;
 import com.nullpointer.domain.card.dto.CreateCardRequest;
+import com.nullpointer.domain.card.dto.MoveCardRequest;
 import com.nullpointer.domain.card.mapper.CardMapper;
 import com.nullpointer.domain.card.service.CardService;
 import com.nullpointer.domain.card.vo.CardVo;
@@ -34,5 +35,13 @@ public class CardServiceImpl implements CardService {
     @Transactional(readOnly = true)
     public List<CardResponse> getCards(Long listId) {
         return cardMapper.findCardsWithDetailsByListId(listId);
+    }
+
+    // 카드 이동
+
+    @Override
+    public void moveCard(Long cardId, MoveCardRequest req, Long userId) {
+        CardVo cardVo = MoveCardRequest.toVo(cardId, req);
+        cardMapper.updateCardLocation(cardVo);
     }
 }

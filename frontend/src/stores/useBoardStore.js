@@ -230,6 +230,54 @@ const useBoardStore = create((set, get) => ({
     }
   },
 
+  // 카드 이동 (드래그 앤 드롭)
+  moveCard: async (cardId, fromListId, toListId, newIndex) => {
+    const { activeBoard } = get()
+    if (!activeBoard) return
+
+    // 상태의 불변성 유지를 위해 깊은 복사
+    const newColumns = { ...activeBoard.columns }
+
+    // 출발/도착 리스트 복사
+    const sourceList = { ...newColumns[fromListId] }
+    const destList =
+      fromListId === toListId ? sourceList : { ...newColumns[toListId] }
+
+    // task 복사
+    sourceList.tasks = [...sourceList.tasks]
+    destList.tasks =
+      fromListId === toListId ? sourceList.tasks : [...destList.tasks]
+
+    // 카드 찾기 및 이동
+    const cardIndex = sourceList.tasks.findIndex((t) => t.id === cardId)
+    if (cardIndex === -1) return
+
+    const [movedCard] = sourceList.tasks.splice(cardIndex, 1)
+
+    // 이동된 카드의 정보 업데이트
+    const updatedCard = { ...movedCard, listId: toListId }
+    destList.tasks.splice(newIndex, 0, updatedCard)
+
+    // 리스트 객체 다시 할당
+    newColumns[fromListId] = sourceList
+    newColumns[toListId] = destList
+
+    // 상태 업데이트
+    set({ activeBoard: { ...activeBoard, columns: newColumns } })
+
+    // 백엔드 API 호출
+    try {
+      await api.patch(`/cards/${cardId}/move`, {
+        toListId,
+        newIndex,
+      })
+    } catch (error) {
+      console.error('카드 이동 실패:', error)
+      // 실패 시 간단히 알림 (복잡한 롤백 로직은 생략)
+      alert('카드 이동에 실패했습니다.')
+    }
+  },
+
   // 보드 데이터 초기화 (페이지 나갈 때 사용)
   resetBoard: () => set({ activeBoard: null, error: null }),
 }))

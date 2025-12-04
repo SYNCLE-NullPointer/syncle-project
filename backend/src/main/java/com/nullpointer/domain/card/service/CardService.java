@@ -2,6 +2,7 @@ package com.nullpointer.domain.card.service;
 
 import com.nullpointer.domain.card.dto.CardResponse;
 import com.nullpointer.domain.card.dto.CreateCardRequest;
+import com.nullpointer.domain.card.dto.MoveCardRequest;
 
 import java.util.List;
 
@@ -12,4 +13,7 @@ public interface CardService {
 
     // 카드 목록 조회
     List<CardResponse> getCards(Long listId);
+
+    // 카드 이동
+    void moveCard(Long cardId, MoveCardRequest req, Long userId);
 }

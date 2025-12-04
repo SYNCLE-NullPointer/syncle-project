@@ -55,15 +55,17 @@ function BoardPage() {
           const fromId = evt.from.dataset.columnId
           const toId = evt.to.dataset.columnId
           const { oldIndex, newIndex } = evt
+          const cardId = evt.item.dataset.id
 
           if (
             fromId &&
             toId &&
             oldIndex !== undefined &&
-            newIndex !== undefined
+            newIndex !== undefined &&
+            cardId
           ) {
             // 카드 이동
-            //moveCard(fromId, toId, oldIndex, newIndex)
+            moveCard(cardId, fromId, toId, oldIndex, newIndex)
           }
         },
       })

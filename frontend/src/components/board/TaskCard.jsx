@@ -9,6 +9,7 @@ function TaskCard({ task }) {
 
   return (
     <div
+      data-id={task.id}
       onClick={() => openCardModal(task)}
       className="group mb-2 cursor-pointer rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all hover:border-blue-500 hover:shadow-md active:scale-[0.98]"
     >
