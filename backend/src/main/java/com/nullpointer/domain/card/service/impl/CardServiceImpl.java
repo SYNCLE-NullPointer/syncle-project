@@ -5,38 +5,29 @@ import com.nullpointer.domain.card.dto.CreateCardRequest;
 import com.nullpointer.domain.card.mapper.CardMapper;
 import com.nullpointer.domain.card.service.CardService;
 import com.nullpointer.domain.card.vo.CardVo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CardServiceImpl implements CardService {
 
     private final CardMapper cardMapper;
 
-    public CardServiceImpl(CardMapper cardMapper) {
-        this.cardMapper = cardMapper;
-    }
-
     @Override
     @Transactional
-    public CardResponse createCard(Long listId, CreateCardRequest request) {
-        CardVo cardVo = new CardVo();
+    public Long createCard(Long listId, CreateCardRequest req, Long userId) {
+
+        // 1. 카드 VO 생성 (DTO -> VO)
+        CardVo cardVo = req.toVo();
         cardVo.setListId(listId);
-        cardVo.setTitle(request.getTitle());
-        cardVo.setDescription(request.getDescription());
+        cardVo.setAssigneeId(userId);
 
         cardMapper.insertCard(cardVo);
-
-        CardResponse response = new CardResponse();
-        response.setId(cardVo.getId());
-        response.setListId(cardVo.getListId());
-        response.setTitle(cardVo.getTitle());
-        response.setDescription(cardVo.getDescription());
-        response.setOrderIndex(cardVo.getOrderIndex());
-
-        return response;
+        return cardVo.getId();
     }
 
     @Override
