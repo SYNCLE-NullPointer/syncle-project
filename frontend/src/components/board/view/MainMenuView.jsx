@@ -72,7 +72,10 @@ function MainMenuView({
           <Users size={18} className="text-gray-500" />
           멤버 관리
           <span className="ml-auto text-xs text-gray-400">
-            {board.members.length}명
+            {board.visibility === 'TEAM'
+              ? board.teamMembers.length
+              : board.members.length}
+            명
           </span>
         </button>
         <button

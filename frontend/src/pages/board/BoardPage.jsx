@@ -7,6 +7,7 @@ import BoardCanvas from '../../components/board/BoardCanvas'
 import BoardSettings from '../../components/board/BoardSettings'
 import CardDetailModal from '../../components/modals/CardDetailModal'
 import useBoardPermission from '../../hooks/useBoardPermission'
+import useUserStore from '../../stores/useUserStore'
 
 /**
  * 보드 데이터 로딩,
@@ -30,6 +31,8 @@ function BoardPage() {
 
   const navigate = useNavigate()
 
+  const { user, fetchUser } = useUserStore()
+
   // 권한 계산
   const { canEdit } = useBoardPermission(activeBoard)
 
@@ -38,6 +41,13 @@ function BoardPage() {
 
   // 리스트 컨테이너 Ref
   const listContainerRef = useRef(null)
+
+  // 컴포넌트 마운트 시 유저 정보가 없으면 불러오기
+  useEffect(() => {
+    if (!user) {
+      fetchUser()
+    }
+  }, [user, fetchUser])
 
   // 컴포넌트 마운트 시 보드 데이터 불러오기
   useEffect(() => {
