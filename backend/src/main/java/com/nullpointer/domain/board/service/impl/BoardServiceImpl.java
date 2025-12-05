@@ -26,9 +26,9 @@ import com.nullpointer.domain.member.vo.BoardMemberVo;
 import com.nullpointer.domain.member.vo.enums.Role;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.exception.BusinessException;
-import com.nullpointer.global.validator.board.BoardValidator;
-import com.nullpointer.global.validator.member.MemberValidator;
-import com.nullpointer.global.validator.team.TeamValidator;
+import com.nullpointer.global.validator.BoardValidator;
+import com.nullpointer.global.validator.MemberValidator;
+import com.nullpointer.global.validator.TeamValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -154,7 +154,7 @@ public class BoardServiceImpl implements BoardService {
         BoardVo boardVo = boardVal.getValidBoard(boardId);
 
         // 3. 업데이트 진행
-        if (req.getTitle() != null && !req.getTitle().isBlank()) {
+        if (req.getTitle() != null) {
             boardVo.setTitle(req.getTitle());
         }
 
@@ -255,9 +255,15 @@ public class BoardServiceImpl implements BoardService {
     @Override
     @Transactional(readOnly = true)
     public BoardViewResponse getBoardView(Long boardId, Long userId) {
+<<<<<<< Updated upstream
         // 조회 권한 확인
         // - validateBoardViewer 내부 resolveEffectiveBoardRole에서 TEAM/PRIVATE 보드 여부, 권한 모두 체크
         memberVal.validateBoardViewer(boardId, userId);
+=======
+
+        // 보드 권한 체크
+        boardVal.hasAccess(boardId, userId);
+>>>>>>> Stashed changes
 
         // 보드 정보 조회
         BoardVo boardVo = boardVal.getValidBoard(boardId);

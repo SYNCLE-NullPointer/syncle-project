@@ -3,6 +3,7 @@ package com.nullpointer.domain.card.service.impl;
 import com.nullpointer.domain.card.dto.CardResponse;
 import com.nullpointer.domain.card.dto.CreateCardRequest;
 import com.nullpointer.domain.card.dto.MoveCardRequest;
+import com.nullpointer.domain.card.dto.UpdateCardRequest;
 import com.nullpointer.domain.card.mapper.CardMapper;
 import com.nullpointer.domain.card.service.CardService;
 import com.nullpointer.domain.card.vo.CardVo;
@@ -10,7 +11,13 @@ import com.nullpointer.domain.list.mapper.ListMapper;
 import com.nullpointer.domain.list.vo.ListVo;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.exception.BusinessException;
+<<<<<<< Updated upstream
 import com.nullpointer.global.validator.member.MemberValidator;
+=======
+import com.nullpointer.global.validator.BoardValidator;
+import com.nullpointer.global.validator.CardValidatior;
+import com.nullpointer.global.validator.MemberValidator;
+>>>>>>> Stashed changes
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +29,7 @@ import java.util.List;
 public class CardServiceImpl implements CardService {
 
     private final CardMapper cardMapper;
+<<<<<<< Updated upstream
     private final ListMapper listMapper;
     private final MemberValidator memberVal;
 
@@ -29,6 +37,10 @@ public class CardServiceImpl implements CardService {
      * 카드 권한
      * - 카드 생성/수정/이동 -> MEMBER 이상 (Editor)
      */
+=======
+    private final CardValidatior cardVal;
+    private final BoardValidator boardVal;
+>>>>>>> Stashed changes
 
     @Override
     @Transactional
@@ -111,5 +123,20 @@ public class CardServiceImpl implements CardService {
         card.setListId(newListId);
         card.setOrderIndex(newOrder);
         cardMapper.updateCardLocation(card);
+    }
+
+    // 카드 수정
+
+    @Override
+    @Transactional
+    public void updateCard(Long cardId, UpdateCardRequest req, Long userId) {
+        // 카드 유효성 검증
+        cardVal.getValidCard(cardId);
+
+        // dto -> vo
+        CardVo cardVo = req.toVo(cardId);
+
+        // 업데이트 진행
+        cardMapper.updateCard(cardVo);
     }
 }

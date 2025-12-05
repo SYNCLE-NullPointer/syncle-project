@@ -40,7 +40,7 @@ function BoardPage() {
     if (boardId) {
       fetchBoard(boardId, navigate)
     }
-  }, [boardId, fetchBoard, resetBoard])
+  }, [boardId, fetchBoard, resetBoard, navigate])
 
   // 리스트 이동 Sortable
   useEffect(() => {

@@ -21,7 +21,7 @@ import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.common.enums.RedisKeyType;
 import com.nullpointer.global.exception.BusinessException;
 import com.nullpointer.global.util.RedisUtil;
-import com.nullpointer.global.validator.member.MemberValidator;
+import com.nullpointer.global.validator.MemberValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

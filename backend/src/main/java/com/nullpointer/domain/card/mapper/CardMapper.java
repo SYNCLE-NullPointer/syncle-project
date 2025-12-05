@@ -32,4 +32,7 @@ public interface CardMapper {
                           @Param("startOrder") int startOrder,
                           @Param("endOrder") int endOrder,
                           @Param("updateValue") int updateValue);
+
+    // 카드 수정
+    void updateCard(CardVo cardVo);
 }
