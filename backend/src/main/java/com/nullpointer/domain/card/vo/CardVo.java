@@ -24,8 +24,8 @@ public class CardVo {
     private LocalDateTime dueDate;
     private Integer orderIndex;
     private Integer progress;
-    private LocalDateTime createdDate;
-    private LocalDateTime updatedDate;
-    private LocalDateTime deletedDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
 
 }

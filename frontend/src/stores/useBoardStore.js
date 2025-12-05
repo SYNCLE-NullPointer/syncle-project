@@ -216,7 +216,7 @@ const useBoardStore = create((set, get) => ({
     const { activeBoard } = get()
     if (!activeBoard) return
 
-    // 1. 프론트엔드 선 반영 (Optimistic Update) - UX 향상
+    // 1. 프론트엔드 선 반영 (Optimistic Update)
     const oldColumns = { ...activeBoard.columns }
     const updatedColumns = {
       ...oldColumns,
@@ -394,11 +394,49 @@ const useBoardStore = create((set, get) => ({
       })
     } catch (error) {
       console.error('카드 이동 실패:', error)
-      // 실패 시 간단히 알림 (복잡한 롤백 로직은 생략)
       alert('카드 이동에 실패했습니다.')
       get().fetchBoard(activeBoard.id) // 보드 데이터 재로딩
     }
     console.log('이동 성공')
+  },
+
+  // 카드 정보 업데이트
+  updateCard: async (cardId, listId, updates) => {
+    const { activeBoard, selectedCard } = get()
+    if (!activeBoard) return
+
+    if (!listId || !activeBoard.columns[listId]) {
+      console.error(`Invalid listId: ${listId}`)
+      return
+    }
+    // 1. 낙관적 업데이트 (UI 즉시 반영)
+    const newColumns = { ...activeBoard.columns }
+    const targetList = { ...newColumns[listId] }
+
+    // 리스트 내 카드 찾아서 업데이트
+    targetList.tasks = targetList.tasks.map((task) =>
+      task.id === cardId ? { ...task, ...updates } : task,
+    )
+    newColumns[listId] = targetList
+
+    // 전체 보드 상태 업데이트
+    set({
+      activeBoard: { ...activeBoard, columns: newColumns },
+      // 현재 보고 있는 카드가 수정 대상이라면 함께 업데이트
+      selectedCard:
+        selectedCard?.id === cardId
+          ? { ...selectedCard, ...updates }
+          : selectedCard,
+    })
+
+    // 백엔드 API 호출
+    try {
+      await api.patch(`/cards/${cardId}`, updates)
+    } catch (error) {
+      console.error('카드 정보 업데이트 실패:', error)
+      alert('카드 정보 업데이트에 실패했습니다.')
+      get().fetchBoard(activeBoard.id)
+    }
   },
 
   // 보드 데이터 초기화 (페이지 나갈 때 사용)

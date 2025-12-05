@@ -1,4 +1,4 @@
-package com.nullpointer.global.validator.team;
+package com.nullpointer.global.validator;
 
 import com.nullpointer.domain.team.mapper.TeamMapper;
 import com.nullpointer.domain.team.vo.TeamVo;

@@ -20,11 +20,9 @@ export default function CardDetailModal() {
   const {
     activeBoard,
     selectedCard,
-    selectedCardColumnId,
     closeCardModal,
     moveCard,
-    // TODO: 실제 API가 구현되면 아래 함수들을 스토어에서 가져와 연결하세요.
-    // updateCardDescription,
+    updateCard,
     // addComment,
     // deleteCard
   } = useBoardStore()
@@ -34,66 +32,45 @@ export default function CardDetailModal() {
   const [isEditingDesc, setIsEditingDesc] = useState(false)
   const [commentText, setCommentText] = useState('')
 
-  // [추가] 완료(체크) 버튼 상태 및 애니메이션 상태
+  // 완료(체크) 버튼 상태
   const [isComplete, setIsComplete] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
 
-  // 데모용 가짜 데이터 (댓글)
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      user: 'Manager',
-      text: '디자인 시안 확인 부탁드립니다.',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-  ])
+  // [변경] Mock 데이터 삭제 -> 빈 배열로 초기화
+  const [comments, setComments] = useState([])
+  const [checklists, setChecklists] = useState([])
 
-  // 데모용 가짜 데이터 (체크리스트)
-  const [checklists, setChecklists] = useState([
-    {
-      id: 1,
-      title: '진행 사항',
-      items: [
-        { id: 1, text: '요구사항 분석', done: true },
-        { id: 2, text: '화면 설계', done: false },
-      ],
-    },
-  ])
+  // 체크리스트 항목 추가용 입력 State
   const [checklistInput, setChecklistInput] = useState('')
 
-  // 모달이 열릴 때 데이터 동기화
   useEffect(() => {
     if (selectedCard) {
       setDescription(selectedCard.description || '')
-      // TODO: 실제 데이터에 'isComplete' 필드가 있다면 여기서 초기화하세요.
-      // setIsComplete(selectedCard.isComplete || false)
     }
   }, [selectedCard])
 
-  // 예외 처리
   if (!selectedCard || !activeBoard) return null
 
-  const currentColumn = activeBoard.columns[selectedCardColumnId]
+  const currentListId = selectedCard.listId
+  const currentColumn = activeBoard.columns[currentListId]
   const allColumns = activeBoard.columns
     ? Object.values(activeBoard.columns)
     : []
 
   // --- Handlers ---
 
-  // 설명 저장 (UI만 반영)
   const handleSaveDescription = () => {
     setIsEditingDesc(false)
-    // TODO: updateCardDescription(selectedCard.id, description) 호출
+    updateCard(selectedCard.id, currentListId, { description })
   }
 
-  // 댓글 추가
   const handleAddComment = (e) => {
     e.preventDefault()
     if (!commentText.trim()) return
 
     const newComment = {
       id: Date.now(),
-      user: 'Me',
+      user: 'Me', // 현재 로그인한 사용자 정보
       text: commentText,
       createdAt: new Date().toISOString(),
     }
@@ -101,7 +78,16 @@ export default function CardDetailModal() {
     setCommentText('')
   }
 
-  // 체크리스트 아이템 토글
+  // 새 체크리스트 생성 핸들러 (우측 버튼 클릭 시 동작)
+  const handleAddChecklist = () => {
+    const newChecklist = {
+      id: Date.now(),
+      title: '체크리스트', // 기본 제목
+      items: [],
+    }
+    setChecklists([...checklists, newChecklist])
+  }
+
   const toggleCheckItem = (listId, itemId) => {
     setChecklists((prev) =>
       prev.map((list) => {
@@ -116,9 +102,10 @@ export default function CardDetailModal() {
     )
   }
 
-  // 체크리스트 아이템 추가
   const handleAddCheckItem = (e, listId) => {
     e.preventDefault()
+    // 현재는 단일 input state(checklistInput)를 쓰므로
+    // 입력된 값이 있을 때만 해당 listId에 추가
     if (!checklistInput.trim()) return
 
     setChecklists((prev) =>
@@ -136,28 +123,23 @@ export default function CardDetailModal() {
     setChecklistInput('')
   }
 
-  // 카드 이동 핸들러
   const handleMoveCard = (e) => {
     const newColId = Number(e.target.value) || e.target.value
-    if (newColId && newColId !== selectedCardColumnId) {
+    if (newColId && newColId !== currentListId) {
       const targetColumn = activeBoard.columns[newColId]
       const newIndex = targetColumn.tasks ? targetColumn.tasks.length : 0
-      moveCard(selectedCard.id, selectedCardColumnId, newColId, newIndex)
+      moveCard(selectedCard.id, currentListId, newColId, newIndex)
     }
   }
 
-  // [추가] 완료 버튼 토글 핸들러 (애니메이션 효과 포함)
   const toggleComplete = () => {
     setIsComplete((prev) => !prev)
-    setIsAnimating(true) // 애니메이션 시작
-
-    // 300ms 뒤에 애니메이션 상태 초기화 (CSS transition 시간과 맞춤)
+    setIsAnimating(true)
     setTimeout(() => {
       setIsAnimating(false)
     }, 300)
   }
 
-  // 진행률 계산
   const calculateProgress = (items) => {
     if (!items || items.length === 0) return 0
     const doneCount = items.filter((i) => i.done).length
@@ -172,12 +154,7 @@ export default function CardDetailModal() {
       >
         {/* --- Header --- */}
         <div className="flex shrink-0 items-start justify-between border-b border-gray-100 bg-white px-6 py-5">
-          {/* 제목과 버튼을 감싸는 컨테이너: items-start로 설정하여 아이콘이 항상 위쪽에 위치 */}
           <div className="flex w-full gap-4 pr-10">
-            {/* [수정] 완료 체크 버튼 
-               1. mt-1 제거하여 위쪽 정렬 맞춤
-               2. h-9 w-9 (36px)로 조정하여 text-xl(약 28px+행간) 제목과 시각적 높이 균형 맞춤
-            */}
             <button
               onClick={toggleComplete}
               className={`flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-all duration-300 ease-out ${
@@ -197,8 +174,6 @@ export default function CardDetailModal() {
             </button>
 
             <div className="w-full pt-0.5">
-              {' '}
-              {/* pt-0.5를 주어 텍스트를 미세하게 중앙 조정 */}
               <h2
                 className={`mb-1 text-xl leading-tight font-bold text-gray-900 transition-all duration-300 ${
                   isComplete ? 'text-gray-400 line-through' : ''
@@ -206,7 +181,6 @@ export default function CardDetailModal() {
               >
                 {selectedCard.title}
               </h2>
-              {/* COMPLETED 텍스트 제거됨 */}
               <p className="flex items-center gap-1 text-sm text-gray-500">
                 <span className="font-semibold text-gray-700 underline decoration-gray-300 underline-offset-4">
                   {currentColumn?.title}
@@ -279,11 +253,14 @@ export default function CardDetailModal() {
                 </div>
               </section>
 
-              {/* Checklist */}
+              {/* Checklist (비어있으면 안 보임, 추가 버튼으로 생성) */}
               {checklists.map((list) => {
                 const progress = calculateProgress(list.items)
                 return (
-                  <section key={list.id}>
+                  <section
+                    key={list.id}
+                    className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                  >
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <CheckSquare size={20} className="text-gray-600" />
@@ -292,7 +269,7 @@ export default function CardDetailModal() {
                         </h3>
                       </div>
                       <button className="rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-200">
-                        Hide checked items
+                        Delete
                       </button>
                     </div>
 
@@ -337,6 +314,8 @@ export default function CardDetailModal() {
                         <input
                           className="w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm transition-all outline-none placeholder:text-gray-400 hover:bg-gray-50 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
                           placeholder="항목 추가..."
+                          // 주의: 실제 구현 시 여러 리스트에 대한 input state 관리가 필요함.
+                          // 현재는 편의상 하나의 input state를 공유하여, 마지막으로 타이핑한 곳에 들어감.
                           value={checklistInput}
                           onChange={(e) => setChecklistInput(e.target.value)}
                         />
@@ -355,9 +334,6 @@ export default function CardDetailModal() {
                       Activity
                     </h3>
                   </div>
-                  <button className="rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-200">
-                    Show details
-                  </button>
                 </div>
 
                 <div className="space-y-6 pl-8">
@@ -386,38 +362,40 @@ export default function CardDetailModal() {
                   </div>
 
                   {/* Comment List */}
-                  <div className="space-y-4">
-                    {comments.map((comment) => (
-                      <div key={comment.id} className="group flex gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">
-                          {comment.user[0]}
-                        </div>
-                        <div className="flex-1">
-                          <div className="mb-1 flex items-baseline gap-2">
-                            <span className="text-sm font-bold text-gray-900">
-                              {comment.user}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {new Date(comment.createdAt).toLocaleTimeString(
-                                [],
-                                { hour: '2-digit', minute: '2-digit' },
-                              )}
-                            </span>
+                  {comments.length > 0 && (
+                    <div className="space-y-4">
+                      {comments.map((comment) => (
+                        <div key={comment.id} className="group flex gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">
+                            {comment.user[0]}
                           </div>
-                          <div className="rounded-lg border border-transparent bg-white p-2 text-sm text-gray-700 transition-all group-hover:border-gray-100 group-hover:shadow-sm">
-                            {comment.text}
+                          <div className="flex-1">
+                            <div className="mb-1 flex items-baseline gap-2">
+                              <span className="text-sm font-bold text-gray-900">
+                                {comment.user}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(comment.createdAt).toLocaleTimeString(
+                                  [],
+                                  { hour: '2-digit', minute: '2-digit' },
+                                )}
+                              </span>
+                            </div>
+                            <div className="rounded-lg border border-transparent bg-white p-2 text-sm text-gray-700 transition-all group-hover:border-gray-100 group-hover:shadow-sm">
+                              {comment.text}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </section>
             </div>
 
-            {/* [Right Column] Sidebar Actions */}
+            {/* Sidebar Actions */}
             <div className="w-full shrink-0 space-y-6 md:w-60">
-              {/* Meta Info */}
+              {/* Properties */}
               <div className="space-y-4">
                 <div className="space-y-1">
                   <h4 className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">
@@ -438,20 +416,34 @@ export default function CardDetailModal() {
                 </div>
               </div>
 
+              {/* Add to card Section */}
+              <div className="space-y-2">
+                <h4 className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">
+                  Add to card
+                </h4>
+                {/* Checklist 추가 버튼 */}
+                <button
+                  onClick={handleAddChecklist}
+                  className="flex w-full items-center gap-2 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                >
+                  <CheckSquare size={14} />
+                  <span>Checklist</span>
+                </button>
+              </div>
+
               {/* Actions */}
               <div className="space-y-2">
                 <h4 className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">
                   Actions
                 </h4>
 
-                {/* Move Card Select */}
                 <div className="group relative">
                   <div className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-gray-500">
                     <ArrowRight size={14} />
                   </div>
                   <select
                     className="w-full cursor-pointer appearance-none rounded-md bg-gray-100 py-1.5 pr-2 pl-8 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    value={selectedCardColumnId}
+                    value={currentListId}
                     onChange={handleMoveCard}
                   >
                     {allColumns.map((col) => (
@@ -462,13 +454,11 @@ export default function CardDetailModal() {
                   </select>
                 </div>
 
-                {/* Archive Button */}
                 <button className="flex w-full items-center gap-2 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-red-50 hover:text-red-600">
                   <Trash2 size={14} />
                   <span>Archive</span>
                 </button>
 
-                {/* More Button */}
                 <button className="flex w-full items-center gap-2 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200">
                   <MoreHorizontal size={14} />
                   <span>More</span>
