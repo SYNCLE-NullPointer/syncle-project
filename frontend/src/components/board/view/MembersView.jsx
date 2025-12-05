@@ -6,12 +6,20 @@ import useUserStore from '../../../stores/useUserStore'
 function MembersView({ board, isOwner }) {
   const { changeMemberRole, removeMember } = useBoardStore()
   const { user } = useUserStore()
-  const [members, setMembers] = useState(board.members)
+
+  // 공개 범위에 따라 멤버 목록 다름
+  const [members, setMembers] = useState(
+    board.visibility === 'TEAM' ? board.teamMembers : board.members,
+  )
 
   // 보드 데이터가 변경되면 로컬 상태도 동기화
   useEffect(() => {
-    setMembers(board.members)
-  }, [board.members])
+    if (board.visibility === 'TEAM') {
+      setMembers(board.teamMembers || [])
+    } else {
+      setMembers(board.members || [])
+    }
+  }, [board.members, board.teamMembers, board.visibility])
 
   // role 변경 핸들러 (Owner만 가능)
   const handleRoleChange = async (userId, newRole) => {
@@ -52,7 +60,7 @@ function MembersView({ board, isOwner }) {
             <div
               key={member.id}
               className={`flex items-center justify-between rounded-md px-2 py-2 transition-colors ${canAction && 'hover:cursor-pointer hover:bg-gray-200'} ${
-                isMe && 'bg-green-100 ring-1 ring-green-50'
+                isMe && 'bg-green-100 ring-1 ring-green-300'
               }`}
             >
               {/* 왼쪽: 멤버 정보 */}
@@ -92,14 +100,16 @@ function MembersView({ board, isOwner }) {
                       </div>
                     </div>
 
-                    {/* 추방 버튼 */}
-                    <button
-                      onClick={() => handleKick(member.id, member.name)}
-                      className="rounded p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                      title="내보내기"
-                    >
-                      <X size={14} />
-                    </button>
+                    {/* 추방 버튼 - TEAM 보드는 탈퇴 기능 X */}
+                    {board.visibility !== 'TEAM' && (
+                      <button
+                        onClick={() => handleKick(member.id, member.name)}
+                        className="rounded p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                        title="내보내기"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                   </>
                 ) : (
                   // 관리 권한이 없거나 조작 불가능한 경우 (OWNER, 본인)
