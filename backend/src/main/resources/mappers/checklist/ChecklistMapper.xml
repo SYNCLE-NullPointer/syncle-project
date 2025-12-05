@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.nullpointer.domain.checklist.mapper.ChecklistMapper">
+
+    <insert id="insertChecklist"
+            parameterType="ChecklistVo"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO check_list (card_id,
+                                title,
+                                created_at)
+        VALUES (#{cardId},
+                #{title},
+                NOW())
+    </insert>
+
+    <select id="findByCardId" resultType="ChecklistVo">
+        SELECT id,
+               card_id,
+               title,
+               is_checked,
+               created_at,
+               updated_at
+        FROM check_list
+        WHERE card_id = #{cardId}
+        ORDER BY created_at ASC
+    </select>
+
+    <update id="updateChecklist" parameterType="ChecklistVo">
+        UPDATE check_list
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="done != null">done = #{done},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteChecklist" parameterType="Long">
+        DELETE
+        FROM check_list
+        WHERE id = #{id}
+    </delete>
+</mapper>

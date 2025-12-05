@@ -11,7 +11,7 @@ import com.nullpointer.domain.list.mapper.ListMapper;
 import com.nullpointer.domain.list.vo.ListVo;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.exception.BusinessException;
-import com.nullpointer.global.validator.CardValidatior;
+import com.nullpointer.global.validator.CardValidator;
 import com.nullpointer.global.validator.MemberValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class CardServiceImpl implements CardService {
     private final CardMapper cardMapper;
     private final ListMapper listMapper;
     private final MemberValidator memberVal;
-    private final CardValidatior cardVal;
+    private final CardValidator cardVal;
 
     @Override
     @Transactional
