@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import BoardCard from '../../components/common/BoardCard'
 import api from '../../api/AxiosInterceptor'
 import TeamBoardSection from '../../components/dashboard/TeamBoardSection'
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion'
 
 function DashboardPage() {

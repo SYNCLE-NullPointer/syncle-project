@@ -96,7 +96,7 @@ const useBoardStore = create((set, get) => ({
       set({ activeBoard: formattedData })
     } catch (error) {
       if (error.response.status === 403) {
-        alert('해당 보드에 접근할 권한이 없습니다 🚫')
+        alert('해당 보드에 접근할 권한이 없습니다')
         navigate('/dashboard') // 메인화면으로 강제 이동
       }
       console.error('보드 로드 실패:', error)
