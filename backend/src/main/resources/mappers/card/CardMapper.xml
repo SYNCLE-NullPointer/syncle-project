@@ -79,7 +79,7 @@
     </update>
 
     <!-- 카드 수정 -->
-    <update id="updateCardDynamic">
+    <update id="updateCard">
         UPDATE card
         <set>
             <if test="title != null">title = #{title},</if>

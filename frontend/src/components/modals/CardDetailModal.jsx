@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import useBoardStore from '../../stores/useBoardStore'
 import {
   X,
@@ -12,8 +12,6 @@ import {
   ArrowRight,
   Trash2,
   MoreHorizontal,
-  Plus,
-  Calendar,
 } from 'lucide-react'
 
 export default function CardDetailModal() {
@@ -23,8 +21,10 @@ export default function CardDetailModal() {
     closeCardModal,
     moveCard,
     updateCard,
-    // addComment,
-    // deleteCard
+    // [수정] 변경된 액션명 사용
+    createChecklist,
+    updateChecklist,
+    deleteChecklist,
   } = useBoardStore()
 
   // --- Local State ---
@@ -32,25 +32,31 @@ export default function CardDetailModal() {
   const [isEditingDesc, setIsEditingDesc] = useState(false)
   const [commentText, setCommentText] = useState('')
 
-  // 완료(체크) 버튼 상태
+  // 체크리스트 토글 및 입력
+  const [showChecklist, setShowChecklist] = useState(false)
+  const [checklistInput, setChecklistInput] = useState('')
+  const checklistInputRef = useRef(null)
+
   const [isComplete, setIsComplete] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
-
-  // [변경] Mock 데이터 삭제 -> 빈 배열로 초기화
   const [comments, setComments] = useState([])
-  const [checklists, setChecklists] = useState([])
 
-  // 체크리스트 항목 추가용 입력 State
-  const [checklistInput, setChecklistInput] = useState('')
-
+  // 초기화 로직
   useEffect(() => {
     if (selectedCard) {
       setDescription(selectedCard.description || '')
+
+      // 체크리스트 아이템이 있으면 자동 펼침
+      const hasItems =
+        selectedCard.checklists && selectedCard.checklists.length > 0
+      setShowChecklist(hasItems)
     }
-  }, [selectedCard])
+  }, [selectedCard?.id])
 
   if (!selectedCard || !activeBoard) return null
 
+  // [수정] 스토어 데이터 사용
+  const checklistItems = selectedCard.checklists || []
   const currentListId = selectedCard.listId
   const currentColumn = activeBoard.columns[currentListId]
   const allColumns = activeBoard.columns
@@ -64,63 +70,47 @@ export default function CardDetailModal() {
     updateCard(selectedCard.id, currentListId, { description })
   }
 
+  const handleToggleChecklist = () => {
+    setShowChecklist((prev) => !prev)
+    if (!showChecklist) {
+      setTimeout(() => checklistInputRef.current?.focus(), 100)
+    }
+  }
+
+  // [수정] 아이템 추가
+  const handleAddChecklist = (e) => {
+    e.preventDefault()
+    if (!checklistInput.trim()) return
+
+    createChecklist(selectedCard.id, currentListId, checklistInput)
+    setChecklistInput('')
+  }
+
+  // [수정] 아이템 완료 토글 (done 필드 사용)
+  const toggleCheckItem = (itemId, currentDone) => {
+    updateChecklist(selectedCard.id, currentListId, itemId, {
+      done: !currentDone, // [변경] isChecked -> done
+    })
+  }
+
+  // [수정] 아이템 삭제
+  const handleDeleteItem = (itemId) => {
+    if (window.confirm('삭제하시겠습니까?')) {
+      deleteChecklist(selectedCard.id, currentListId, itemId)
+    }
+  }
+
   const handleAddComment = (e) => {
     e.preventDefault()
     if (!commentText.trim()) return
-
     const newComment = {
       id: Date.now(),
-      user: 'Me', // 현재 로그인한 사용자 정보
+      user: 'Me',
       text: commentText,
       createdAt: new Date().toISOString(),
     }
     setComments([...comments, newComment])
     setCommentText('')
-  }
-
-  // 새 체크리스트 생성 핸들러 (우측 버튼 클릭 시 동작)
-  const handleAddChecklist = () => {
-    const newChecklist = {
-      id: Date.now(),
-      title: '체크리스트', // 기본 제목
-      items: [],
-    }
-    setChecklists([...checklists, newChecklist])
-  }
-
-  const toggleCheckItem = (listId, itemId) => {
-    setChecklists((prev) =>
-      prev.map((list) => {
-        if (list.id !== listId) return list
-        return {
-          ...list,
-          items: list.items.map((item) =>
-            item.id === itemId ? { ...item, done: !item.done } : item,
-          ),
-        }
-      }),
-    )
-  }
-
-  const handleAddCheckItem = (e, listId) => {
-    e.preventDefault()
-    // 현재는 단일 input state(checklistInput)를 쓰므로
-    // 입력된 값이 있을 때만 해당 listId에 추가
-    if (!checklistInput.trim()) return
-
-    setChecklists((prev) =>
-      prev.map((list) => {
-        if (list.id !== listId) return list
-        return {
-          ...list,
-          items: [
-            ...list.items,
-            { id: Date.now(), text: checklistInput, done: false },
-          ],
-        }
-      }),
-    )
-    setChecklistInput('')
   }
 
   const handleMoveCard = (e) => {
@@ -135,16 +125,16 @@ export default function CardDetailModal() {
   const toggleComplete = () => {
     setIsComplete((prev) => !prev)
     setIsAnimating(true)
-    setTimeout(() => {
-      setIsAnimating(false)
-    }, 300)
+    setTimeout(() => setIsAnimating(false), 300)
   }
 
+  // [수정] 진행률 계산 (done 필드 사용)
   const calculateProgress = (items) => {
     if (!items || items.length === 0) return 0
-    const doneCount = items.filter((i) => i.done).length
+    const doneCount = items.filter((i) => i.done).length // [변경] i.done 확인
     return Math.round((doneCount / items.length) * 100)
   }
+  const progress = calculateProgress(checklistItems)
 
   return (
     <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm duration-200">
@@ -197,7 +187,7 @@ export default function CardDetailModal() {
           </button>
         </div>
 
-        {/* --- Body (Scrollable) --- */}
+        {/* --- Body --- */}
         <div className="flex-1 overflow-y-auto bg-white p-6 md:p-8">
           <div className="flex flex-col gap-10 md:flex-row">
             {/* [Left Column] Main Content */}
@@ -215,7 +205,6 @@ export default function CardDetailModal() {
                     <div className="space-y-2">
                       <textarea
                         className="min-h-[120px] w-full resize-none rounded-xl border border-gray-200 p-3 text-sm text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
-                        placeholder="상세 설명을 입력하세요..."
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         autoFocus
@@ -253,79 +242,86 @@ export default function CardDetailModal() {
                 </div>
               </section>
 
-              {/* Checklist (비어있으면 안 보임, 추가 버튼으로 생성) */}
-              {checklists.map((list) => {
-                const progress = calculateProgress(list.items)
-                return (
-                  <section
-                    key={list.id}
-                    className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <CheckSquare size={20} className="text-gray-600" />
-                        <h3 className="text-base font-semibold text-gray-800">
-                          {list.title}
-                        </h3>
-                      </div>
-                      <button className="rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-200">
-                        Delete
-                      </button>
+              {/* Checklist Section */}
+              {showChecklist && (
+                <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CheckSquare size={20} className="text-gray-600" />
+                      <h3 className="text-base font-semibold text-gray-800">
+                        체크리스트
+                      </h3>
+                    </div>
+                    {checklistItems.length > 0 && (
+                      <span className="text-xs font-medium text-gray-500">
+                        {Math.round(
+                          (checklistItems.filter((i) => i.done).length / // [변경] i.done
+                            checklistItems.length) *
+                            100,
+                        )}
+                        % 완료
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="pl-8">
+                    {/* Progress Bar */}
+                    <div className="mb-4 h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        className="h-full rounded-full bg-blue-500 transition-all duration-500 ease-out"
+                        style={{ width: `${progress}%` }}
+                      />
                     </div>
 
-                    <div className="pl-8">
-                      {/* Progress Bar */}
-                      <div className="mb-4 flex items-center gap-3">
-                        <span className="w-8 text-right text-xs font-bold text-gray-500">
-                          {progress}%
-                        </span>
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-                          <div
-                            className="h-full rounded-full bg-blue-500 transition-all duration-500 ease-out"
-                            style={{ width: `${progress}%` }}
+                    {/* Items List */}
+                    <div className="mb-3 space-y-2">
+                      {checklistItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="group flex items-center gap-3 rounded p-1 hover:bg-gray-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={item.done} // [변경] item.done
+                            onChange={
+                              () => toggleCheckItem(item.id, item.done) // [변경] item.done
+                            }
+                            className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                        </div>
-                      </div>
-
-                      {/* Items */}
-                      <div className="mb-3 space-y-2">
-                        {list.items.map((item) => (
-                          <label
-                            key={item.id}
-                            className="group flex cursor-pointer items-center gap-3 rounded p-1 hover:bg-gray-50"
+                          <span
+                            className={`flex-1 text-sm transition-colors ${
+                              item.done // [변경] item.done
+                                ? 'text-gray-400 line-through'
+                                : 'text-gray-700'
+                            }`}
                           >
-                            <input
-                              type="checkbox"
-                              checked={item.done}
-                              onChange={() => toggleCheckItem(list.id, item.id)}
-                              className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span
-                              className={`text-sm transition-colors ${item.done ? 'text-gray-400 line-through' : 'text-gray-700 group-hover:text-gray-900'}`}
-                            >
-                              {item.text}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-
-                      {/* Add Item Input */}
-                      <form onSubmit={(e) => handleAddCheckItem(e, list.id)}>
-                        <input
-                          className="w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm transition-all outline-none placeholder:text-gray-400 hover:bg-gray-50 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-                          placeholder="항목 추가..."
-                          // 주의: 실제 구현 시 여러 리스트에 대한 input state 관리가 필요함.
-                          // 현재는 편의상 하나의 input state를 공유하여, 마지막으로 타이핑한 곳에 들어감.
-                          value={checklistInput}
-                          onChange={(e) => setChecklistInput(e.target.value)}
-                        />
-                      </form>
+                            {item.title}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="invisible text-gray-400 group-hover:visible hover:text-red-500"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  </section>
-                )
-              })}
 
-              {/* Activity / Comments */}
+                    {/* Add Item Input */}
+                    <form onSubmit={handleAddChecklist}>
+                      <input
+                        ref={checklistInputRef}
+                        className="w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm transition-all outline-none placeholder:text-gray-400 hover:bg-gray-50 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        placeholder="항목 추가..."
+                        value={checklistInput}
+                        onChange={(e) => setChecklistInput(e.target.value)}
+                      />
+                    </form>
+                  </div>
+                </section>
+              )}
+
+              {/* Activity Section */}
               <section>
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -335,7 +331,6 @@ export default function CardDetailModal() {
                     </h3>
                   </div>
                 </div>
-
                 <div className="space-y-6 pl-8">
                   {/* Comment Input */}
                   <div className="flex gap-3">
@@ -360,8 +355,7 @@ export default function CardDetailModal() {
                       )}
                     </div>
                   </div>
-
-                  {/* Comment List */}
+                  {/* Comments List */}
                   {comments.length > 0 && (
                     <div className="space-y-4">
                       {comments.map((comment) => (
@@ -393,9 +387,8 @@ export default function CardDetailModal() {
               </section>
             </div>
 
-            {/* Sidebar Actions */}
+            {/* [Right Column] Sidebar Actions */}
             <div className="w-full shrink-0 space-y-6 md:w-60">
-              {/* Properties */}
               <div className="space-y-4">
                 <div className="space-y-1">
                   <h4 className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">
@@ -416,27 +409,27 @@ export default function CardDetailModal() {
                 </div>
               </div>
 
-              {/* Add to card Section */}
               <div className="space-y-2">
                 <h4 className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">
                   Add to card
                 </h4>
-                {/* Checklist 추가 버튼 */}
                 <button
-                  onClick={handleAddChecklist}
-                  className="flex w-full items-center gap-2 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                  onClick={handleToggleChecklist}
+                  className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    showChecklist
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
                   <CheckSquare size={14} />
                   <span>Checklist</span>
                 </button>
               </div>
 
-              {/* Actions */}
               <div className="space-y-2">
                 <h4 className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">
                   Actions
                 </h4>
-
                 <div className="group relative">
                   <div className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-gray-500">
                     <ArrowRight size={14} />
@@ -453,15 +446,9 @@ export default function CardDetailModal() {
                     ))}
                   </select>
                 </div>
-
                 <button className="flex w-full items-center gap-2 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-red-50 hover:text-red-600">
                   <Trash2 size={14} />
                   <span>Archive</span>
-                </button>
-
-                <button className="flex w-full items-center gap-2 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200">
-                  <MoreHorizontal size={14} />
-                  <span>More</span>
                 </button>
               </div>
             </div>

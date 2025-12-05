@@ -400,42 +400,154 @@ const useBoardStore = create((set, get) => ({
     console.log('이동 성공')
   },
 
-  // 카드 정보 업데이트
+  // 1. 카드 수정 (설명 등)
   updateCard: async (cardId, listId, updates) => {
     const { activeBoard, selectedCard } = get()
     if (!activeBoard) return
 
-    if (!listId || !activeBoard.columns[listId]) {
-      console.error(`Invalid listId: ${listId}`)
-      return
-    }
-    // 1. 낙관적 업데이트 (UI 즉시 반영)
+    // 낙관적 업데이트
     const newColumns = { ...activeBoard.columns }
-    const targetList = { ...newColumns[listId] }
+    const column = { ...newColumns[listId] }
 
-    // 리스트 내 카드 찾아서 업데이트
-    targetList.tasks = targetList.tasks.map((task) =>
+    column.tasks = column.tasks.map((task) =>
       task.id === cardId ? { ...task, ...updates } : task,
     )
-    newColumns[listId] = targetList
+    newColumns[listId] = column
 
-    // 전체 보드 상태 업데이트
     set({
       activeBoard: { ...activeBoard, columns: newColumns },
-      // 현재 보고 있는 카드가 수정 대상이라면 함께 업데이트
       selectedCard:
         selectedCard?.id === cardId
           ? { ...selectedCard, ...updates }
           : selectedCard,
     })
 
-    // 백엔드 API 호출
     try {
       await api.patch(`/cards/${cardId}`, updates)
     } catch (error) {
-      console.error('카드 정보 업데이트 실패:', error)
-      alert('카드 정보 업데이트에 실패했습니다.')
-      get().fetchBoard(activeBoard.id)
+      console.error('카드 수정 실패:', error)
+    }
+  },
+
+  // 2. 체크리스트 아이템 생성
+  // 백엔드 API: POST /api/cards/{cardId}/checklists (Body: { title })
+  createChecklist: async (cardId, listId, title) => {
+    const { activeBoard, selectedCard } = get()
+
+    try {
+      const response = await api.post(`/cards/${cardId}/checklists`, { title })
+      const newItemId = response.data.data
+
+      // 새 아이템 객체 (백엔드 ChecklistVo 구조에 맞춤)
+      const newItem = {
+        id: newItemId,
+        cardId,
+        title,
+        done: false,
+      }
+
+      // 상태 업데이트
+      const newColumns = { ...activeBoard.columns }
+      const column = { ...newColumns[listId] }
+
+      column.tasks = column.tasks.map((task) => {
+        if (task.id === cardId) {
+          return {
+            ...task,
+            checklists: [...(task.checklists || []), newItem],
+          }
+        }
+        return task
+      })
+      newColumns[listId] = column
+
+      set({
+        activeBoard: { ...activeBoard, columns: newColumns },
+        selectedCard: {
+          ...selectedCard,
+          checklists: [...(selectedCard.checklists || []), newItem],
+        },
+      })
+    } catch (error) {
+      console.error('체크리스트 아이템 생성 실패:', error)
+    }
+  },
+
+  // 3. 체크리스트 아이템 수정 (완료 여부, 내용)
+  // 백엔드 API: PATCH /api/checklists/{checklistId}
+  updateChecklist: async (cardId, listId, itemId, updates) => {
+    const { activeBoard, selectedCard } = get()
+
+    // 낙관적 업데이트
+    const newColumns = { ...activeBoard.columns }
+    const column = { ...newColumns[listId] }
+
+    column.tasks = column.tasks.map((task) => {
+      if (task.id === cardId) {
+        return {
+          ...task,
+          checklists: (task.checklists || []).map((item) =>
+            item.id === itemId ? { ...item, ...updates } : item,
+          ),
+        }
+      }
+      return task
+    })
+    newColumns[listId] = column
+
+    set({
+      activeBoard: { ...activeBoard, columns: newColumns },
+      selectedCard: {
+        ...selectedCard,
+        checklists: (selectedCard.checklists || []).map((item) =>
+          item.id === itemId ? { ...item, ...updates } : item,
+        ),
+      },
+    })
+
+    try {
+      await api.patch(`/checklists/${itemId}`, updates)
+    } catch (error) {
+      console.error('체크리스트 아이템 수정 실패:', error)
+    }
+  },
+
+  // 4. 체크리스트 아이템 삭제
+  // 백엔드 API: DELETE /api/checklists/{checklistId}
+  deleteChecklist: async (cardId, listId, itemId) => {
+    const { activeBoard, selectedCard } = get()
+
+    // 낙관적 업데이트
+    const newColumns = { ...activeBoard.columns }
+    const column = { ...newColumns[listId] }
+
+    column.tasks = column.tasks.map((task) => {
+      if (task.id === cardId) {
+        return {
+          ...task,
+          checklists: (task.checklists || []).filter(
+            (item) => item.id !== itemId,
+          ),
+        }
+      }
+      return task
+    })
+    newColumns[listId] = column
+
+    set({
+      activeBoard: { ...activeBoard, columns: newColumns },
+      selectedCard: {
+        ...selectedCard,
+        checklists: (selectedCard.checklists || []).filter(
+          (item) => item.id !== itemId,
+        ),
+      },
+    })
+
+    try {
+      await api.delete(`/checklists/${itemId}`)
+    } catch (error) {
+      console.error('체크리스트 아이템 삭제 실패:', error)
     }
   },
 
@@ -470,6 +582,14 @@ const normalizeBoardData = (dto) => {
         dueDate: card.dueDate,
         // 댓글 수
         commentCount: card.commentCount || 0,
+
+        // 백엔드에서 넘어온 ChecklistVo 리스트를 바로 매핑
+        checklists: (card.checklists || []).map((cl) => ({
+          id: cl.id,
+          title: cl.title,
+          done: cl.done,
+        })),
+
         // 담당자 객체 (Assignee)
         assignee: card.assigneeId
           ? {
