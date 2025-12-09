@@ -80,7 +80,7 @@ export default function CardDetailModal() {
                 </p>
 
                 {/* 마감일 뱃지 */}
-                {dateStatus && (
+                {dateStatus.dateLabel && (
                   <div
                     className={`flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs ${dateStatus.bg} ${dateStatus.text}`}
                     title="마감일"

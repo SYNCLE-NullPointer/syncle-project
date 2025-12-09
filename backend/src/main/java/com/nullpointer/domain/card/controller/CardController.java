@@ -23,9 +23,9 @@ public class CardController {
     // 카드 생성
     @Operation(summary = "카드 생성", description = "리스트에 새로운 카드를 생성합니다.")
     @PostMapping
-    public ApiResponse<Long> createCard(@PathVariable("listId") Long listId,
-                                        @RequestBody CreateCardRequest request,
-                                        @LoginUser Long userId) {
+    public ApiResponse<CardResponse> createCard(@PathVariable("listId") Long listId,
+                                                @RequestBody CreateCardRequest request,
+                                                @LoginUser Long userId) {
         return ApiResponse.success(cardService.createCard(listId, request, userId));
     }
 

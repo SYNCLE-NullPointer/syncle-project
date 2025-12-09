@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 public class UpdateCardRequest {
     private String title;
     private String description;
+    private Long assigneeId;
     private Priority priority;
     private LocalDateTime startDate;
     private LocalDateTime dueDate;
@@ -21,6 +22,7 @@ public class UpdateCardRequest {
                 .id(cardId)
                 .title(this.title)
                 .description(this.description)
+                .assigneeId(this.assigneeId)
                 .priority(this.priority)
                 .startDate(this.startDate)
                 .dueDate(this.dueDate)

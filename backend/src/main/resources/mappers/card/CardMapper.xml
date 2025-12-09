@@ -69,6 +69,29 @@
           AND deleted_at IS NULL
     </select>
 
+    <!-- 카드 상세 조회 -->
+    <select id="findCardDetailById" parameterType="Long" resultType="CardResponse">
+        SELECT c.id,
+               c.list_id                     AS listId,
+               c.title,
+               c.description,
+               c.order_index                 AS orderIndex,
+               c.start_date                  AS startDate,
+               c.due_date                    AS dueDate,
+               c.assignee_id                 AS assigneeId,
+               u.nickname                    AS assigneeName,
+               u.profile_img                 AS assigneeProfileImg,
+               (SELECT COUNT(*)
+                FROM comment cm
+                WHERE cm.card_id = c.id
+                  AND cm.deleted_at IS NULL) AS commentCount
+        FROM card c
+                 LEFT JOIN user u
+                           ON c.assignee_id = u.id
+        WHERE c.id = #{id}
+          AND c.deleted_at IS NULL
+    </select>
+
     <!-- 카드 정렬 -->
     <update id="updateOrderIndex">
         UPDATE card
@@ -90,5 +113,13 @@
             updated_at = NOW()
         </set>
         WHERE id = #{id}
+    </update>
+
+    <!-- 담당자 수정 -->
+    <update id="updateCardAssignee">
+        UPDATE card
+        SET assignee_id = #{assigneeId}
+        WHERE id = #{cardId}
+          AND deleted_at IS NULL
     </update>
 </mapper>

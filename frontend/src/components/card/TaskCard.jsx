@@ -18,13 +18,6 @@ function TaskCard({ task }) {
       onClick={() => openCardModal(task)}
       className={`group mb-2 cursor-pointer rounded-lg border p-3 shadow-sm transition-all hover:shadow-md active:scale-[0.98] ${bg} ${border} hover:border-blue-400`}
     >
-      {/* 카드 태그 */}
-      {task.tag && (
-        <span className="mb-2 inline-block rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">
-          {task.tag}
-        </span>
-      )}
-
       <h4 className="text-sm leading-snug font-medium text-gray-800">
         {task.title}
       </h4>
@@ -44,12 +37,28 @@ function TaskCard({ task }) {
           )}
         </div>
 
-        {/* 담당자 아바타 Placeholder */}
-        <div className="flex -space-x-1">
-          <div className="flex h-5 w-5 items-center justify-center rounded-full border border-white bg-indigo-500 text-[9px] text-white">
-            M
+        {/* 담당자 아바타 */}
+        {task.assignee && (
+          <div
+            className="flex -space-x-1"
+            title={task.assignee.name || '담당자'}
+          >
+            <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full">
+              {task.assignee.profileImg ? (
+                <img
+                  src={task.assignee.profileImg}
+                  alt={task.assignee.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                // 이미지가 없으면 이름 이니셜
+                <span className="flex h-full w-full items-center justify-center bg-blue-50 text-xs font-bold text-blue-600">
+                  {task.assignee.name?.slice(0, 1) || <User size={12} />}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

@@ -101,9 +101,9 @@ function Header({ onOpenTeamModal }) {
           }}
           // 프로필 이미지 있으면 이미지로 대체
           style={
-            user?.profileImage
+            user?.profileImg
               ? {
-                  backgroundImage: `url(${user.profileImage})`,
+                  backgroundImage: `url(${user.profileImg})`,
                   backgroundSize: 'cover',
                 }
               : {}
