@@ -36,7 +36,7 @@ function CardActivity() {
           </div>
           <div className="relative flex-1">
             <textarea
-              className="min-h-[50px] w-full resize-none overflow-hidden rounded-xl border border-gray-200 p-3 pr-16 text-sm shadow-sm transition-shadow outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="min-h-[50px] w-full resize-none overflow-hidden rounded-xl border border-gray-200 bg-transparent p-3 pr-16 text-sm shadow-sm transition-shadow outline-none hover:bg-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               placeholder="댓글을 작성하세요..."
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}

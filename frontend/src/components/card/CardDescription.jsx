@@ -44,7 +44,7 @@ function CardDescription() {
               </button>
               <button
                 onClick={() => setIsEditingDesc(false)}
-                className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
               >
                 취소
               </button>
@@ -55,8 +55,8 @@ function CardDescription() {
             onClick={() => setIsEditingDesc(true)}
             className={`min-h-20 cursor-pointer rounded-xl p-4 transition-colors ${
               description
-                ? 'bg-transparent font-medium text-gray-600 hover:bg-gray-50'
-                : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                ? 'bg-transparent font-medium text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-50 text-gray-500 hover:bg-gray-200'
             }`}
           >
             <p className="text-sm leading-relaxed whitespace-pre-wrap">

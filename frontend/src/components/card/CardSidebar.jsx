@@ -163,10 +163,10 @@ function CardSidebar({ onAddChecklist, showChecklist }) {
             onSelectMember={handleChangeMember}
           />
 
-          {/* 라벨 버튼 */}
+          {/* 태그 버튼 */}
           <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200">
             <Tag size={16} className="text-gray-500" />
-            <span className="text-gray-500">라벨</span>
+            <span className="text-gray-500">태그</span>
           </button>
 
           {/* 마감일 버튼 */}
@@ -211,7 +211,7 @@ function CardSidebar({ onAddChecklist, showChecklist }) {
             <ArrowRight size={14} />
           </div>
           <select
-            className="w-full cursor-pointer appearance-none rounded-md bg-gray-100 py-1.5 pr-2 pl-8 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full cursor-pointer appearance-none rounded-md bg-gray-50 py-1.5 pr-2 pl-8 text-sm text-gray-500 transition-colors hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             value={selectedCard.listId}
             onChange={handleMoveCard}
           >

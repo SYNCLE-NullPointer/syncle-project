@@ -64,7 +64,7 @@ export const createCardSlice = (set, get) => ({
 
   // 카드 이동 (드래그 앤 드롭)
   moveCard: async (cardId, fromListId, toListId, newIndex) => {
-    const { activeBoard } = get()
+    const { activeBoard, selectedCard } = get()
     if (!activeBoard) return
 
     // 상태의 불변성 유지를 위해 깊은 복사
@@ -95,7 +95,13 @@ export const createCardSlice = (set, get) => ({
     newColumns[toListId] = destList
 
     // 상태 업데이트
-    set({ activeBoard: { ...activeBoard, columns: newColumns } })
+    set({
+      activeBoard: { ...activeBoard, columns: newColumns },
+      selectedCard:
+        selectedCard && selectedCard.id === cardId
+          ? { ...selectedCard, listId: toListId }
+          : selectedCard,
+    })
 
     // 백엔드 API 호출
     try {
