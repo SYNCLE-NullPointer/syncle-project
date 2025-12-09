@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react'
 import BoardList from './BoardList'
-import useBoardStore from '../../stores/useBoardStore'
 import useBoardPermission from '../../hooks/useBoardPermission'
+import { useListMutations } from '../../hooks/useListMutations'
 
-function BoardCanvas({ board, columnRefs, listContainerRef }) {
-  const { addList } = useBoardStore()
+function BoardCanvas({ board, columnRefs, listContainerRef, boardId }) {
+  const { addList } = useListMutations(boardId)
+
   const { canEdit } = useBoardPermission(board)
-
   const [isAdding, setIsAdding] = useState(false)
   const [title, setTitle] = useState('')
 
@@ -35,6 +35,7 @@ function BoardCanvas({ board, columnRefs, listContainerRef }) {
               column={column}
               innerRef={(el) => (columnRefs.current[column.id] = el)}
               canEdit={canEdit} // 리스트 작업 권한
+              boardId={boardId}
             />
           ))}
         </div>

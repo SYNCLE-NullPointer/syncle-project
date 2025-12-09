@@ -9,9 +9,15 @@ import PermissionsView from './view/PermissionsView'
 import MembersView from './view/MembersView'
 import ArchiveView from './view/ArchiveView'
 import useBoardPermission from '../../hooks/useBoardPermission'
+import { useNavigate } from 'react-router-dom'
+import { useBoardMutations } from '../../hooks/useBoardMutations'
 
 function BoardSettings({ board }) {
-  const { toggleSettings, deleteBoard, isSettingsOpen } = useBoardStore()
+  const navigate = useNavigate()
+
+  const { toggleSettings, isSettingsOpen } = useBoardStore()
+
+  const { deleteBoard } = useBoardMutations(board.id)
 
   // 로그인 사용자의 권한 가져오기
   const { role, canManage, isExplicitMember } = useBoardPermission(board)
@@ -98,6 +104,25 @@ function BoardSettings({ board }) {
 
   // 메뉴가 닫혀있으면 렌더링 x
   if (!isSettingsOpen) return null
+
+  // 보드 삭제 핸들러
+  const handleDelete = () => {
+    if (
+      window.confirm('정말 이 보드를 삭제하시겠습니까? 복구할 수 없습니다.')
+    ) {
+      // [변경] 삭제 요청 및 성공 시 이동 처리
+      deleteBoard(null, {
+        onSuccess: () => {
+          alert('보드가 삭제되었습니다.')
+          // 팀 보드 목록 페이지로 이동 (board.teamId 활용)
+          navigate(`/teams/${board.teamId}/boards`)
+        },
+        onError: () => {
+          alert('보드 삭제에 실패했습니다.')
+        },
+      })
+    }
+  }
 
   return (
     <div
