@@ -1,39 +1,24 @@
-import React, { useEffect, useState } from 'react'
-import useBoardStore from '../../../stores/useBoardStore'
 import { ChevronDown, X } from 'lucide-react'
 import useUserStore from '../../../stores/useUserStore'
+import { useMemberMutations } from '../../../hooks/useMemberMutations'
 
 function MembersView({ board, isOwner }) {
-  const { changeMemberRole, removeMember } = useBoardStore()
+  const { changeMemberRole, removeMember } = useMemberMutations(board.id)
   const { user } = useUserStore()
 
   // 공개 범위에 따라 멤버 목록 다름
-  const [members, setMembers] = useState(
-    board.visibility === 'TEAM' ? board.teamMembers : board.members,
-  )
-
-  // 보드 데이터가 변경되면 로컬 상태도 동기화
-  useEffect(() => {
-    if (board.visibility === 'TEAM') {
-      setMembers(board.teamMembers || [])
-    } else {
-      setMembers(board.members || [])
-    }
-  }, [board.members, board.teamMembers, board.visibility])
+  const members =
+    board.visibility === 'TEAM' ? board.teamMembers || [] : board.members || []
 
   // role 변경 핸들러 (Owner만 가능)
   const handleRoleChange = async (userId, newRole) => {
-    await changeMemberRole(board.id, userId, newRole)
-    setMembers((prev) =>
-      prev.map((m) => (m.id === userId ? { ...m, role: newRole } : m)),
-    )
+    changeMemberRole({ userId, newRole })
   }
 
   // 추방 핸들러 (Owner -> Others)
   const handleKick = async (userId, userName) => {
     if (window.confirm(`'${userName}'님을 추방하시겠습니까?`)) {
-      await removeMember(board.id, userId)
-      setMembers((prev) => prev.filter((m) => m.id !== userId))
+      removeMember(userId)
     }
   }
 
@@ -54,7 +39,7 @@ function MembersView({ board, isOwner }) {
 
           // 작업 권한 판단
           // 내가 Owner이고 나를 제외한 상대가 Owner가 아니어야 함
-          const canAction = isOwner && member.role !== 'OWENR' && !isMe
+          const canAction = isOwner && member.role !== 'OWNER' && !isMe
 
           return (
             <div

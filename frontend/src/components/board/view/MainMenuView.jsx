@@ -25,6 +25,9 @@ function MainMenuView({
   const { user } = useUserStore()
   const { removeMember } = useBoardStore()
 
+  // TEAM 공개일 경우 멤버 관리 비활성화 여부 확인
+  const isTeamBoard = board.visibility === 'TEAM'
+
   // 보드 탈퇴 핸들러 (본인이 Owner가 아닐 때 가능)
   const handleLeaveBoard = async () => {
     if (window.confirm(`정말 '${board.title}' 보드에서 탈퇴하시겠습니까?`)) {
@@ -67,15 +70,20 @@ function MainMenuView({
       <div className="space-y-1">
         <button
           onClick={() => onChangeView('members')}
-          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200"
+          disabled={isTeamBoard} // TEAM이면 클릭 불가
+          className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors ${
+            isTeamBoard
+              ? 'cursor-not-allowed text-gray-400 opacity-60' // 비활성화 스타일
+              : 'text-gray-700 hover:cursor-pointer hover:bg-gray-200' // 활성화 스타일
+          }`}
         >
-          <Users size={18} className="text-gray-500" />
+          <Users
+            size={18}
+            className={isTeamBoard ? 'text-gray-400' : 'text-gray-500'}
+          />
           멤버 관리
           <span className="ml-auto text-xs text-gray-400">
-            {board.visibility === 'TEAM'
-              ? board.teamMembers.length
-              : board.members.length}
-            명
+            {isTeamBoard ? board.teamMembers.length : board.members.length}명
           </span>
         </button>
         <button

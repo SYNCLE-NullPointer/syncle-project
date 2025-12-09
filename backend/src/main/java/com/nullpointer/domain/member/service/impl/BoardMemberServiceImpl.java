@@ -19,6 +19,7 @@ import com.nullpointer.global.exception.BusinessException;
 import com.nullpointer.global.validator.MemberValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class BoardMemberServiceImpl implements BoardMemberService {
 
@@ -97,6 +99,7 @@ public class BoardMemberServiceImpl implements BoardMemberService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BoardMemberResponse> getBoardMembers(Long teamId) {
         return boardMemberMapper.findMembersByBoardId(teamId);
     }
@@ -107,16 +110,21 @@ public class BoardMemberServiceImpl implements BoardMemberService {
         memberVal.validateBoardManager(boardId, userId);
 
         // 2. 멤버 존재 확인
-        if (boardMemberMapper.existsByBoardIdAndUserId(boardId, memberId)) {
+        if (!boardMemberMapper.existsByBoardIdAndUserId(boardId, memberId)) {
             throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
         }
+
+        // 로그 기록을 위해 보드 정보 조회하여 teamId 획득
+        BoardVo board = boardMapper.findBoardByBoardId(boardId);
+        Long teamId = (board != null) ? board.getTeamId() : null;
+
         BoardMemberVo vo = req.toVo(boardId, memberId);
         Role oldRole = vo.getRole();
 
         boardMemberMapper.updateBoardRole(vo);
 
         // 멤버 권한 변경 로그 저장
-        changeRoleLog(boardId, memberId, userId, oldRole, req.getRole());
+        changeRoleLog(teamId, boardId, memberId, userId, oldRole, req.getRole());
     }
 
     @Override
@@ -124,7 +132,7 @@ public class BoardMemberServiceImpl implements BoardMemberService {
         Long ownerId = null;
 
         // 1. 멤버 존재 확인
-        if (boardMemberMapper.existsByBoardIdAndUserId(boardId, memberId)) {
+        if (!boardMemberMapper.existsByBoardIdAndUserId(boardId, memberId)) {
             throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
         }
 
@@ -172,14 +180,14 @@ public class BoardMemberServiceImpl implements BoardMemberService {
     }
 
     // 보드 멤버 권한 변경 로그
-    private void changeRoleLog(Long boardId, Long targetUserId, Long ownerId, Role oldRole, Role newRole) {
+    private void changeRoleLog(Long teamId, Long boardId, Long targetUserId, Long ownerId, Role oldRole, Role newRole) {
         UserVo targetUser = userMapper.findById(targetUserId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         activityService.saveLog(
                 ActivitySaveRequest.builder()
                         .userId(ownerId) // 변경한 관리자 ID
-                        .teamId(null)
+                        .teamId(teamId)
                         .boardId(boardId)
                         .type(ActivityType.UPDATE_MEMBER_ROLE)
                         .targetId(targetUserId)
