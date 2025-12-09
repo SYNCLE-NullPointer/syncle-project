@@ -15,6 +15,7 @@
                           title,
                           description,
                           order_index,
+                          is_complete,
                           created_at,
                           updated_at,
                           deleted_at)
@@ -23,6 +24,7 @@
                 #{title},
                 #{description},
                 #{orderIndex},
+                false,
                 NOW(),
                 NULL,
                 NULL)
@@ -38,6 +40,7 @@
                c.description,
                c.order_index                 AS orderIndex,
                c.due_date                    AS dueDate,
+               c.is_complete                 AS is_complete,
                c.assignee_id                 AS assigneeId,
                u.nickname                    As assigneeName,
                u.profile_img                 As assigneeProfileImg,
@@ -69,6 +72,30 @@
           AND deleted_at IS NULL
     </select>
 
+    <!-- 카드 상세 조회 -->
+    <select id="findCardDetailById" parameterType="Long" resultType="CardResponse">
+        SELECT c.id,
+               c.list_id                     AS listId,
+               c.title,
+               c.description,
+               c.order_index                 AS orderIndex,
+               c.is_complete                 AS isComplete,
+               c.start_date                  AS startDate,
+               c.due_date                    AS dueDate,
+               c.assignee_id                 AS assigneeId,
+               u.nickname                    AS assigneeName,
+               u.profile_img                 AS assigneeProfileImg,
+               (SELECT COUNT(*)
+                FROM comment cm
+                WHERE cm.card_id = c.id
+                  AND cm.deleted_at IS NULL) AS commentCount
+        FROM card c
+                 LEFT JOIN user u
+                           ON c.assignee_id = u.id
+        WHERE c.id = #{id}
+          AND c.deleted_at IS NULL
+    </select>
+
     <!-- 카드 정렬 -->
     <update id="updateOrderIndex">
         UPDATE card
@@ -84,11 +111,20 @@
         <set>
             <if test="title != null">title = #{title},</if>
             <if test="description != null">description = #{description},</if>
+            <if test="isComplete != null">is_complete = #{isComplete},</if>
             <if test="priority != null">priority = #{priority},</if>
             <if test="startDate != null">start_date = #{startDate},</if>
             <if test="dueDate != null">due_date = #{dueDate},</if>
             updated_at = NOW()
         </set>
         WHERE id = #{id}
+    </update>
+
+    <!-- 담당자 수정 -->
+    <update id="updateCardAssignee">
+        UPDATE card
+        SET assignee_id = #{assigneeId}
+        WHERE id = #{cardId}
+          AND deleted_at IS NULL
     </update>
 </mapper>

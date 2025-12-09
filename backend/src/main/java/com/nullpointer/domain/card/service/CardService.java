@@ -10,7 +10,7 @@ import java.util.List;
 public interface CardService {
 
     // 카드 생성
-    Long createCard(Long listId, CreateCardRequest request, Long userId);
+    CardResponse createCard(Long listId, CreateCardRequest request, Long userId);
 
     // 카드 목록 조회
     List<CardResponse> getCards(Long listId, Long userId);
@@ -19,5 +19,5 @@ public interface CardService {
     void moveCard(Long cardId, MoveCardRequest req, Long userId);
 
     // 카드 수정
-    void updateCard(Long cardId, UpdateCardRequest req, Long userId);
+    CardResponse updateCard(Long cardId, UpdateCardRequest req, Long userId);
 }

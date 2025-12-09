@@ -11,11 +11,13 @@ public class CreateCardRequest {
 
     private String title;
     private String description;
+    private Long assigneeId;
 
     public CardVo toVo() {
         return CardVo.builder()
                 .title(this.title)
                 .description(this.description)
+                .isComplete(false)
                 .build();
     }
 

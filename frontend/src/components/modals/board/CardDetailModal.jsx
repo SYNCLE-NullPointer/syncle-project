@@ -1,5 +1,5 @@
 import { Check, Clock, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import useBoardStore from '../../../stores/useBoardStore'
 import CardActivity from '../../card/CardActivity'
 import CardChecklist from '../../card/CardChecklist'
@@ -8,7 +8,8 @@ import CardSidebar from '../../card/CardSidebar'
 import { getDateStatusStyle } from '../../../utils/dateUtils'
 
 export default function CardDetailModal() {
-  const { activeBoard, selectedCard, closeCardModal } = useBoardStore()
+  const { activeBoard, selectedCard, closeCardModal, updateCard } =
+    useBoardStore()
 
   // 체크리스트 표시 여부 상테
   // - 아이템이 있으면 자동 펼침
@@ -19,14 +20,30 @@ export default function CardDetailModal() {
   const [isComplete, setIsComplete] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
 
+  // 모달이 열리거나 selectedCard가 바뀔 때 상태 동기화
+  useEffect(() => {
+    if (selectedCard) {
+      setIsComplete(selectedCard.isComplete || false)
+    }
+  }, [selectedCard])
+
   if (!selectedCard || !activeBoard) return null
 
   const currentColumn = activeBoard.columns[selectedCard.listId]
 
+  // 완료 토글 핸들러
   const toggleComplete = () => {
+    const nextState = !isComplete
+
+    // UI 즉시 반영 (낙관적 업데이트)
     setIsComplete((prev) => !prev)
     setIsAnimating(true)
     setTimeout(() => setIsAnimating(false), 300)
+
+    // 업데이트
+    updateCard(selectedCard.id, selectedCard.listId, {
+      isComplete: nextState,
+    })
   }
 
   // 날짜 스타일 계산
@@ -42,14 +59,14 @@ export default function CardDetailModal() {
         onClick={(e) => e.stopPropagation()}
       >
         {/* --- Header --- */}
-        <div className="flex shrink-0 items-start justify-between border-b border-gray-100 bg-white px-6 py-5">
+        <div className="flex shrink-0 items-start justify-between border-b border-gray-100 bg-white px-6 pt-5 pb-3">
           <div className="flex w-full gap-4 pr-10">
             <button
               onClick={toggleComplete}
               className={`flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-all duration-300 ease-out ${
                 isComplete
                   ? 'border-green-500 bg-green-500 text-white shadow-md shadow-green-200'
-                  : 'border-gray-300 bg-transparent text-transparent hover:border-gray-400 hover:bg-gray-50'
+                  : 'border-gray-300 bg-transparent text-transparent hover:border-gray-400 hover:bg-gray-200'
               } ${isAnimating ? 'scale-125' : 'scale-100'} `}
               title={isComplete ? '완료 취소' : '완료 표시'}
             >
@@ -80,9 +97,9 @@ export default function CardDetailModal() {
                 </p>
 
                 {/* 마감일 뱃지 */}
-                {dateStatus && (
+                {dateStatus.dateLabel && (
                   <div
-                    className={`flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs ${dateStatus.bg} ${dateStatus.text}`}
+                    className={`flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs hover:cursor-pointer ${dateStatus.bg} ${dateStatus.text}`}
                     title="마감일"
                   >
                     <Clock size={12} />
@@ -95,17 +112,17 @@ export default function CardDetailModal() {
 
           <button
             onClick={closeCardModal}
-            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700"
           >
             <X size={24} />
           </button>
         </div>
 
         {/* --- Body --- */}
-        <div className="flex-1 overflow-y-auto bg-white p-6 md:p-8">
+        <div className="flex-1 overflow-y-auto bg-white p-6 md:p-5">
           <div className="flex flex-col gap-10 md:flex-row">
             {/* [Left Column] Main Content */}
-            <div className="flex flex-1 flex-col gap-8">
+            <div className="flex flex-1 flex-col gap-10">
               {/* Description */}
               <CardDescription />
 

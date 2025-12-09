@@ -44,7 +44,7 @@ function CardChecklist({ items }) {
           <h3 className="text-base font-semibold text-gray-800">체크리스트</h3>
         </div>
         {total > 0 && (
-          <span className="text-xs font-medium text-gray-500">
+          <span className="text-xs font-bold text-gray-500">
             {progress}% 완료
           </span>
         )}
@@ -52,7 +52,7 @@ function CardChecklist({ items }) {
 
       <div className="pl-8">
         {/* Progress Bar */}
-        <div className="mb-4 h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+        <div className="mb-4 h-2.5 flex-1 overflow-hidden rounded-full bg-gray-200">
           <div
             className="h-full rounded-full bg-blue-500 transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
@@ -64,7 +64,7 @@ function CardChecklist({ items }) {
           {items.map((item) => (
             <div
               key={item.id}
-              className="group flex items-center gap-3 rounded p-1 hover:bg-gray-50"
+              className="group flex items-center gap-3 rounded p-1 hover:bg-gray-200"
             >
               <input
                 type="checkbox"
@@ -96,7 +96,7 @@ function CardChecklist({ items }) {
         {/* Add Item Input */}
         <form onSubmit={handleAddChecklist}>
           <input
-            className="w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm transition-all outline-none placeholder:text-gray-400 hover:bg-gray-50 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm transition-all outline-none placeholder:text-gray-400 hover:bg-gray-200 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
             placeholder="항목 추가..."
             value={checklistInput}
             onChange={(e) => setChecklistInput(e.target.value)}

@@ -12,7 +12,6 @@ import com.nullpointer.domain.list.vo.ListVo;
 import com.nullpointer.global.common.constants.AppConstants;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.exception.BusinessException;
-import com.nullpointer.global.validator.CardValidator;
 import com.nullpointer.global.validator.MemberValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,27 +26,32 @@ public class CardServiceImpl implements CardService {
     private final CardMapper cardMapper;
     private final ListMapper listMapper;
     private final MemberValidator memberVal;
-    private final CardValidator cardVal;
 
     @Override
     @Transactional
-    public Long createCard(Long listId, CreateCardRequest req, Long userId) {
-        // 1. 리스트가 속한 보드 id 찾기
-        // 리스트가 없으면 보드도 없음
+    public CardResponse createCard(Long listId, CreateCardRequest req, Long userId) {
+        // 리스트가 속한 보드 id 찾기
+        // -> 리스트가 없으면 보드도 없음
         ListVo list = listMapper.findById(listId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
         // 보드 작업 권한 확인 -> VIEWER 불가
         memberVal.validateBoardEditor(list.getBoardId(), userId);
 
-        // 1. 카드 VO 생성 (DTO -> VO)
-        CardVo cardVo = req.toVo();
-        cardVo.setListId(listId);
-        cardVo.setAssigneeId(userId);
-        cardVo.setOrderIndex(AppConstants.DEFAULT_ORDER_INDEX); // refactor) 하드코딩 대신 상수 클래스 사용
+        // 카드 VO 생성 (DTO -> VO)
+        CardVo cardVo = CardVo.builder()
+                .listId(list.getId())
+                .title(req.getTitle())
+                .description(req.getDescription())
+                .assigneeId(userId) // 생성자를 초기 담당자로 설정
+                .orderIndex(AppConstants.DEFAULT_ORDER_INDEX)
+                .build();
 
+        // DB 저장
         cardMapper.insertCard(cardVo);
-        return cardVo.getId();
+
+        // 담당자 정보 포함 응답 반환
+        return cardMapper.findCardDetailById(cardVo.getId());
     }
 
     @Override
@@ -113,17 +117,43 @@ public class CardServiceImpl implements CardService {
     }
 
     // 카드 수정
-
     @Override
     @Transactional
-    public void updateCard(Long cardId, UpdateCardRequest req, Long userId) {
-        // 카드 유효성 검증
-        cardVal.getValidCard(cardId);
+    public CardResponse updateCard(Long cardId, UpdateCardRequest req, Long userId) {
+        // 카드 조회
+        CardVo card = cardMapper.findById(cardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CARD_NOT_FOUND));
 
-        // dto -> vo
-        CardVo cardVo = req.toVo(cardId);
+        // 카드가 속한 리스트 정보로 보드 ID 확인
+        ListVo list = listMapper.findById(card.getListId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+
+        Long boardId = list.getBoardId();
+
+        // 보드 작업 권한 검증 -> 요청자가 해당 보드의 MEMBER 권한 이상인지 확인
+        memberVal.validateBoardEditor(boardId, userId);
+
+        // 담당자 변경인 경우
+        if (req.getAssigneeId() != null) {
+            // 담당자로 지정된 사람이 보드에 접근 가능한지 확인 (VIEWER 이상)
+            memberVal.validateBoardViewer(boardId, req.getAssigneeId());
+            cardMapper.updateCardAssignee(cardId, req.getAssigneeId());
+        }
+
+        // 카드 정보 업데이트
+        CardVo updateVo = CardVo.builder()
+                .id(cardId)
+                .title(req.getTitle())
+                .description(req.getDescription())
+                .priority(req.getPriority())
+                .isComplete(req.getIsComplete())
+                .startDate(req.getStartDate())
+                .dueDate(req.getDueDate())
+                .build();
 
         // 업데이트 진행
-        cardMapper.updateCard(cardVo);
+        cardMapper.updateCard(updateVo);
+
+        return cardMapper.findCardDetailById(cardId);
     }
 }

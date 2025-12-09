@@ -2,10 +2,9 @@ package com.nullpointer.domain.card.mapper;
 
 import com.nullpointer.domain.card.dto.CardResponse;
 import com.nullpointer.domain.card.vo.CardVo;
-import io.lettuce.core.dynamic.annotation.Param;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
-import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +20,8 @@ public interface CardMapper {
     // 특정 리스트의 카드 목록 조회
     List<CardResponse> findCardsWithDetailsByListId(Long listId);
 
+    CardResponse findCardDetailById(Long id);
+
     // 카드 이동
     void updateCardLocation(CardVo cardVo);
 
@@ -35,4 +36,7 @@ public interface CardMapper {
 
     // 카드 수정
     void updateCard(CardVo cardVo);
+
+    // 담당자 변경
+    void updateCardAssignee(@Param("cardId") Long cardId, @Param("assigneeId") Long assineeId);
 }
