@@ -21,6 +21,8 @@ public class CardResponse {
     private Integer orderIndex;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDateTime startDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime dueDate;
     private Integer commentCount;
 
@@ -38,6 +40,7 @@ public class CardResponse {
                 .title(c.getTitle())
                 .description(c.getDescription())
                 .orderIndex(c.getOrderIndex())
+                .startDate(c.getStartDate())
                 .dueDate(c.getDueDate())
                 .assigneeId(c.getAssigneeId())
                 .assigneeName(assigneeName)

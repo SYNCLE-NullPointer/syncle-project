@@ -126,14 +126,15 @@ const normalizeBoardData = (dto) => {
   serverLists.forEach((list) => {
     // 이 리스트에 속한 '진행 중'인 카드들
     const activeTasks = []
-
     ;(list.cards || []).forEach((card) => {
+      console.log(card)
       const mappedCard = {
         id: card.id,
         listId: list.id, // 부모 리스트 ID 역참조 용
         title: card.title,
         description: card.description,
         order: card.orderIndex,
+        startDate: card.startDate,
         dueDate: card.dueDate,
         isComplete: card.isComplete || false,
         // 댓글 수

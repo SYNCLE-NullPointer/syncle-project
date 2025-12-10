@@ -191,7 +191,6 @@ export const useCardMutations = (boardId) => {
   const handleError = (context, message) => {
     if (context?.previousBoard) {
       queryClient.setQueryData(queryKey, context.previousBoard)
-      useBoardStore.setState({ activeBoard: context.previousBoard })
     }
     alert(message || '작업에 실패했습니다.')
   }

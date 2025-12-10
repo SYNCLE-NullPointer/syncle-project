@@ -4,9 +4,13 @@ import DateRangePickerMenu from '../modals/DateRangePickerMenu'
 import { useEffect, useRef, useState } from 'react'
 import MemberPickerMenu from '../modals/MemberPickerMenu'
 import { useCardMutations } from '../../hooks/useCardMutations'
+import { useParams } from 'react-router-dom'
+import { useBoardQuery } from '../../hooks/useBoardQuery'
 
 function CardSidebar({ onAddChecklist, showChecklist }) {
-  const { activeBoard, selectedCard } = useBoardStore()
+  const { boardId } = useParams()
+  const { selectedCard } = useBoardStore()
+  const { data: activeBoard } = useBoardQuery(boardId)
   const { updateCard, moveCard } = useCardMutations(activeBoard?.id)
 
   // -- 날짜 메뉴 상태 --
@@ -76,12 +80,18 @@ function CardSidebar({ onAddChecklist, showChecklist }) {
     } else {
       // 날짜 선택 시
       const { startDate, endDate } = item[0]
+      const adjustedStartDate = new Date(startDate)
+      adjustedStartDate.setHours(12, 0, 0, 0)
+
+      const adjustedEndDate = new Date(endDate)
+      adjustedEndDate.setHours(12, 0, 0, 0)
+
       updateCard({
         cardId: selectedCard.id,
         listId: selectedCard.listId,
         updates: {
-          startDate: startDate.toISOString(),
-          dueDate: endDate.toISOString(),
+          startDate: adjustedStartDate.toISOString(),
+          dueDate: adjustedEndDate.toISOString(),
         },
       })
     }
