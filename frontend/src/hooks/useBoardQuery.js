@@ -40,6 +40,7 @@ const normalizeBoardData = (dto) => {
         title: card.title,
         description: card.description,
         order: card.orderIndex,
+        startDate: card.startDate,
         dueDate: card.dueDate,
         isComplete: card.isComplete || false,
         // 댓글 수

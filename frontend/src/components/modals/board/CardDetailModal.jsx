@@ -7,9 +7,13 @@ import CardDescription from '../../card/CardDescription'
 import CardSidebar from '../../card/CardSidebar'
 import { getDateStatusStyle } from '../../../utils/dateUtils'
 import { useCardMutations } from '../../../hooks/useCardMutations'
+import { useParams } from 'react-router-dom'
+import { useBoardQuery } from '../../../hooks/useBoardQuery'
 
 export default function CardDetailModal() {
-  const { activeBoard, selectedCard, closeCardModal } = useBoardStore()
+  const { boardId } = useParams()
+  const { selectedCard, closeCardModal } = useBoardStore()
+  const { data: activeBoard } = useBoardQuery(boardId)
   const { updateCard } = useCardMutations(activeBoard?.id)
 
   // 체크리스트 표시 여부 상테
