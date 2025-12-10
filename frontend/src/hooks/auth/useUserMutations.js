@@ -70,8 +70,8 @@ export const useUserMutations = () => {
   })
 
   return {
-    updateProfile: (data) =>
-      checkIsVerified() && updateProfileMutation.mutate(data),
+    updateProfile: (data, options) =>
+      checkIsVerified() && updateProfileMutation.mutate(data, options),
     changePassword: (data) =>
       checkIsVerified() && changePasswordMutation.mutate(data),
     deactivateUser: () => checkIsVerified() && deactivateUserMutation.mutate(),
