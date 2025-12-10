@@ -19,6 +19,12 @@ export default function FormModal({ title, fields, onSubmit, onClose }) {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+
+    // 필드 정의에 커스텀 onChange가 있다면 실행 (상태 초기화 등에 사용)
+    const fieldConfig = fields.find((f) => f.name === name)
+    if (fieldConfig && fieldConfig.onChange) {
+      fieldConfig.onChange(e)
+    }
   }
 
   const handleSubmit = (e) => {

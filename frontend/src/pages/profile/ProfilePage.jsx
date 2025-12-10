@@ -70,11 +70,10 @@ export default function ProfilePage() {
 
     updateProfile(formData, {
       onSuccess: () => {
+        // 1. 모달 닫기
         setEditProfileOpen(false)
-        // checkStatus 초기화
-        setCheckStatus({
-          nickname: { loading: false, message: '', isValid: false },
-        })
+        // 2. 중복 확인 상태 초기화 (다음에 열 때 깨끗한 상태 유지)
+        updateNicknameStatus(false, '', false)
       },
     })
   }
@@ -123,6 +122,8 @@ export default function ProfilePage() {
               description:
                 isSocialLogin &&
                 '※ 소셜 로그인 사용자는 닉네임을 변경할 수 없습니다.',
+              // 입력 변경 시 메시지 초기화
+              onChange: () => updateNicknameStatus(false, '', false),
               // 닉네임 중복 확인
               onCheck: isSocialLogin
                 ? null
