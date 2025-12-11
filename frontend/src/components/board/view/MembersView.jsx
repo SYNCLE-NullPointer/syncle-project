@@ -1,6 +1,6 @@
 import { ChevronDown, X } from 'lucide-react'
-import useUserStore from '../../../stores/useUserStore'
 import { useMemberMutations } from '../../../hooks/useMemberMutations'
+import useUserStore from '../../../stores/useUserStore'
 
 function MembersView({ board, isOwner }) {
   const { changeMemberRole, removeMember } = useMemberMutations(board.id)

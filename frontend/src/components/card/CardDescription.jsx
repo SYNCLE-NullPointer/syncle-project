@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import useBoardStore from '../../stores/useBoardStore'
 import { AlignLeft } from 'lucide-react'
-import { useCardMutations } from '../../hooks/useCardMutations'
+import { useCardMutations } from '../../hooks/card/useCardMutations'
 import { useParams } from 'react-router-dom'
 
 function CardDescription() {

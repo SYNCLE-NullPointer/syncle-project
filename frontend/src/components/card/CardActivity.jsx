@@ -1,13 +1,13 @@
-import React, { useState } from 'react'
-import { MessageSquare, Edit2, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { Edit2, MessageSquare, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { useParams } from 'react-router-dom'
+import defaultProfile from '../../assets/images/default.png'
+import { useCommentMutations } from '../../hooks/card/useCommentMutations'
+import { useBoardQuery } from '../../hooks/board/useBoardQuery'
 import useBoardStore from '../../stores/useBoardStore'
 import useUserStore from '../../stores/useUserStore'
-import { useCommentMutations } from '../../hooks/useCommentMutations'
-import defaultProfile from '../../assets/images/default.png'
-import { useParams } from 'react-router-dom'
-import { useBoardQuery } from '../../hooks/useBoardQuery'
 
 function CardActivity() {
   const { boardId } = useParams()

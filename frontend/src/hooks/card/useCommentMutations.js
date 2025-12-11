@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { boardApi } from '../api/board.api'
-import useBoardStore from '../stores/useBoardStore'
-import useUserStore from '../stores/useUserStore' // 작성자 정보를 위해 필요
+import { boardApi } from '../../api/board.api'
+import useBoardStore from '../../stores/useBoardStore'
+import useUserStore from '../../stores/useUserStore' // 작성자 정보를 위해 필요
 
 export const useCommentMutations = (boardId) => {
   const queryClient = useQueryClient()

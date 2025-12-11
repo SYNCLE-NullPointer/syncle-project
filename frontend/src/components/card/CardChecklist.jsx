@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import useBoardStore from '../../stores/useBoardStore'
 import { CheckSquare, Trash2 } from 'lucide-react'
-import { useChecklistMutations } from '../../hooks/useChecklistMutations'
+import { useChecklistMutations } from '../../hooks/card/useChecklistMutations'
 import { useParams } from 'react-router-dom'
 
 function CardChecklist({ items }) {

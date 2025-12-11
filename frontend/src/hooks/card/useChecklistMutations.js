@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { boardApi } from '../api/board.api'
-import useBoardStore from '../stores/useBoardStore'
+import { boardApi } from '../../api/board.api'
+import useBoardStore from '../../stores/useBoardStore'
 
 export const useChecklistMutations = (boardId) => {
   const queryClient = useQueryClient()

@@ -1,16 +1,16 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import Sortable from 'sortablejs'
-import useBoardStore from '../../stores/useBoardStore'
-import BoardHeader from '../../components/board/BoardHeader'
 import BoardCanvas from '../../components/board/BoardCanvas'
+import BoardHeader from '../../components/board/BoardHeader'
 import BoardSettings from '../../components/board/BoardSettings'
 import CardDetailModal from '../../components/modals/board/CardDetailModal'
-import useBoardPermission from '../../hooks/useBoardPermission'
-import useUserStore from '../../stores/useUserStore'
-import { useBoardQuery } from '../../hooks/useBoardQuery'
-import { useCardMutations } from '../../hooks/useCardMutations'
+import useBoardPermission from '../../hooks/board/useBoardPermission'
+import { useBoardQuery } from '../../hooks/board/useBoardQuery'
+import { useCardMutations } from '../../hooks/card/useCardMutations'
 import { useListMutations } from '../../hooks/useListMutations'
+import useBoardStore from '../../stores/useBoardStore'
+import useUserStore from '../../stores/useUserStore'
 
 /**
  * 보드 데이터 로딩,

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import useUserStore from '../stores/useUserStore'
+import useUserStore from '../../stores/useUserStore'
 
 /**
  * 로그인 사용자의 현재 보드 권한 판단

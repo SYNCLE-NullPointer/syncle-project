@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { boardApi } from '../api/board.api'
+import { boardApi } from '../../api/board.api'
 
 // 1. 데이터 변환 (Server Array -> Client Object Map)
 // 백엔드: List<ListWithCardsResponse> -> 프론트: columns { id: { ... } }

@@ -1,7 +1,6 @@
-import React from 'react'
-import BoardList from './BoardList'
-import useBoardPermission from '../../hooks/useBoardPermission'
+import useBoardPermission from '../../hooks/board/useBoardPermission'
 import AddListButton from './AddListButton'
+import BoardList from './BoardList'
 
 function BoardCanvas({ board, columnRefs, listContainerRef }) {
   const { canEdit } = useBoardPermission(board)

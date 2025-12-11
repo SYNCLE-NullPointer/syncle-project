@@ -1,18 +1,17 @@
 import {
+  ActivityIcon,
+  AlertTriangle,
+  File,
+  FileText,
+  Globe,
+  LogOut,
+  Shield,
   Trash2,
   Users,
-  Globe,
-  FileText,
-  Shield,
-  ActivityIcon,
-  LogOut,
-  File,
-  AlertTriangle,
 } from 'lucide-react'
-import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import useUserStore from '../../../stores/useUserStore'
 import { useMemberMutations } from '../../../hooks/useMemberMutations'
+import useUserStore from '../../../stores/useUserStore'
 
 function MainMenuView({
   board,

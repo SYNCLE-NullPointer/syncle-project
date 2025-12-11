@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import useBoardStore from '../../stores/useBoardStore'
 import { Link } from 'react-router-dom'
 import InviteBoardMemeberModal from '../modals/board/InviteBoardMemeberModal'
-import { useBoardMutations } from '../../hooks/useBoardMutations'
+import { useBoardMutations } from '../../hooks/board/useBoardMutations'
 import {
   Filter,
   Lock,

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { boardApi } from '../api/board.api'
+import { boardApi } from '../../api/board.api'
 
 export const useBoardMutations = (boardId) => {
   const queryClient = useQueryClient()

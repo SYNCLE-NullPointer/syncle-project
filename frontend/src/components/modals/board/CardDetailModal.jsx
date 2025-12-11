@@ -1,14 +1,14 @@
 import { Check, Clock, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { useCardMutations } from '../../../hooks/card/useCardMutations'
+import { useBoardQuery } from '../../../hooks/board/useBoardQuery'
 import useBoardStore from '../../../stores/useBoardStore'
+import { getDateStatusStyle } from '../../../utils/dateUtils'
 import CardActivity from '../../card/CardActivity'
 import CardChecklist from '../../card/CardChecklist'
 import CardDescription from '../../card/CardDescription'
 import CardSidebar from '../../card/CardSidebar'
-import { getDateStatusStyle } from '../../../utils/dateUtils'
-import { useCardMutations } from '../../../hooks/useCardMutations'
-import { useParams } from 'react-router-dom'
-import { useBoardQuery } from '../../../hooks/useBoardQuery'
 
 export default function CardDetailModal() {
   const { boardId } = useParams()

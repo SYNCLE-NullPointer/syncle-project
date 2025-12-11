@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Briefcase, Lock } from 'lucide-react'
 import RadioOption from './RadioOption'
-import { useBoardMutations } from '../../../hooks/useBoardMutations'
+import { useBoardMutations } from '../../../hooks/board/useBoardMutations'
 
 function VisibilityView({ board, isOwner }) {
   const { updateBoard } = useBoardMutations(board.id)

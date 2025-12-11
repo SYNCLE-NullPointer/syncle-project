@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import TaskCard from '../card/TaskCard'
 import { MoreHorizontal, Plus, X } from 'lucide-react'
-import { useCardMutations } from '../../hooks/useCardMutations'
+import { useCardMutations } from '../../hooks/card/useCardMutations'
 import { useListMutations } from '../../hooks/useListMutations'
 
 /**

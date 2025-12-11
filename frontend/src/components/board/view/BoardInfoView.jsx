@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useBoardMutations } from '../../../hooks/useBoardMutations'
+import { useBoardMutations } from '../../../hooks/board/useBoardMutations'
 
 function BoardInfoView({ board, isOwner }) {
   const { updateBoard } = useBoardMutations()
