@@ -9,18 +9,15 @@ import java.util.List;
 public interface ChecklistService {
 
     // 체크리스트 추가
-    Long createChecklist(Long cardId, CreateChecklistRequest req);
+    Long createChecklist(Long cardId, CreateChecklistRequest req, Long userId);
 
     // 체크리스트 조회
     List<ChecklistVo> getChecklists(Long cardId);
 
     // 체크리스트 수정
-    void updateChecklist(Long checklistId, UpdateChecklistRequest req);
+    void updateChecklist(Long checklistId, UpdateChecklistRequest req, Long userId);
 
     // 체크리스트 삭제
-    void deleteChecklist(Long checklistId);
-
-
-
+    void deleteChecklist(Long checklistId, Long userId);
 
 }

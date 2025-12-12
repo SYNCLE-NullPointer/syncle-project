@@ -41,6 +41,13 @@
         WHERE c.id = #{id}
     </select>
 
+    <select id="findById" resultType="CommentVo">
+        SELECT *
+        FROM comment
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
     <insert id="insertComment"
             parameterType="com.nullpointer.domain.comment.dto.CommentRequest"
             useGeneratedKeys="true"

@@ -1,10 +1,15 @@
 package com.nullpointer.domain.comment.service.impl;
 
+import com.nullpointer.domain.checklist.vo.ChecklistVo;
 import com.nullpointer.domain.comment.dto.CommentRequest;
 import com.nullpointer.domain.comment.dto.CommentResponse;
 import com.nullpointer.domain.comment.mapper.CommentMapper;
 import com.nullpointer.domain.comment.service.CommentService;
+import com.nullpointer.domain.comment.vo.CommentVo;
 import com.nullpointer.global.common.SocketSender;
+import com.nullpointer.global.common.enums.ErrorCode;
+import com.nullpointer.global.exception.BusinessException;
+import com.nullpointer.global.validator.CardValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +25,7 @@ public class CommentServiceImpl implements CommentService {
 
     private final CommentMapper commentMapper;
     private final SocketSender socketSender;
+    private final CardValidator cardVal;
 
     // 목록 조회
     @Transactional(readOnly = true)
@@ -58,27 +64,50 @@ public class CommentServiceImpl implements CommentService {
     // 등록
     @Transactional
     public CommentResponse createComment(Long cardId, Long userId, CommentRequest request) {
-        // 1. 작성자 ID, 카드 ID 주입
+        // 작성자 ID, 카드 ID 주입
         request.setWriterId(userId);
         request.setCardId(cardId);
 
-        // 2. 저장 (request객체에 id가 담김)
+        // 저장 (request객체에 id가 담김)
         commentMapper.insertComment(request);
 
-        // 3. 저장된 데이터를 Full 정보(작성자 포함)로 다시 조회해서 리턴
+        // 소켓 전송
+        Long boardId = cardVal.findBoardIdByCardId(cardId);
+        socketSender.sendSocketMessage(boardId, "CHECKLIST_CREATE", userId, null);
+
+        // 저장된 데이터를 Full 정보(작성자 포함)로 다시 조회해서 리턴
         return commentMapper.selectCommentById(request.getId());
     }
 
     // 수정
     @Transactional
     public void updateComment(Long userId, Long commentId, String content) {
-        // (옵션) 여기서 userId로 본인 확인 로직 추가 가능
+        // 댓글 조회
+        CommentVo commentVo = commentMapper.findById(commentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CHECKLIST_NOT_FOUND));
+
         commentMapper.updateComment(commentId, content);
+
+        // 카드ID 조회
+        Long boardId = cardVal.findBoardIdByCardId(commentVo.getCardId());
+
+        // 소켓 전송
+        socketSender.sendSocketMessage(boardId, "COMMENT_UPDATE", userId, null);
     }
 
     // 삭제
     @Transactional
     public void deleteComment(Long userId, Long commentId) {
+        // 댓글 조회
+        CommentVo commentVo = commentMapper.findById(commentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CHECKLIST_NOT_FOUND));
+
         commentMapper.deleteComment(commentId);
+
+        // 카드ID 조회
+        Long boardId = cardVal.findBoardIdByCardId(commentVo.getCardId());
+
+        // 소켓 전송
+        socketSender.sendSocketMessage(boardId, "COMMENT_DELETE", userId, null);
     }
 }

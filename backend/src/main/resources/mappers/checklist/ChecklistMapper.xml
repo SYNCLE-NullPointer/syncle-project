@@ -29,6 +29,13 @@
         ORDER BY created_at ASC
     </select>
 
+    <select id="findById" resultType="ChecklistVo">
+        SELECT *
+        FROM check_list
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
     <update id="updateChecklist" parameterType="ChecklistVo">
         UPDATE check_list
         <set>
