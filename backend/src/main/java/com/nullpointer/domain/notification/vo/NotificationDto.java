@@ -19,6 +19,7 @@ public class NotificationDto {
     private Long receiverId; // 알림을 받는 사용자 id
     private Long senderId; // 행동을 한 사용자 id
     private String senderNickname;
+    private String senderProfileImg;
 
     private Long boardId;
     private Long targetId; // 이벤트 대상 테이블 id

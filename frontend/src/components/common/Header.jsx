@@ -1,112 +1,127 @@
-import React, { useEffect } from 'react'
+import { Bell, Plus, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import useUiStore from '../../stores/useUiStore'
-import { Plus } from 'lucide-react'
 import defaultProfile from '../../assets/images/default.png'
 import { useAuthQuery } from '../../hooks/auth/useAuthQuery'
+import { useNotificationQuery } from '../../hooks/notification/useNotificationQuery'
+import useUiStore from '../../stores/useUiStore'
+import NotificationMenu from '../modals/NotificationMenu'
+import ProfileMenu from '../modals/ProfileMenu'
 
 function Header({ onOpenTeamModal }) {
-  const notificationCount = 1
+  // 알림 데이터 조회
+  // 소켓이 알림을 받으면 'notifications' 쿼리를 무효화시키고,
+  // 자동으로 최신 데이터를 가져와 unreadCount 갱신
+  const { unreadCount } = useNotificationQuery()
+
   const { data: user } = useAuthQuery()
-  const { toggleMenu, closeAll } = useUiStore()
+  const { activeMenu, toggleMenu, closeAll } = useUiStore()
   const location = useLocation()
+
+  const [notiAnchor, setNotiAnchor] = useState(null)
+  const [profileAnchor, setProfileAnchor] = useState(null)
 
   useEffect(() => {
     // 경로가 바뀔 때마다 모든 메뉴 닫기
     closeAll()
   }, [location.pathname, closeAll])
 
+  // 알림 아이콘 클릭
+  const handleNotiClick = (e) => {
+    e.stopPropagation()
+    setNotiAnchor(e.currentTarget)
+    toggleMenu('notification')
+  }
+
+  // 프로필 아이콘 클릭
+  const handleProfileClick = (e) => {
+    e.stopPropagation()
+    setProfileAnchor(e.currentTarget)
+    toggleMenu('profile')
+  }
+
   return (
-    <nav className="flex h-14 w-full items-center justify-between border-b border-gray-200 bg-white px-7">
+    <nav className="relative z-50 flex h-14 w-full items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
       {/* ---------------- 좌측: 로고 ---------------- */}
       <Link to="dashboard" className="flex items-center gap-3">
         {/* 서비스 로고 */}
-        <span className="text-xl font-semibold">Syncle</span>
+        <span className="text-xl font-bold tracking-tight text-gray-800">
+          Syncle
+        </span>
       </Link>
-
-      {/* ---------------- 가운데: 검색 + 버튼 ---------------- */}
-      <div className="flex w-full max-w-2xl items-center gap-3 px-6">
+      {/* ---------------- 가운데: 검색 + 팀 생성 ---------------- */}
+      <div className="flex w-full max-w-xl items-center gap-4 px-4">
         {/* 검색창 */}
         <div className="relative w-full">
           <input
             type="text"
-            placeholder="Search"
-            className="w-full rounded-md border border-gray-300 py-2 pr-3 pl-10 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            placeholder="검색어를 입력해주세요."
+            className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-11 text-sm text-gray-700 transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:outline-none"
           />
-          <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
-            <svg
-              className="h-4 w-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeWidth="2.5"
-                d="m21 21-3.5-3.5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
-              />
-            </svg>
-          </div>
+          <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-gray-400" />
         </div>
 
         {/* Create 버튼 */}
         <button
-          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-extrabold whitespace-nowrap text-white hover:bg-blue-700"
           onClick={onOpenTeamModal}
+          className="hidden shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:cursor-pointer hover:bg-blue-700 hover:shadow-md active:scale-95 md:flex"
         >
-          <Plus size={16} strokeWidth={3} />
+          <Plus size={18} strokeWidth={2.5} />
           <span>팀 생성</span>
         </button>
       </div>
-
       {/* ---------------- 우측 아이콘들 ---------------- */}
-      <div className="flex items-center gap-6 pr-4">
-        {/* 벨 아이콘 + 알림 */}
-        <div
-          className="relative flex h-6 w-8 cursor-pointer items-center justify-center rounded-md transition hover:bg-gray-100"
-          onMouseDown={(e) => {
-            e.stopPropagation()
-          }}
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleMenu('notification')
-          }}
-        >
-          <svg
-            className="h-5 w-5 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+      <div className="flex items-center gap-4">
+        {/* 알림 아이콘 */}
+        <div className="relative">
+          <button
+            onClick={handleNotiClick}
+            className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:cursor-pointer ${
+              activeMenu === 'notification'
+                ? 'bg-blue-50 text-blue-600'
+                : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700'
+            }`}
           >
-            <path
-              strokeWidth="2"
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6 6 0 1 0-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 1 1-6 0h6z"
-            />
-          </svg>
+            <Bell size={22} strokeWidth={2} />
 
-          {/* 알림 */}
-          <div className="absolute -top-1 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white">
-            {notificationCount > 99 ? '99+' : notificationCount}
-          </div>
+            {/* 읽지 않은 알림 배지 */}
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white shadow-sm ring-2 ring-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* 알림 메뉴 드롭다운 */}
+          {activeMenu === 'notification' && (
+            <NotificationMenu
+              onClose={closeAll}
+              anchorEl={notiAnchor} // Floating UI 사용 시 필요
+            />
+          )}
         </div>
 
-        {/* 프로필 아이콘 */}
-        <div
-          // 1. shrink-0: 찌그러짐 방지
-          // 2. overflow-hidden: 둥근 모서리 밖으로 이미지 튀어나옴 방지
-          className="h-9 w-9 shrink-0 cursor-pointer overflow-hidden rounded-full border border-gray-200 transition-opacity hover:opacity-80"
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleMenu('profile')
-          }}
-        >
-          <img
-            // 유저 이미지가 없으면 기본 이미지 사용
-            src={user?.profileImg || defaultProfile}
-            alt="Profile"
-            // 3. object-cover: 이미지 비율 유지하며 꽉 채우기
-            className="h-full w-full object-cover"
-          />
+        {/* 프로필 아이콘 영역 */}
+        <div className="relative">
+          <button
+            onClick={handleProfileClick}
+            className={`mt-1 h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 transition-all hover:cursor-pointer ${
+              activeMenu === 'profile'
+                ? 'border-blue-500 ring-2 ring-blue-100'
+                : 'border-white shadow-sm hover:border-gray-200'
+            }`}
+          >
+            <img
+              src={user?.profileImg || defaultProfile}
+              alt="Profile"
+              className="h-full w-full object-cover"
+            />
+          </button>
+
+          {/* 프로필 메뉴 드롭다운 (컴포넌트가 있다면 추가) */}
+          {activeMenu === 'profile' && (
+            <ProfileMenu onClose={closeAll} anchorEl={profileAnchor} />
+          )}
         </div>
       </div>
     </nav>
