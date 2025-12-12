@@ -9,7 +9,7 @@ import CardActivity from '../../card/CardActivity'
 import CardChecklist from '../../card/CardChecklist'
 import CardDescription from '../../card/CardDescription'
 import CardSidebar from '../../card/CardSidebar'
-import CardLabel from '../../card/CardLabel'
+import { useBoardSocket } from '../../../hooks/board/useBoardSocket'
 
 export default function CardDetailModal() {
   const { boardId } = useParams()
@@ -22,6 +22,9 @@ export default function CardDetailModal() {
   const [showChecklist, setShowChecklist] = useState(
     selectedCard.checklists && selectedCard.checklists.length > 0,
   )
+
+  // 웹소켓 연결 및 실시간 감지
+  useBoardSocket(boardId)
 
   // 댓글 표시 여부 상태
   const [showComment, setShowComment] = useState(true)

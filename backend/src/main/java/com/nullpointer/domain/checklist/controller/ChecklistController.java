@@ -5,6 +5,7 @@ import com.nullpointer.domain.checklist.dto.UpdateChecklistRequest;
 import com.nullpointer.domain.checklist.service.ChecklistService;
 import com.nullpointer.domain.checklist.vo.ChecklistVo;
 import com.nullpointer.global.common.ApiResponse;
+import com.nullpointer.global.common.annotation.LoginUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +24,9 @@ public class ChecklistController {
     @Operation(summary = "체크리스트 생성", description = "카드에 새로운 체크리스트 아이템을 추가합니다.")
     @PostMapping("/cards/{cardId}/checklists")
     public ApiResponse<Long> createCheckList(@PathVariable Long cardId,
-                                             @RequestBody CreateChecklistRequest req) {
-        Long checklistId = checklistService.createChecklist(cardId, req);
+                                             @RequestBody CreateChecklistRequest req,
+                                             @LoginUser Long userId) {
+        Long checklistId = checklistService.createChecklist(cardId, req, userId);
         return ApiResponse.success(checklistId);
     }
 
@@ -39,16 +41,18 @@ public class ChecklistController {
     @Operation(summary = "체크리스트 수정", description = "체크리스트 아이템의 내용이나 완료 상태를 수정합니다.")
     @PatchMapping("/checklists/{checklistId}")
     public ApiResponse<String> updateChecklist(@PathVariable Long checklistId,
-                                               @RequestBody UpdateChecklistRequest req) {
-        checklistService.updateChecklist(checklistId, req);
+                                               @RequestBody UpdateChecklistRequest req,
+                                               @LoginUser Long userId) {
+        checklistService.updateChecklist(checklistId, req, userId);
         return ApiResponse.success("체크리스트 수정 성공");
     }
 
     // 4. 체크리스트 삭제
     @Operation(summary = "체크리스트 삭제", description = "체크리스트 아이템을 삭제합니다.")
     @DeleteMapping("/checklists/{checklistId}")
-    public ApiResponse<String> deleteChecklist(@PathVariable Long checklistId) {
-        checklistService.deleteChecklist(checklistId);
+    public ApiResponse<String> deleteChecklist(@PathVariable Long checklistId,
+                                               @LoginUser Long userId) {
+        checklistService.deleteChecklist(checklistId, userId);
         return ApiResponse.success("체크리스트 삭제 성공");
     }
 }

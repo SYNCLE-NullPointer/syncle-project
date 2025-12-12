@@ -6,6 +6,7 @@ import com.nullpointer.domain.comment.vo.CommentVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
+import java.util.Optional;
 
 @Mapper
 public interface CommentMapper {
@@ -23,4 +24,7 @@ public interface CommentMapper {
 
     // 단건 조회 (저장 후 바로 반환할 때 필요)
     CommentResponse selectCommentById(Long id);
+
+    // 댓글 조회
+    Optional<CommentVo> findById(Long commentId);
 }
