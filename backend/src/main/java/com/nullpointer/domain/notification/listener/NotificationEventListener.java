@@ -75,6 +75,7 @@ public class NotificationEventListener {
                 .receiverId(receiverId)
                 .senderId(event.getActorId())
                 .senderNickname(event.getActorNickname())
+                .senderProfileImg(event.getActorProfileImg())
                 .boardId(event.getBoardId())
                 .targetId(event.getCardId())
                 .type(type)
@@ -111,28 +112,28 @@ public class NotificationEventListener {
         // 1. 완료 처리
         if (fields.contains("COMPLETE")) {
             return Boolean.TRUE.equals(event.getIsComplete())
-                    ? String.format("'%s' 카드가 완료 처리되었습니다.", cardTitle)
-                    : String.format("'%s' 카드의 완료 처리가 취소되었습니다.", cardTitle);
+                    ? String.format("담당 카드 '%s'가 완료 처리되었습니다.", cardTitle)
+                    : String.format("담당 카드 '%s'의 완료 처리가 취소되었습니다.", cardTitle);
         }
 
         // 2. 중요도 변경 (Priority Enum의 label 활용)
         if (fields.contains("PRIORITY")) {
             String label = event.getPriority().getLabel(); // "높음", "보통", "낮음"
-            return String.format("'%s' 카드의 중요도가 '%s'(으)로 변경되었습니다.", cardTitle, label);
+            return String.format("담당 카드 '%s'의 중요도가 '%s'(으)로 변경되었습니다.", cardTitle, label);
         }
 
         // 3. 마감일 변경
         if (fields.contains("DUE_DATE")) {
             if (event.getDueDate() != null) {
                 String dateStr = event.getDueDate().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"));
-                return String.format("'%s' 카드의 마감일이 %s로 변경되었습니다.", cardTitle, dateStr);
+                return String.format("담당 카드 '%s'의 마감일이 %s로 변경되었습니다.", cardTitle, dateStr);
             } else {
-                return String.format("'%s' 카드의 마감일 설정이 해제되었습니다.", cardTitle);
+                return String.format("담당 카드 '%s'의 마감일 설정이 해제되었습니다.", cardTitle);
             }
         }
 
         // 그 외 (제목, 설명 등)
-        return String.format("'%s' 카드의 내용이 수정되었습니다.", cardTitle);
+        return String.format("담당 카드 '%s'의 내용이 수정되었습니다.", cardTitle);
     }
 
 }

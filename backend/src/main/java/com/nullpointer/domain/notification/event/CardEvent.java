@@ -19,6 +19,7 @@ public class CardEvent {
 
     private Long actorId; // 행동한 사람
     private String actorNickname; // 행동한 사람의 닉네임
+    private String actorProfileImg;
     private Long assigneeId; // 담당자
 
     private Boolean isComplete; // 완료 여부

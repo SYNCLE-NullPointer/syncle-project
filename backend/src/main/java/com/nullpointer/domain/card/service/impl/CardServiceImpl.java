@@ -265,6 +265,7 @@ public class CardServiceImpl implements CardService {
                 .boardId(boardId)
                 .actorId(actorId)
                 .actorNickname(actor.getNickname()) // 알림 메시지용 이름
+                .actorProfileImg(actor.getProfileImg())
                 .assigneeId(card.getAssigneeId())
                 .isComplete(card.getIsComplete())
                 .priority(card.getPriority())
