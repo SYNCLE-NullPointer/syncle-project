@@ -12,7 +12,7 @@ public interface ChecklistService {
     Long createChecklist(Long cardId, CreateChecklistRequest req, Long userId);
 
     // 체크리스트 조회
-    List<ChecklistVo> getChecklists(Long cardId);
+    List<ChecklistVo> getChecklists(Long cardId, Long userId);
 
     // 체크리스트 수정
     void updateChecklist(Long checklistId, UpdateChecklistRequest req, Long userId);

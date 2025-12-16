@@ -1,8 +1,10 @@
 import {
   ArrowRight,
+  AtSign,
   Bell,
   CheckSquare,
   Clock,
+  ListChecks,
   MessageSquareCode,
   User,
   UserPlus,
@@ -45,11 +47,16 @@ export default function NotificationItem({ notification, onClick }) {
     switch (type) {
       case 'COMMENT': // 댓글
       case 'COMMENT_REPLY': // 답글
-      case 'COMMENT_TAGGED': // 멘션
         return {
           icon: <MessageSquareCode size={14} />,
           color: 'text-blue-600 bg-blue-50',
-          label: type === 'COMMENT' ? '댓글' : '답글',
+          label: '댓글', // 통합
+        }
+      case 'MENTION': // 멘션
+        return {
+          icon: <AtSign size={14} />,
+          color: 'text-cyan-600 bg-cyan-50',
+          label: '멘션',
         }
       case 'CARD_ASSIGNED': // 담당자 지정
         return {
@@ -68,6 +75,12 @@ export default function NotificationItem({ notification, onClick }) {
           icon: <CheckSquare size={14} />,
           color: 'text-orange-600 bg-orange-50',
           label: '수정',
+        }
+      case 'CHECKLIST_COMPLETED':
+        return {
+          icon: <ListChecks size={14} />,
+          color: 'text-emerald-600 bg-emerald-50',
+          label: '체크리스트',
         }
       case 'DEADLINE_NEAR': // 마감 임박
         return {
@@ -95,13 +108,14 @@ export default function NotificationItem({ notification, onClick }) {
   const renderMessageContent = () => {
     // 댓글/답글/멘션 타입인 경우 '알림 문구'와 '내용'을 분리
     if (
-      type === 'COMMENT' ||
-      type === 'COMMENT_REPLY' ||
-      type === 'COMMENT_TAGGED'
+      type.includes('COMMENT') ||
+      type === 'MENTION' ||
+      type === 'CHECKLIST_COMPLETED'
     ) {
       const separatorIndex = message.indexOf(':') // 첫 번째 ':' 위치 찾음
 
       if (separatorIndex > -1) {
+        console.log(message)
         const titlePart = message.slice(0, separatorIndex)
         const contentPart = message.slice(separatorIndex + 1).trim()
 
@@ -113,7 +127,7 @@ export default function NotificationItem({ notification, onClick }) {
             </span>
 
             {/* 실제 내용 (줄바꿈 처리(whitespace-pre-wrap) + 박스 스타일) */}
-            <div className="mt-1.5 border-l-2 border-gray-300 p-2 text-sm whitespace-pre-wrap text-gray-500">
+            <div className="mt-1.5 border-l-2 border-gray-300 p-2 text-sm whitespace-pre-wrap text-gray-500 transition-colors hover:border-gray-400 hover:bg-gray-100 hover:text-gray-600">
               {contentPart}
             </div>
           </div>
@@ -123,7 +137,7 @@ export default function NotificationItem({ notification, onClick }) {
 
     // 그 외 일반 알림
     return (
-      <p className="border-l-2 border-gray-300 p-2 text-sm leading-relaxed break-keep whitespace-pre-wrap text-gray-500">
+      <p className="border-l-2 border-gray-300 p-2 text-sm leading-relaxed break-keep whitespace-pre-wrap text-gray-500 transition-colors hover:border-gray-400 hover:bg-gray-100 hover:text-gray-600">
         {message}
       </p>
     )
@@ -132,9 +146,7 @@ export default function NotificationItem({ notification, onClick }) {
   return (
     <div
       onClick={onClick}
-      className={`group flex cursor-pointer items-start gap-4 border-b border-gray-100 p-5 transition-colors last:border-0 hover:bg-blue-50 ${
-        !isRead ? 'bg-blue-50/40' : 'bg-white'
-      }`}
+      className="group flex cursor-pointer items-start gap-4 border-b border-gray-100 p-5 last:border-0"
     >
       {/* 프로필 이미지 */}
       <div className="relative shrink-0">

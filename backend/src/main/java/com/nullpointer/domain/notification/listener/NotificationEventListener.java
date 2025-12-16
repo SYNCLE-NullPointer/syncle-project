@@ -73,10 +73,19 @@ public class NotificationEventListener {
                         getSafeSubstring(event.getCommentContent(), 20));
                 break;
             case MENTION:
-                receiverId = event.getTargetUserId(); // 멘션된 사람
+                receiverId = event.getTargetUserId(); // 멘션된 사람에게 알림
                 type = NotificationType.MENTION;
                 message = String.format("'%s'님이 회원님을 언급했습니다:%s",
                         event.getActorNickname(), getSafeSubstring(event.getCommentContent(), 20));
+                break;
+            case CHECKLIST:
+                // 완료일 때만 알림 발송
+                if (Boolean.TRUE.equals(event.getChecklistDone())) {
+                    receiverId = event.getAssigneeId(); // 담당자에게 알림
+                    type = NotificationType.CHECKLIST_COMPLETED;
+                    message = String.format("담당 카드 '%s'의 항목을 완료했습니다.:%s",
+                            event.getCardTitle(), getSafeSubstring(event.getChecklistContent(), 20));
+                }
                 break;
             default:
                 return;

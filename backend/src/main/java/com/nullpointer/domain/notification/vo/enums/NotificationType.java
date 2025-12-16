@@ -8,8 +8,9 @@ public enum NotificationType {
     CARD_ASSIGNED("담당자 지정"),
     CARD_MOVED("카드 이동"),
     CARD_UPDATED("카드 수정"),
+    CHECKLIST_COMPLETED("체크리스트 완료"),
 
-    COMMENT("새 댓글"),
+    COMMENT("댓글"),
     COMMENT_REPLY("답글"),
 
     MENTION("멘션"),

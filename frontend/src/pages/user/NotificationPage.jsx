@@ -8,30 +8,45 @@ import NotificationItem from '../../components/common/NotificationItem'
 // 메인 알림 페이지
 function NotificationPage() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('ALL')
-
-  // 탭 목록
-  const tabs = [
-    { id: 'ALL', label: '전체' },
-    { id: 'CARD_ASSIGNED', label: '할당됨' },
-    { id: 'COMMENT_ALL', label: '댓글' }, // 댓글/답글/멘션 통합
-    { id: 'TEAM_INVITE', label: '초대' },
-  ]
 
   // 데이터 연동
   const { notifications, isLoading } = useNotificationQuery()
   const { markAsRead, markAllAsRead } = useNotificationMutations()
 
+  const [activeTab, setActiveTab] = useState('ALL')
+
+  // 탭 목록
+  const tabs = [
+    { id: 'ALL', label: '전체' },
+    { id: 'ME', label: '나' }, // 멘션, 할당, 답글, 초대
+    { id: 'COMMENT', label: '댓글' }, // 댓글 관련
+    { id: 'WORK', label: '업무' }, // 상태 변경, 체크리스트 등
+  ]
+
+  // 탭 id에 따른 실제 알림 타입 매핑
+  const getFilterTypes = (tabId) => {
+    switch (tabId) {
+      case 'ME':
+        return ['MENTION', 'CARD_ASSIGNED', 'TEAM_INVITE', 'COMMENT_REPLY']
+      case 'COMMENT':
+        return ['COMMENT', 'COMMENT_REPLY', 'MENTION']
+      case 'WORK':
+        return [
+          'CARD_MOVED',
+          'CARD_UPDATED',
+          'CHECKLIST_COMPLETED',
+          'DEADLINE_NEAR',
+        ]
+      default:
+        return [] // ALL인 경우
+    }
+  }
+
   // 필터링 로직
   const filteredNotifications = notifications.filter((noti) => {
     if (activeTab === 'ALL') return true
-
-    // '댓글' 탭 선택 시: 타입 이름에 'COMMENT'가 포함된 모든 알림 필터링
-    if (activeTab === 'COMMENT_ALL') {
-      return noti.type && noti.type.includes('COMMENT')
-    }
-
-    return noti.type === activeTab
+    const targetTypes = getFilterTypes(activeTab)
+    return targetTypes.includes(noti.type)
   })
 
   // 알림 클릭 핸들러
@@ -47,7 +62,7 @@ function NotificationPage() {
   }
 
   return (
-    <main className="flex-1 overflow-y-auto bg-gray-50 p-6 md:p-10">
+    <main className="flex-1 overflow-y-auto bg-white p-6 md:p-10">
       <div className="mx-auto max-w-3xl">
         {/* 헤더 영역 */}
         <div className="mb-8 flex items-end justify-between">
@@ -69,21 +84,18 @@ function NotificationPage() {
         </div>
 
         {/* 탭 */}
-        <div className="mb-6 flex gap-2 border-b border-gray-300 pb-1">
+        <div className="mb-5 flex gap-2 border-b border-gray-300 pb-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative rounded-t-lg px-4 py-2.5 text-sm font-medium transition-colors hover:cursor-pointer ${
+              className={`cursor-pointer border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'text-blue-600'
-                  : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               {tab.label}
-              {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-0 h-0.5 w-full bg-blue-600"></span>
-              )}
             </button>
           ))}
         </div>
