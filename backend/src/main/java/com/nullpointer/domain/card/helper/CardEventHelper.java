@@ -53,6 +53,7 @@ public class CardEventHelper {
                     .actorProfileImg(actor.getProfileImg())
                     .eventType(CardEvent.EventType.MENTION)
                     .targetUserId(targetId)
+                    .commentContent(newDescription)
                     .build();
 
             publisher.publishEvent(event);

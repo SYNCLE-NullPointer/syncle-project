@@ -76,8 +76,13 @@ function NotificationMenu({ onClose, anchorEl }) {
 
   const renderMessageContent = (noti) => {
     const { message, type } = noti
-    // 댓글/답글/멘션 타입인 경우 '알림 문구'와 '내용'을 분리
-    if (type && type.includes('COMMENT')) {
+    // 댓글/답글/멘션/체크리스트 타입인 경우 '알림 문구'와 '내용'을 분리
+    if (
+      type &&
+      (type.includes('COMMENT') ||
+        type === 'MENTION' ||
+        type === 'CHECKLIST_COMPLETED')
+    ) {
       const separatorIndex = message.indexOf(':') // 첫 번째 ':' 위치 찾음
 
       if (separatorIndex > -1) {
@@ -92,7 +97,7 @@ function NotificationMenu({ onClose, anchorEl }) {
             </span>
 
             {/* 실제 내용 (줄바꿈 처리(whitespace-pre-wrap) + 박스 스타일) */}
-            <div className="mt-1 border-l-2 border-gray-300 p-2 text-sm whitespace-pre-wrap text-gray-500">
+            <div className="mt-1 border-l-2 border-gray-300 p-2 text-sm whitespace-pre-wrap text-gray-500 transition-colors hover:border-gray-400 hover:bg-gray-100 hover:text-gray-600">
               {contentPart}
             </div>
           </div>
@@ -102,7 +107,7 @@ function NotificationMenu({ onClose, anchorEl }) {
 
     // 그 외 일반 알림
     return (
-      <p className="border-l-2 border-gray-300 p-2 text-sm leading-relaxed break-keep whitespace-pre-wrap text-gray-500">
+      <p className="border-l-2 border-gray-300 p-2 text-sm leading-relaxed break-keep whitespace-pre-wrap text-gray-500 transition-colors hover:border-gray-400 hover:bg-gray-100 hover:text-gray-600">
         {message}
       </p>
     )
@@ -148,9 +153,7 @@ function NotificationMenu({ onClose, anchorEl }) {
               <li
                 key={noti.id}
                 onClick={() => handleItemClick(noti)}
-                className={`group relative flex cursor-pointer items-start gap-4 px-2 py-2 transition-colors hover:bg-blue-50 ${
-                  !noti.isRead ? 'bg-blue-50/30' : 'bg-white'
-                }`}
+                className="group relative flex cursor-pointer items-start gap-4 px-2 py-2"
               >
                 <div className="relative shrink-0">
                   <div className="h-10 w-10 overflow-hidden rounded-full border border-gray-200 bg-gray-100">

@@ -33,8 +33,8 @@ public class ChecklistController {
     // 특정 카드의 체크리스트 목록 조회
     @Operation(summary = "체크리스트 조회", description = "카드의 모든 체크리스트 아이템을 조회합니다.")
     @GetMapping("/cards/{cardId}/checklists")
-    public ApiResponse<List<ChecklistVo>> getChecklists(@PathVariable Long cardId) {
-        return ApiResponse.success(checklistService.getChecklists(cardId));
+    public ApiResponse<List<ChecklistVo>> getChecklists(@PathVariable Long cardId, @LoginUser Long userId) {
+        return ApiResponse.success(checklistService.getChecklists(cardId, userId));
     }
 
     // 3. 체크리스트 수정 (완료 토글, 내용 수정)

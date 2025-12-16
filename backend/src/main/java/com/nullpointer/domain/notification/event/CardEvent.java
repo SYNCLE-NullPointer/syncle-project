@@ -31,6 +31,9 @@ public class CardEvent {
     private Long commentId;
     private Long targetUserId; // 타겟 수신자 id (답글, 멘션용)
 
+    private String checklistContent; // 체크리스트 내용
+    private Boolean checklistDone; // 완료 여부
+
     // 변경된 속성 목록
     private Set<String> changedFields;
 
@@ -42,6 +45,7 @@ public class CardEvent {
         UPDATED,
         COMMENT,
         REPLY,
-        MENTION
+        MENTION,
+        CHECKLIST
     }
 }
