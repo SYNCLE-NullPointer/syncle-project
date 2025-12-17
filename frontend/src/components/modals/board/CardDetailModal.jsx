@@ -9,6 +9,7 @@ import CardActivity from '../../card/CardActivity'
 import CardChecklist from '../../card/CardChecklist'
 import CardDescription from '../../card/CardDescription'
 import CardSidebar from '../../card/CardSidebar'
+import CardAttachment from '../../card/CardAttachment'
 
 export default function CardDetailModal() {
   const { boardId: boardIdParam } = useParams()
@@ -176,6 +177,11 @@ export default function CardDetailModal() {
             <div className="flex flex-1 flex-col gap-10">
               {/* Description */}
               <CardDescription />
+
+              {/* Attachments */}
+              {selectedCard.files && selectedCard.files.length > 0 && (
+                <CardAttachment files={selectedCard.files} />
+              )}
 
               {/* Checklist Section */}
               {showChecklist && (

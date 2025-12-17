@@ -94,6 +94,16 @@ const normalizeBoardData = (dto) => {
         // 댓글 수
         commentCount: card.commentCount || 0,
 
+        // 파일
+        files: (card.files || []).map((f) => ({
+          id: f.id,
+          cardId: f.cardId,
+          fileName: f.fileName,
+          fileUrl: f.filePath,
+          fileSize: f.fileSize,
+          createdAt: f.createdAt,
+        })),
+
         // 백엔드에서 넘어온 ChecklistVo 리스트를 바로 매핑
         checklists: (card.checklists || [])
           .filter((cl) => cl.id)

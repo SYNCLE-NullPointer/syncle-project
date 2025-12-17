@@ -13,6 +13,7 @@ import com.nullpointer.domain.board.mapper.BoardMapper;
 import com.nullpointer.domain.board.service.BoardService;
 import com.nullpointer.domain.board.vo.BoardVo;
 import com.nullpointer.domain.board.vo.enums.Visibility;
+import com.nullpointer.domain.file.service.S3FileStorageService;
 import com.nullpointer.domain.list.mapper.ListMapper;
 import com.nullpointer.domain.list.vo.ListVo;
 import com.nullpointer.domain.member.dto.board.BoardMemberResponse;
@@ -48,6 +49,7 @@ public class BoardServiceImpl implements BoardService {
     private final ActivityService activityService;
     private final TeamMemberMapper teamMemberMapper;
     private final SocketSender socketSender;
+    private final S3FileStorageService s3FileStorageService;
 
     /**
      * 보드 권한
@@ -279,6 +281,31 @@ public class BoardServiceImpl implements BoardService {
 
         // 현재 유저가 이 보드를 즐겨찾기 했는지 확인
         boolean isFavorite = boardMapper.existsFavorite(boardId, userId);
+
+        // 첨부파일이 있을 경우 key값을 URL로 변환
+        // 1. 리스트 목록이 비어있지 않은지 확인
+        if (response.getLists() != null) {
+            // 2. 각 리스트를 순회 (ListVo)
+            response.getLists().forEach(list -> {
+
+                // 3. 해당 리스트에 카드가 있는지 확인
+                if (list.getCards() != null) {
+                    // 4. 각 카드를 순회 (CardVo)
+                    list.getCards().forEach(card -> {
+
+                        // 5. 해당 카드에 파일이 있는지 확인
+                        if (card.getFiles() != null) {
+                            // 6. 각 파일을 순회하며 URL 변환 (FileVo)
+                            card.getFiles().forEach(file -> {
+                                // s3FileStorageService URL 변환 메서드
+                                String downloadPath = s3FileStorageService.getDownLoadUrl(file.getFilePath(), file.getFileName());
+                                file.setFilePath(downloadPath);
+                            });
+                        }
+                    });
+                }
+            });
+        }
 
         // Owner ID 추출
         Long ownerId = boardMembers.stream()

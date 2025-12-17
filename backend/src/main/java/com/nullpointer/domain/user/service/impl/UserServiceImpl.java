@@ -2,7 +2,7 @@ package com.nullpointer.domain.user.service.impl;
 
 import com.nullpointer.domain.auth.dto.request.AuthRequest;
 import com.nullpointer.domain.auth.dto.request.PasswordRequest;
-import com.nullpointer.domain.file.service.FileStorageService;
+import com.nullpointer.domain.file.service.S3FileStorageService;
 import com.nullpointer.domain.user.dto.request.UpdateProfileRequest;
 import com.nullpointer.domain.user.dto.response.UserProfileResponse;
 import com.nullpointer.domain.user.dto.response.UserSummaryResponse;
@@ -30,7 +30,7 @@ import org.springframework.util.StringUtils;
 public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
-    private final FileStorageService fileStorageService;
+    private final S3FileStorageService fileStorageService;
     private final PasswordEncoder passwordEncoder;
     private final RedisUtil redisUtil;
     private final JwtTokenProvider jwtTokenProvider;

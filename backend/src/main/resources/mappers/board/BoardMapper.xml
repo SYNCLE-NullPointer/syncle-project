@@ -127,7 +127,17 @@
                     <result property="title" column="check_title"/>
                     <result property="done" column="check_done"/>
                 </collection>
-                <collection property="comments" ofType="com.nullpointer.domain.comment.dto.CommentResponse"
+
+                <collection property="files" ofType="FileResponse">
+                    <id property="id" column="file_id"/>
+                    <result property="cardId" column="file_card_id"/>
+                    <result property="fileName" column="file_file_name"/>
+                    <result property="filePath" column="file_file_path"/>
+                    <result property="fileSize" column="file_file_size"/>
+                    <result property="createdAt" column="file_created_at"/>
+                </collection>
+
+                <collection property="comments" ofType="CommentResponse"
                             javaType="java.util.List">
                     <id property="id" column="comment_id"/>
                     <result property="writerId" column="comment_writer_id"/>
@@ -180,6 +190,7 @@
                f.file_name    AS file_file_name,
                f.file_path    AS file_file_path,
                f.file_size    AS file_file_size,
+               f.created_at   AS file_created_at,
 
                -- 댓글 (comment 테이블 조인)
                cmt.id         AS comment_id,
