@@ -46,13 +46,13 @@ function CardAttachment({ files = [] }) {
             return (
               <div
                 key={file.id}
-                className="group relative flex aspect-[4/3] flex-col overflow-hidden rounded-lg border border-gray-200 bg-gray-50 transition-shadow hover:shadow-md"
+                className="group relative flex aspect-4/3 flex-col overflow-hidden rounded-lg border border-gray-200 bg-gray-50 transition-shadow hover:shadow-md"
               >
                 {/* 썸네일 영역 */}
                 <div className="flex h-full w-full items-center justify-center overflow-hidden bg-gray-100">
                   {isImg ? (
                     <img
-                      src={file.fullUrl}
+                      src={file.fileUrl}
                       alt={file.fileName}
                       className="h-full w-full object-cover"
                     />
@@ -62,7 +62,7 @@ function CardAttachment({ files = [] }) {
                 </div>
 
                 {/* 정보 및 오버레이 */}
-                <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div className="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                   <div className="p-3 text-white">
                     <p
                       className="truncate text-sm font-medium"
@@ -79,11 +79,11 @@ function CardAttachment({ files = [] }) {
                   {/* 액션 버튼들 */}
                   <div className="absolute top-2 right-2 flex gap-2">
                     <a
-                      href={file.fullUrl}
+                      href={file.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="rounded bg-black/50 p-1.5 text-white backdrop-blur-sm hover:bg-black/70"
-                      title="다운로드/열기"
+                      title="다운로드"
                     >
                       <Download size={14} />
                     </a>

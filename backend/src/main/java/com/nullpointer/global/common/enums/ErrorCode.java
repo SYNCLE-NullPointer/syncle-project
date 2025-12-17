@@ -81,7 +81,8 @@ public enum ErrorCode {
     CHECKLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "CL001", "존재하지 않는 체크리스트입니다."),
 
     // 파일
-    FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "F001", "존재하지 않는 파일입니다.");
+    FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "F001", "존재하지 않는 파일입니다."),
+    FILE_DOWNLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "F002", "파일 다운로드에 실패했습니다.");
 
     private final HttpStatus status;
     private final String code;

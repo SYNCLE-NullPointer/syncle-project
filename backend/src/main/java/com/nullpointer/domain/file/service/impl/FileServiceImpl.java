@@ -52,9 +52,9 @@ public class FileServiceImpl implements FileService {
         fileMapper.insertFile(fileVo);
 
         // 5. 응답 반환
-        // CloudFront URL 생성
-        String fullUrl = fileStorageService.getFileUrl(filePath);
-        return FileResponse.of(fileVo, fullUrl);
+        // 파일 다운로드 URL 생성
+        String downloadUrl = fileStorageService.getDownLoadUrl(filePath, file.getOriginalFilename());
+        return FileResponse.of(fileVo, downloadUrl);
     }
 
     @Override
@@ -67,9 +67,6 @@ public class FileServiceImpl implements FileService {
 
         // 권한 검증
         validateCardAndPermission(fileVo.getCardId(), userId);
-
-        // S3에서 삭제
-        fileStorageService.deleteFile(fileVo.getFilePath());
 
         // DB 삭제
         fileMapper.deleteById(fileId);

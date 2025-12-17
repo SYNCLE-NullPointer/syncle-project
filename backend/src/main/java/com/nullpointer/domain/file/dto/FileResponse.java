@@ -1,16 +1,15 @@
 package com.nullpointer.domain.file.dto;
 
-import com.nullpointer.domain.board.dto.response.BoardResponse;
 import com.nullpointer.domain.file.vo.FileVo;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class FileResponse {
     private Long id;
     private Long cardId;
@@ -18,17 +17,17 @@ public class FileResponse {
     private String fileName;
     private Long fileSize;
     private String filePath;
-    private String fullUrl;
+    private String fileDownloadUrl;
     private LocalDateTime createdAt;
 
-    public static FileResponse of(FileVo vo, String fileUrl) {
+    public static FileResponse of(FileVo vo, String fileDownloadUrl) {
         return FileResponse.builder()
                 .id(vo.getId())
                 .cardId(vo.getCardId())
                 .uploaderId(vo.getUploaderId())
                 .fileName(vo.getFileName())
                 .fileSize(vo.getFileSize())
-                .fullUrl(fileUrl)
+                .filePath(fileDownloadUrl)
                 .createdAt(vo.getCreatedAt())
                 .build();
     }

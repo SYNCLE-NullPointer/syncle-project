@@ -128,7 +128,7 @@
                     <result property="done" column="check_done"/>
                 </collection>
 
-                <collection property="files" ofType="FileVo">
+                <collection property="files" ofType="FileResponse">
                     <id property="id" column="file_id"/>
                     <result property="cardId" column="file_card_id"/>
                     <result property="fileName" column="file_file_name"/>

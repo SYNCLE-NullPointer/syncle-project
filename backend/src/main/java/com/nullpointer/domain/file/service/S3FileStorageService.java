@@ -13,4 +13,7 @@ public interface S3FileStorageService {
     // 파일 삭제
     void deleteFile(String filePath);
 
+    // 다운로드 URL 생성
+    String getDownLoadUrl(String filePath, String fileName);
+
 }

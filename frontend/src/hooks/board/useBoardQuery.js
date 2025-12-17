@@ -99,7 +99,7 @@ const normalizeBoardData = (dto) => {
           id: f.id,
           cardId: f.cardId,
           fileName: f.fileName,
-          fullUrl: f.filePath,
+          fileUrl: f.filePath,
           fileSize: f.fileSize,
           createdAt: f.createdAt,
         })),

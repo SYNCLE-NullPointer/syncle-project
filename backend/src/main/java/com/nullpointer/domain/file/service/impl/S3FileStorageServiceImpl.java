@@ -13,11 +13,17 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.UUID;
 
 @Slf4j
@@ -27,6 +33,7 @@ import java.util.UUID;
 public class S3FileStorageServiceImpl implements S3FileStorageService {
 
     private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucketName;
@@ -88,10 +95,41 @@ public class S3FileStorageServiceImpl implements S3FileStorageService {
         }
     }
 
+    // 다운로드 URL 생성
+    @Override
+    public String getDownLoadUrl(String filePath, String fileName) {
+        try {
+            // 1. 인코딩
+            String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                    .replaceAll("\\+", "%20");
+
+            // 2. GetObjectRequest 생성
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(filePath)
+                    .responseContentDisposition("attachment; filename=\"" + encodedFileName + "\"") // 👈 핵심
+                    .build();
+
+            // 3. Presign 요청 생성 (유효기간 설정)
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofHours(1)) // 1시간
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            // 4. URL 발급
+            PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+            return presignedRequest.url().toString();
+
+        } catch (Exception e) {
+            log.error("파일 다운로드 URL 생성 실패", e);
+            throw new BusinessException(ErrorCode.FILE_DOWNLOAD_FAILED);
+        }
+    }
+
     // 확장자 추출
     private String getExtension(String filename) {
         if (StringUtils.hasText(filename) && filename.contains(".")) {
-            return filename.substring(filename.lastIndexOf('.'));
+            return filename.substring(filename.lastIndexOf('.') + 1);
         }
         return "";
     }

@@ -1,12 +1,12 @@
 package com.nullpointer.domain.file.vo;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
+@AllArgsConstructor
 public class FileVo {
     private Long id;
     private Long cardId;
@@ -16,6 +16,4 @@ public class FileVo {
     private Long fileSize;
     private LocalDateTime createdAt;
     private LocalDateTime deletedAt;
-
-    private String fullUrl;
 }
