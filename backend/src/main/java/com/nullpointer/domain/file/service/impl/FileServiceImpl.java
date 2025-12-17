@@ -7,6 +7,7 @@ import com.nullpointer.domain.file.mapper.FileMapper;
 import com.nullpointer.domain.file.service.FileService;
 import com.nullpointer.domain.file.service.S3FileStorageService;
 import com.nullpointer.domain.file.vo.FileVo;
+import com.nullpointer.domain.file.vo.enums.FileType;
 import com.nullpointer.domain.list.mapper.ListMapper;
 import com.nullpointer.domain.list.vo.ListVo;
 import com.nullpointer.global.common.enums.ErrorCode;
@@ -38,7 +39,7 @@ public class FileServiceImpl implements FileService {
         validateCardAndPermission(cardId, userId);
 
         // 3. S3에 파일 저장
-        String filePath = fileStorageService.storeFile(file, userId, "attachments");
+        String filePath = fileStorageService.storeFile(file, userId, FileType.ATTACHMENT);
 
         // 4. DB에 파일 정보 저장
         FileVo fileVo = FileVo.builder()
