@@ -111,7 +111,9 @@ export const useAuthMutations = () => {
       sessionStorage.clear()
       queryClient.setQueryData(['user', 'me'], null)
       alert('로그아웃 되었습니다.')
-      navigate('/auth/signin')
+
+      // 브라우저 자체 새로고침 + 메모리 초기화 + 뒤로가기 방지
+      window.location.replace('/auth/signin')
     },
   })
 
