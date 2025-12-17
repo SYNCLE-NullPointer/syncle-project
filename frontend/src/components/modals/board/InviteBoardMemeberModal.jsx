@@ -73,7 +73,6 @@ function InviteBoardMemeberModal({
 
     inviteMemberToBoard(userIds, {
       onSuccess: () => {
-        alert(`${selectedUsers.length}명을 보드에 초대했습니다.`)
         onClose()
       },
       onSettled: () => {

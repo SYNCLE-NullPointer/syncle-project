@@ -22,6 +22,7 @@
         WHERE a.id = b.team_id
           AND b.user_id = #{id}
           AND a.deleted_at IS NULL
+          AND b.deleted_at IS NULL
     </select>
 
     <!-- 팀 상세 조회 -->

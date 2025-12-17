@@ -60,12 +60,17 @@ export const useMemberMutations = (entityId, type = 'BOARD') => {
     },
 
     onSettled: () => {
-      // 서버 데이터 동기화
+      // 현재 보고 있는 팀/보드 상세 페이지 데이터 갱신
       queryClient.invalidateQueries({ queryKey })
+
+      // 사이드바의 팀 목록 데이터 갱신
+      if (type === 'TEAM') {
+        queryClient.invalidateQueries({ queryKey: ['teams'] })
+      }
     },
   })
 
-  // 멤버 내보내기 (추방)
+  // 멤버 내보내기 (추방/탈퇴)
   const removeMemberMutation = useMutation({
     mutationFn: (userId) => {
       if (type === 'TEAM') {
@@ -101,6 +106,10 @@ export const useMemberMutations = (entityId, type = 'BOARD') => {
           type === 'TEAM' ? '팀에서 탈퇴했습니다.' : '보드에서 탈퇴했습니다.',
         )
         navigate('/dashboard')
+        if (type === 'TEAM') {
+          // 사이드바의 팀 목록 데이터 갱신
+          queryClient.invalidateQueries({ queryKey: ['teams'] })
+        }
       } else {
         alert('멤버를 추방하였습니다.')
       }

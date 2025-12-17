@@ -88,7 +88,6 @@ function InviteMemberModal({ teamId, currentMembers = [], onClose }) {
       },
       {
         onSuccess: () => {
-          alert(`${selectedUsers.length}명을 초대했습니다.`)
           onClose()
           navigate(`/teams/${teamId}/invitations`)
         },
