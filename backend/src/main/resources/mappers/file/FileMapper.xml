@@ -5,7 +5,7 @@
 
 <mapper namespace="com.nullpointer.domain.file.mapper.FileMapper">
 
-    <insert id="insertFile" parameterType="FileVo" useGeneratedKeys="true" keyProperty="fileId">
+    <insert id="insertFile" parameterType="FileVo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO file (card_id,
                           uploader_id,
                           file_name,
@@ -14,8 +14,8 @@
                           created_at)
         VALUES (#{cardId},
                 #{uploaderId},
+                #{fileName},
                 #{filePath},
-                #{file_path},
                 #{fileSize},
                 NOW())
     </insert>
@@ -23,7 +23,7 @@
     <select id="findById" parameterType="long" resultType="FileVo">
         SELECT *
         FROM file
-        WHERE file_id = #{fileId}
+        WHERE id = #{id}
     </select>
 
     <update id="deleteById" parameterType="long">

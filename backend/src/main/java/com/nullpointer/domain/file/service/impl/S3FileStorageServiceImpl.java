@@ -1,6 +1,6 @@
 package com.nullpointer.domain.file.service.impl;
 
-import com.nullpointer.domain.file.service.FileStorageService;
+import com.nullpointer.domain.file.service.S3FileStorageService;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import java.util.UUID;
 @Service
 @Primary
 @RequiredArgsConstructor
-public class S3FileStorageServiceImpl implements FileStorageService {
+public class S3FileStorageServiceImpl implements S3FileStorageService {
 
     private final S3Client s3Client;
 

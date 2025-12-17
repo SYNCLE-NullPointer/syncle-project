@@ -5,6 +5,7 @@ import {
   Clock,
   Trash2,
   User,
+  Paperclip,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
@@ -16,6 +17,7 @@ import DateRangePickerMenu from '../modals/DateRangePickerMenu'
 import MemberPickerMenu from '../modals/MemberPickerMenu'
 import CardPriority from './CardPriority'
 import CardLabel from './CardLabel'
+import { useFileMutations } from '../../hooks/file/useFileMutations'
 
 function CardSidebar({
   onAddChecklist,
@@ -27,6 +29,9 @@ function CardSidebar({
   const { selectedCard, closeCardModal } = useBoardStore()
   const { data: activeBoard } = useBoardQuery(boardId)
   const { updateCard, moveCard, deleteCard } = useCardMutations(activeBoard?.id)
+
+  // 파일 업로드 훅 사용
+  const { uploadFile } = useFileMutations(Number(boardId))
 
   // -- 날짜 메뉴 상태 --
   const [isDateOpen, setIsDateOpen] = useState(false)
@@ -49,6 +54,9 @@ function CardSidebar({
   const [isMoveOpen, setIsMoveOpen] = useState(false)
   const moveButtonRef = useRef(null)
   const [movePopupPos, setMovePopupPos] = useState({ top: 0, left: 0 })
+
+  // -- 파일 인풋 Ref --
+  const fileInputRef = useRef(null)
 
   // 카드가 선택될 때마다 기존 설정된 날짜로 초기화
   useEffect(() => {
@@ -98,6 +106,21 @@ function CardSidebar({
     if (isDateOpen) setIsDateOpen(false)
     if (isMemberOpen) setIsMemberOpen(false)
     setIsMoveOpen(!isMoveOpen)
+  }
+
+  // 파일 업로드 핸들러
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    uploadFile({
+      cardId: selectedCard.id,
+      listId: selectedCard.listId,
+      file: file,
+    })
+
+    // 같은 파일을 다시 선택해도 이벤트가 발생하도록 초기화
+    e.target.value = ''
   }
 
   // 날짜 적용 핸들러
@@ -252,6 +275,21 @@ function CardSidebar({
             setRange={setDateRange}
             onApply={handleDateApply}
             position={datePopupPos}
+          />
+
+          {/* 첨부파일 버튼 (추가됨) */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-gray-700 transition-colors hover:cursor-pointer hover:bg-gray-200"
+          >
+            <Paperclip size={16} className="text-gray-500" />
+            <span className="text-gray-500">첨부파일</span>
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
           />
 
           {/* 체크리스트 버튼 */}

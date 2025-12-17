@@ -5,7 +5,7 @@ import com.nullpointer.domain.card.vo.CardVo;
 import com.nullpointer.domain.file.dto.FileResponse;
 import com.nullpointer.domain.file.mapper.FileMapper;
 import com.nullpointer.domain.file.service.FileService;
-import com.nullpointer.domain.file.service.FileStorageService;
+import com.nullpointer.domain.file.service.S3FileStorageService;
 import com.nullpointer.domain.file.vo.FileVo;
 import com.nullpointer.domain.list.mapper.ListMapper;
 import com.nullpointer.domain.list.vo.ListVo;
@@ -24,7 +24,7 @@ public class FileServiceImpl implements FileService {
     private final FileMapper fileMapper;
     private final CardMapper cardMapper;
     private final ListMapper listMapper;
-    private final FileStorageService fileStorageService;
+    private final S3FileStorageService fileStorageService;
     private final MemberValidator memberValidator;
 
     @Override

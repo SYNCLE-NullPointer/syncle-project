@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @AllArgsConstructor
@@ -15,7 +17,9 @@ public class FileResponse {
     private Long uploaderId;
     private String fileName;
     private Long fileSize;
+    private String filePath;
     private String fullUrl;
+    private LocalDateTime createdAt;
 
     public static FileResponse of(FileVo vo, String fileUrl) {
         return FileResponse.builder()
@@ -25,6 +29,7 @@ public class FileResponse {
                 .fileName(vo.getFileName())
                 .fileSize(vo.getFileSize())
                 .fullUrl(fileUrl)
+                .createdAt(vo.getCreatedAt())
                 .build();
     }
 }
