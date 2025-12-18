@@ -13,6 +13,9 @@ public interface TeamMemberMapper {
     // 팀 멤버 초대
     void insertTeamMember(TeamMemberVo teamMemberVo);
 
+    // 팀 멤버 id 조회
+    List<Long> findAllMemberIdsByTeamId(Long teamId);
+
     // 팀 멤버 조회
     List<TeamMemberResponse> findMembersByTeamId(Long teamId);
 

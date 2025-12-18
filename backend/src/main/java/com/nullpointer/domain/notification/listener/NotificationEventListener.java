@@ -166,6 +166,7 @@ public class NotificationEventListener {
                 break;
             case TEAM_MEMBER_KICKED:
                 message = String.format("'%s' 팀에서 제외되었습니다.", event.getTargetName());
+                targetUrl = "/dashboard";
                 break;
             case TEAM_MEMBER_LEFT:
                 message = String.format("'%s' 팀을 떠났습니다.", event.getTargetName());
@@ -173,10 +174,19 @@ public class NotificationEventListener {
                 break;
             case BOARD_MEMBER_KICKED:
                 message = String.format("'%s' 보드에서 제외되었습니다.", event.getTargetName());
+                targetUrl = "/dashboard";
                 break;
             case BOARD_MEMBER_LEFT:
                 message = String.format("'%s' 보드를 떠났습니다.", event.getTargetName());
                 targetUrl = "/board/" + event.getTargetId(); // 해당 보드로 이동
+                break;
+            case TEAM_DELETED:
+                message = String.format("'%s' 팀이 삭제되었습니다.", event.getTargetName());
+                targetUrl = "/dashboard";
+                break;
+            case BOARD_DELETED:
+                message = String.format("'%s' 보드가 삭제되었습니다.", event.getTargetName());
+                targetUrl = "/dashboard";
                 break;
             default:
                 return;

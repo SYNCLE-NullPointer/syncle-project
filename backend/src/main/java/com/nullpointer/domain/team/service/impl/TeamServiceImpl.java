@@ -10,6 +10,8 @@ import com.nullpointer.domain.member.dto.team.TeamMemberResponse;
 import com.nullpointer.domain.member.mapper.TeamMemberMapper;
 import com.nullpointer.domain.member.vo.TeamMemberVo;
 import com.nullpointer.domain.member.vo.enums.Role;
+import com.nullpointer.domain.notification.event.InvitationEvent;
+import com.nullpointer.domain.notification.vo.enums.NotificationType;
 import com.nullpointer.domain.team.dto.request.CreateTeamRequest;
 import com.nullpointer.domain.team.dto.request.UpdateTeamRequest;
 import com.nullpointer.domain.team.dto.response.TeamDetailResponse;
@@ -17,10 +19,15 @@ import com.nullpointer.domain.team.dto.response.TeamResponse;
 import com.nullpointer.domain.team.mapper.TeamMapper;
 import com.nullpointer.domain.team.service.TeamService;
 import com.nullpointer.domain.team.vo.TeamVo;
+import com.nullpointer.domain.user.mapper.UserMapper;
+import com.nullpointer.domain.user.vo.UserVo;
+import com.nullpointer.global.common.SocketSender;
 import com.nullpointer.global.common.enums.ErrorCode;
+import com.nullpointer.global.exception.BusinessException;
 import com.nullpointer.global.validator.MemberValidator;
 import com.nullpointer.global.validator.TeamValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,9 +42,12 @@ public class TeamServiceImpl implements TeamService {
     private final BoardMapper boardMapper;
     private final TeamValidator teamVal;
     private final MemberValidator memberVal;
+    private final ApplicationEventPublisher publisher;
+    private final SocketSender socketSender;
 
     private final BoardService boardService;
     private final ActivityService activityService;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
@@ -137,6 +147,9 @@ public class TeamServiceImpl implements TeamService {
 
         // 팀 수정 로그 저장
         updateTeamLog(userId, teamVo);
+
+        // 소켓 전송
+        socketSender.sendTeamSocketMessage(teamId, "TEAM_UPDATED", userId, null);
     }
 
     // 팀 삭제
@@ -149,8 +162,24 @@ public class TeamServiceImpl implements TeamService {
         // 2. 삭제 권한 검증 (OWNER 여부)
         memberVal.validateTeamOwner(teamId, userId, ErrorCode.TEAM_DELETE_FORBIDDEN);
 
+        // 관리자 정보 조회
+        UserVo actor = userMapper.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 삭제 전에 알림을 받을 멤버 조회
+        List<Long> memberIds = teamMemberMapper.findAllMemberIdsByTeamId(teamId);
+
         // 3. 삭제 진행 (Soft Delete)
         teamMapper.deleteTeam(teamId);
+
+        // [알림] 팀 삭제 알림 발송
+        for (Long memberId : memberIds) {
+            if (memberId.equals(actor.getId())) continue;
+            publishDeleteEvent(actor, memberId, teamVo);
+        }
+
+        // 소켓 전송
+        socketSender.sendTeamSocketMessage(teamId, "TEAM_DELETED", userId, null);
     }
 
     /**
@@ -181,6 +210,24 @@ public class TeamServiceImpl implements TeamService {
                 .targetName(team.getName())
                 .description("팀 설정을 변경했습니다.")
                 .build());
+    }
+
+    /**
+     * Helper Methods
+     */
+
+    // [이벤트] 팀 삭제 이벤트 발행
+    private void publishDeleteEvent(UserVo sender, Long receiverId, TeamVo team) {
+        InvitationEvent event = InvitationEvent.builder()
+                .senderId(sender.getId())
+                .senderNickname(sender.getNickname())
+                .senderProfileImg(sender.getProfileImg())
+                .receiverId(receiverId)
+                .targetName(team.getName())
+                .type(NotificationType.TEAM_DELETED)
+                .build();
+
+        publisher.publishEvent(event);
     }
 
 }

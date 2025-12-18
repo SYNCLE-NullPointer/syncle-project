@@ -16,7 +16,7 @@ public class InvitationEvent {
     private Long targetId; // teamId || boardId
     private String targetName; // teamName || boardTitle
 
-    private NotificationType type; // TEAM_INVITE || BOARD_INVITE
+    private NotificationType type; // TEAM_INVITE || BOARD_INVITE || TEAM_DELETE || BOARD_DELETE
 
     private String token; // 팀 초대 토큰
 }
