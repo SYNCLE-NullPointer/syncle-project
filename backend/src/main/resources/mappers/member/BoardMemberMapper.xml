@@ -21,6 +21,14 @@
         </foreach>
     </insert>
 
+    <!-- 보드 멤버 id 조회 -->
+    <select id="findAllMemberIdsByBoardId" parameterType="Long" resultType="Long">
+        SELECT user_id
+        FROM board_member
+        WHERE board_id = #{boardId}
+          AND deleted_at IS NULL
+    </select>
+
     <!-- 보드 멤버 조회 -->
     <select id="findMembersByBoardId" parameterType="Long" resultType="BoardMemberResponse">
         SELECT a.board_id,

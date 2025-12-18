@@ -12,6 +12,14 @@
                 #{role})
     </insert>
 
+    <!-- 팀 멤버 id 조회 -->
+    <select id="findAllMemberIdsByTeamId" parameterType="Long" resultType="Long">
+        SELECT user_id
+        FROM team_member
+        WHERE team_id = #{teamId}
+          AND deleted_at IS NULL
+    </select>
+
     <!-- 팀 멤버 조회 -->
     <select id="findMembersByTeamId" parameterType="Long" resultType="TeamMemberResponse">
         SELECT a.team_id,

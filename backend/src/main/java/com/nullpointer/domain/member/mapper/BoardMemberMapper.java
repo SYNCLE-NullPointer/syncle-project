@@ -14,6 +14,9 @@ public interface BoardMemberMapper {
     // 보드 멤버 일괄 초대
     void insertBoardMembersBulk(@Param("list") List<BoardMemberVo> boardMemberVos);
 
+    // 보드 멤버 id 조회
+    List<Long> findAllMemberIdsByBoardId(@Param("boardId") Long boardId);
+
     // 보드 멤버 조회
     List<BoardMemberResponse> findMembersByBoardId(Long boardId);
 
@@ -34,9 +37,6 @@ public interface BoardMemberMapper {
 
     // 탈퇴 멤버 일괄 복구
     void restoreMembersBulk(@Param("boardId") Long boardId, @Param("userIds") List<Long> userIds);
-
-    // 보드 내 OWNER 수 count
-    long countBoardOwner();
 
     // 보드 권한 체크
     boolean hasAccessToBoard(Long boardId, Long userId);

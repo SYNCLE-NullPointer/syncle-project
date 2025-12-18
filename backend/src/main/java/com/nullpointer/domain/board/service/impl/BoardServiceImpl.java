@@ -22,6 +22,10 @@ import com.nullpointer.domain.member.mapper.BoardMemberMapper;
 import com.nullpointer.domain.member.mapper.TeamMemberMapper;
 import com.nullpointer.domain.member.vo.BoardMemberVo;
 import com.nullpointer.domain.member.vo.enums.Role;
+import com.nullpointer.domain.notification.event.InvitationEvent;
+import com.nullpointer.domain.notification.vo.enums.NotificationType;
+import com.nullpointer.domain.user.mapper.UserMapper;
+import com.nullpointer.domain.user.vo.UserVo;
 import com.nullpointer.global.common.SocketSender;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.exception.BusinessException;
@@ -29,6 +33,7 @@ import com.nullpointer.global.validator.BoardValidator;
 import com.nullpointer.global.validator.MemberValidator;
 import com.nullpointer.global.validator.TeamValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,8 +53,10 @@ public class BoardServiceImpl implements BoardService {
     private final ListMapper listMapper;
     private final ActivityService activityService;
     private final TeamMemberMapper teamMemberMapper;
+    private final ApplicationEventPublisher publisher;
     private final SocketSender socketSender;
     private final S3FileStorageService s3FileStorageService;
+    private final UserMapper userMapper;
 
     /**
      * 보드 권한
@@ -183,14 +190,25 @@ public class BoardServiceImpl implements BoardService {
 
         // 2. 공통 검증 메서드로 보드 조회
         BoardVo boardVo = boardVal.getValidBoard(boardId);
-        Long teamId = boardVo.getTeamId();
-        String boardTitle = boardVo.getTitle();
+
+        // 관리자 정보 조회
+        UserVo actor = userMapper.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 삭제 전에 알림을 받을 멤버 조회
+        List<Long> memberIds = boardMemberMapper.findAllMemberIdsByBoardId(boardId);
 
         // 3. 삭제 진행
         boardMapper.deleteBoard(boardId);
 
         // 보드 삭제 로그 저장
-        deleteBoardLog(userId, teamId, boardId, boardTitle);
+        // deleteBoardLog(userId, teamId, boardId, boardTitle);
+
+        // [알림] 보드 삭제 알림 발송
+        for (Long memberId : memberIds) {
+            if (memberId.equals(actor.getId())) continue; // 본인은 알림 발송 x
+            publishDeleteEvent(actor, memberId, boardVo);
+        }
 
         // 소켓 전송
         socketSender.sendSocketMessage(boardId, "BOARD_DELETED", userId, null);
@@ -319,5 +337,23 @@ public class BoardServiceImpl implements BoardService {
                 .teamMembers(teamMembers)
                 .isFavorite(isFavorite)
                 .build();
+    }
+
+    /**
+     * Helper Methods
+     */
+
+    // [이벤트] 보드 삭제 이벤트 발행
+    private void publishDeleteEvent(UserVo sender, Long receiverId, BoardVo board) {
+        InvitationEvent event = InvitationEvent.builder()
+                .senderId(sender.getId())
+                .senderNickname(sender.getNickname())
+                .senderProfileImg(sender.getProfileImg())
+                .receiverId(receiverId)
+                .targetName(board.getTitle())
+                .type(NotificationType.BOARD_DELETED)
+                .build();
+
+        publisher.publishEvent(event);
     }
 }
