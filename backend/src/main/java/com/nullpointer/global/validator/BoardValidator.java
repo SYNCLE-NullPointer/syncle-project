@@ -21,10 +21,8 @@ public class BoardValidator {
      * 유효한 보드 가져오기
      */
     public BoardVo getValidBoard(Long boardId) {
-        BoardVo board = boardMapper.findBoardByBoardId(boardId);
-        if (board == null) {
-            throw new BusinessException(ErrorCode.BOARD_NOT_FOUND);
-        }
+        BoardVo board = boardMapper.findBoardByBoardId(boardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
         if (board.getDeletedAt() != null) {
             throw new BusinessException(ErrorCode.BOARD_DELETED);
         }

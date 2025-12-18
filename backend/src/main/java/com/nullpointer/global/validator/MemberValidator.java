@@ -1,4 +1,5 @@
 package com.nullpointer.global.validator;
+
 import com.nullpointer.domain.board.mapper.BoardMapper;
 import com.nullpointer.domain.board.vo.BoardVo;
 import com.nullpointer.domain.board.vo.enums.Visibility;
@@ -11,6 +12,7 @@ import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
 @Component
 @RequiredArgsConstructor
 public class MemberValidator {
@@ -20,6 +22,7 @@ public class MemberValidator {
     // ========================================================
     //  1. 팀 권한 확인
     // ========================================================
+
     /**
      * 팀 MEMBER인지 확인 (단순 접근 권한)
      * - 팀 페이지 조회
@@ -29,6 +32,7 @@ public class MemberValidator {
             throw new BusinessException(ErrorCode.TEAM_ACCESS_DENIED);
         }
     }
+
     /**
      * 팀 OWNER인지 확인 (관리 권한)
      * - 팀 설정 변경, 삭제, 멤버 추방
@@ -40,6 +44,7 @@ public class MemberValidator {
             throw new BusinessException(errorCode);
         }
     }
+
     /**
      * 팀 멤버 초대 시 중복 가입 방지를 위한 검증
      * - 현재 활동 중인 멤버 -> 예외
@@ -57,6 +62,7 @@ public class MemberValidator {
     // ========================================================
     //  2. 보드 권한 확인
     // ========================================================
+
     /**
      * 보드 관리자(OWNER) 권한 확인
      * - 보드 삭제, 보드 설정 변경, 멤버 초대/추방/권한 변경
@@ -69,6 +75,7 @@ public class MemberValidator {
             throw new BusinessException(ErrorCode.BOARD_UPDATE_FORBIDDEN);
         }
     }
+
     /**
      * 보드 작업자(OWNER/MEMBER)
      * - 리스트/카드 생성, 수정, 삭제, 이동, 댓글 작성 등
@@ -81,6 +88,7 @@ public class MemberValidator {
             throw new BusinessException(ErrorCode.BOARD_ACCESS_DENIED);
         }
     }
+
     /**
      * 보드 조회(VIEWER) 권한 검증
      * - 보드 진입, 리스트/카드 조회
@@ -96,6 +104,7 @@ public class MemberValidator {
     // ========================================================
     //  3. 실질적 권한(Effective Role) 계산
     // ========================================================
+
     /**
      * 현재 사용자가 해당 보드에서 행사할 수 있는 '최종 권한' 계산
      * 1. 보드 멤버 테이블에 명시적으로 존재하는지?
@@ -106,10 +115,9 @@ public class MemberValidator {
      */
     private Role resolveEffectiveBoardRole(Long boardId, Long userId) {
         // 1. 보드 정보 조회
-        BoardVo board = boardMapper.findBoardByBoardId(boardId);
-        if (board == null) { // 삭제된 보드는 쿼리에서 이미 필터링 됨
-            throw new BusinessException(ErrorCode.BOARD_NOT_FOUND);
-        }
+        BoardVo board = boardMapper.findBoardByBoardId(boardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+
         // 2. 명시적 권한 확인 - 보드 멤버 테이블 조회
         // 사용자가 이 보드에 직접 초대되어 멤버로 등록되어 있는지 확인
         BoardMemberVo boardMember = boardMemberMapper.findMember(boardId, userId);

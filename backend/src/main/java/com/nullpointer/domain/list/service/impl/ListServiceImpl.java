@@ -67,7 +67,6 @@ public class ListServiceImpl implements ListService {
     }
 
 
-
     @Override
     @Transactional(readOnly = true)
     public List<ListResponse> getLists(Long boardId, Long userId) {
@@ -142,8 +141,9 @@ public class ListServiceImpl implements ListService {
     // 리스트 활동 로그 저장
     private void saveActivityLog(Long userId, Long boardId, ActivityType type, Long targetId, String targetName, String description) {
         // 팀 ID 조회를 위해 보드 정보 가져오기
-        BoardVo board = boardMapper.findBoardByBoardId(boardId);
-        Long teamId = (board != null) ? board.getTeamId() : null;
+        BoardVo board = boardMapper.findBoardByBoardId(boardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+        Long teamId = board.getTeamId();
 
         activityService.saveLog(ActivitySaveRequest.builder().userId(userId).teamId(teamId).boardId(boardId).type(type).targetId(targetId).targetName(targetName).description(description).build());
     }

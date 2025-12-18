@@ -86,13 +86,13 @@ public class ChecklistServiceImpl implements ChecklistService {
         ChecklistVo updateVo = req.toVo(checklistId);
         checklistMapper.updateChecklist(updateVo);
 
+        // 소켓 전송
+        socketSender.sendSocketMessage(boardId, "CHECKLIST_UPDATE", userId, null);
+
         // [알림] 체크리스트 완료 상태 변경 알림
         if (req.getDone() != null && !req.getDone().equals(oldDone)) {
             publishChecklistEvent(checklist.getCardId(), userId, checklist.getTitle(), req.getDone());
         }
-
-        // 소켓 전송
-        socketSender.sendSocketMessage(boardId, "CHECKLIST_UPDATE", userId, null);
     }
 
     @Override

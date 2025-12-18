@@ -59,13 +59,11 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     @Transactional
     public void sendInvitation(Long teamId, TeamInviteRequest req, Long inviterId) {
-        // 1. 권한 체크 (초대자가 OWNER인지 검증)
+        // === 기본 검증 ===
         memberValidator.validateTeamOwner(teamId, inviterId, ErrorCode.MEMBER_INVITE_FORBIDDEN);
 
-        TeamVo team = teamMapper.findTeamByTeamId(teamId);
-        if (team == null) {
-            throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
-        }
+        TeamVo team = teamMapper.findTeamByTeamId(teamId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND));
 
         UserVo inviter = userMapper.findById(inviterId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -73,7 +71,7 @@ public class InvitationServiceImpl implements InvitationService {
         // refactor) for문 안에서 쿼리 사용 -> 한 번만 사용하여 일괄 처리되도록 변경
         List<Long> targetIds = req.getUserIds();
 
-        // 데이터 일괄 조회
+        // === 데이터 일괄 조회 ===
         // 1. 초대할 사용자 정보, ID 조회
         List<UserVo> receivers = userMapper.findAllByIds(targetIds);
 
@@ -85,11 +83,13 @@ public class InvitationServiceImpl implements InvitationService {
         List<Long> pendingInviteeIds = invitationMapper.findPendingInviteeIds(teamId, targetIds);
         Set<Long> pendingInviteeSet = new HashSet<>(pendingInviteeIds);
 
-        // 초대장 생성
+        // === 초대장 생성 ===
         List<InvitationVo> invitationsToInsert = new ArrayList<>();
 
         // 초대가 발송될 사용자 ID 목록 (이전 기록 삭제용)
         List<Long> finalTargetIds = new ArrayList<>();
+        // 사용자 정보 조회용 {key: userId, value: UserVo}
+        Map<Long, UserVo> receiverMap = new HashMap<>();
 
         for (UserVo receiver : receivers) {
             Long userId = receiver.getId();
@@ -99,12 +99,9 @@ public class InvitationServiceImpl implements InvitationService {
             if (existingMemberSet.contains(userId)) continue; // 이미 멤버인 경우
             if (pendingInviteeSet.contains(userId)) continue; // 이미 초대된 경우
 
-
             // 초대하는 멤버 ID 수집
             finalTargetIds.add(userId);
-
-            // 새로 초대하는 인원들에 대해, 기존의 '만료됨(EXPIRED)' 또는 '거절됨(REJECTED)' 상태인 내역 삭제
-            invitationMapper.deletePreviousInvitations(teamId, finalTargetIds);
+            receiverMap.put(userId, receiver);
 
             // 초대장 객체 생성
             String token = UUID.randomUUID().toString();
@@ -118,31 +115,43 @@ public class InvitationServiceImpl implements InvitationService {
                     .build();
 
             invitationsToInsert.add(invitation);
+        }
+
+        // 대상이 없으면 종료
+        if (invitationsToInsert.isEmpty()) return;
+
+        // === DB 작업 ===
+        // 새로 초대하는 인원들에 대해, 기존의 '만료됨(EXPIRED)' 또는 '거절됨(REJECTED)' 상태인 내역 삭제
+        invitationMapper.deletePreviousInvitations(teamId, finalTargetIds);
+
+        // DB에 한 번에 저장 (Bulk Insert)
+        invitationMapper.insertInvitationsBulk(invitationsToInsert);
+
+        // === 알림, 이메일 발송 ===
+        for (InvitationVo invitation : invitationsToInsert) {
+            // inviteeId로 Map에서 수신자 정보 꺼내기
+            UserVo receiver = receiverMap.get(invitation.getInviteeId());
+
+            if (receiver == null) continue;
 
             // Redis 저장
             redisUtil.setDataExpire(
-                    RedisKeyType.INVITATION.getKey(token),
-                    String.valueOf(userId),
+                    RedisKeyType.INVITATION.getKey(invitation.getToken()),
+                    String.valueOf(receiver.getId()),
                     RedisKeyType.INVITATION.getDefaultTtl()
             );
 
             // 이메일 전송
             String inviteUrl = UriComponentsBuilder.fromUriString(frontendUrl)
                     .path("/auth/invite/accept")
-                    .queryParam("token", token)
+                    .queryParam("token", invitation.getToken())
                     .build()
                     .toUriString();
 
             emailService.sendInvitationEmail(receiver.getEmail(), inviteUrl, team.getName(), inviter.getNickname());
 
             // [알림] 초대 알림 발송
-            publishInviteEvent(inviter, receiver.getId(), team.getId(), team.getName(), token);
-        }
-
-
-        // DB에 한 번에 저장 (Bulk Insert)
-        if (!invitationsToInsert.isEmpty()) {
-            invitationMapper.insertInvitationsBulk(invitationsToInsert);
+            publishInviteEvent(inviter, receiver.getId(), team.getId(), team.getName(), invitation.getToken());
         }
     }
 
