@@ -98,11 +98,11 @@ public class CommentServiceImpl implements CommentService {
         CardVo card = cardMapper.findById(cardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CARD_NOT_FOUND));
 
-        // [알림] 멘션/댓글/답글 알림 처리
-        handleNotification(card, boardId, actor, request);
-
         // 소켓 전송
         socketSender.sendSocketMessage(boardId, "CHECKLIST_CREATE", userId, null);
+
+        // [알림] 멘션/댓글/답글 알림 처리
+        handleNotification(card, boardId, actor, request);
 
         // 저장된 데이터를 Full 정보(작성자 포함)로 다시 조회해서 리턴
         return commentMapper.selectCommentById(request.getId());

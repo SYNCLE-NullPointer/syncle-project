@@ -3,6 +3,7 @@ package com.nullpointer.domain.team.mapper;
 import com.nullpointer.domain.team.vo.TeamVo;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TeamMapper {
 
@@ -13,7 +14,7 @@ public interface TeamMapper {
     List<TeamVo> findTeamByUserId(Long userId);
 
     // 팀 상세 조회
-    TeamVo findTeamByTeamId(Long teamId);
+    Optional<TeamVo> findTeamByTeamId(Long teamId);
 
     // 팀 정보 수정
     void updateTeam(TeamVo teamVo);

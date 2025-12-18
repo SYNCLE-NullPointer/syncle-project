@@ -19,10 +19,9 @@ public class TeamValidator {
      * 유효한 팀 가져오기
      */
     public TeamVo getValidTeam(Long teamId) {
-        TeamVo team = teamMapper.findTeamByTeamId(teamId);
-        if (team == null) {
-            throw new BusinessException(ErrorCode.TEAM_NOT_FOUND);
-        }
+        TeamVo team = teamMapper.findTeamByTeamId(teamId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND));
+
         if (team.getDeletedAt() != null) {
             throw new BusinessException(ErrorCode.TEAM_DELETED);
         }

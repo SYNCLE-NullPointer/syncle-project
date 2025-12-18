@@ -119,7 +119,9 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     @Override
     @Transactional
     public void deleteTeamMember(Long teamId, Long memberId, Long userId) {
-        TeamVo team = teamMapper.findTeamByTeamId(teamId);
+        TeamVo team = teamMapper.findTeamByTeamId(teamId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND));
+
         UserVo actor = userMapper.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -128,12 +130,16 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
         }
 
+        // 알림 대상, 타입 결정
+        NotificationType notificationType;
+        Long receiverId;
+
         // 2. 추방/탈퇴 분기
         if (!userId.equals(memberId)) {
             // [추방] OWNER가 멤버 추방
             memberVal.validateTeamOwner(teamId, userId, ErrorCode.MEMBER_DELETE_FORBIDDEN);
-            // [알림] 대상자에게 추방 알림 발송
-            publishMemberEvent(actor, memberId, team, NotificationType.TEAM_MEMBER_KICKED);
+            notificationType = NotificationType.TEAM_MEMBER_KICKED;
+            receiverId = memberId; // 추방 대상에게 알림
         } else {
             // [탈퇴] 본인 탈퇴
             // 추가) 본인이 OWNER이면 탈퇴 불가
@@ -141,13 +147,15 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             if (me.getRole() == Role.OWNER) {
                 throw new BusinessException(ErrorCode.OWNER_MUST_TRANSFER_BEFORE_LEAVE);
             }
-
-            Long ownerId = findTeamOwnerId(teamId);
-            publishMemberEvent(actor, ownerId, team, NotificationType.TEAM_MEMBER_LEFT);
+            notificationType = NotificationType.TEAM_MEMBER_LEFT;
+            receiverId = findTeamOwnerId(teamId); // 관리자에게 알림
         }
 
-        // 3. 탈퇴 처리
+        // 3. DB 삭제 처리
         teamMemberMapper.deleteTeamMember(teamId, memberId);
+
+        // [알림] 관리자/추방 대상에게 알림 발송
+        publishMemberEvent(actor, receiverId, team, notificationType);
 
         // 탈퇴/강퇴 로그 저장
         // kickMemberLog(teamId, memberId, ownerId);
