@@ -1,6 +1,5 @@
-package com.nullpointer.domain.file.service.impl;
+package com.nullpointer.domain.file.service;
 
-import com.nullpointer.domain.file.service.S3FileStorageService;
 import com.nullpointer.domain.file.vo.enums.FileType;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.exception.BusinessException;

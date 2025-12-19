@@ -7,7 +7,6 @@ import com.nullpointer.domain.invitation.dto.MyInvitationResponse;
 import com.nullpointer.domain.invitation.dto.TeamInvitationResponse;
 import com.nullpointer.domain.invitation.dto.TeamInviteRequest;
 import com.nullpointer.domain.invitation.mapper.InvitationMapper;
-import com.nullpointer.domain.invitation.service.InvitationEmailService;
 import com.nullpointer.domain.invitation.service.InvitationService;
 import com.nullpointer.domain.invitation.vo.InvitationVo;
 import com.nullpointer.domain.invitation.vo.enums.Status;
@@ -25,6 +24,7 @@ import com.nullpointer.domain.user.vo.UserVo;
 import com.nullpointer.global.common.SocketSender;
 import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.common.enums.RedisKeyType;
+import com.nullpointer.global.email.EmailService;
 import com.nullpointer.global.exception.BusinessException;
 import com.nullpointer.global.util.RedisUtil;
 import com.nullpointer.global.validator.MemberValidator;
@@ -44,7 +44,7 @@ public class InvitationServiceImpl implements InvitationService {
 
     private final InvitationMapper invitationMapper;
     private final TeamMemberService teamMemberService;
-    private final InvitationEmailService emailService;
+    private final EmailService emailService;
     private final TeamMapper teamMapper;
     private final UserMapper userMapper;
     private final RedisUtil redisUtil;
@@ -55,7 +55,7 @@ public class InvitationServiceImpl implements InvitationService {
     private final ApplicationEventPublisher publisher;
     private final SocketSender socketSender;
 
-    @Value("${app.domain.frontend}")
+    @Value("${app.domain.frontend.url}")
     private String frontendUrl;
 
     // ========================================================

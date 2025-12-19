@@ -1,7 +1,7 @@
 package com.nullpointer.domain.auth.service.impl;
 
-import com.nullpointer.domain.auth.service.EmailService;
 import com.nullpointer.global.common.enums.VerificationType;
+import com.nullpointer.global.email.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
