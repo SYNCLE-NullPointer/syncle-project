@@ -47,4 +47,6 @@ public interface BoardMapper {
 
     void deleteFavorite(@Param("boardId") Long boardId, @Param("userId") Long userId);
 
+    // 공개된 모든 보드 검색
+    List<BoardResponse> searchPublicBoards(@Param("keyword") String keyword);
 }

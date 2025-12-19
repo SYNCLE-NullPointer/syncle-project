@@ -5,6 +5,8 @@ export const boardApi = {
   fetchBoard: (boardId) => api.get(`/boards/${boardId}/view`),
   // 내 보드 목록 조회
   fetchMyBoards: () => api.get('/boards/me'),
+  // 공개 보드 검색
+  searchBoards: (keyword) => api.get('/boards/search', { params: { keyword } }),
   // 보드 생성
   createBoard: (teamId, data) => api.post(`/teams/${teamId}/boards`, data),
   // 보드 수정

@@ -124,20 +124,19 @@ public class MemberValidator {
         if (boardMember != null) {
             return boardMember.getRole(); // DB에 저장된 role 반환
         }
-        // 3. PRIVATE 보드인 경우 - 명시적인 보드 멤버가 아니면 접근 불가
-        if (board.getVisibility() == Visibility.PRIVATE) {
-            return null;
-        }
-        // 4. TEAM 보드인 경우 - 같은 팀 소속 팀원에게 암시적 권한 부여
+
+        // 3. 같은 팀 멤버 확인
         TeamMemberVo teamMember = teamMemberMapper.findMember(board.getTeamId(), userId);
         if (teamMember != null) {
-            // 팀에서의 역할에 따라 보드 권한 매핑
-            if (teamMember.getRole() == Role.VIEWER) {
-                return Role.VIEWER; // 조회만 가능
-            } else {
-                return Role.MEMBER; // 팀 OWNER도 보드 MEMBER로 매핑
-            }
+            return (teamMember.getRole() == Role.VIEWER) ? Role.VIEWER : Role.MEMBER;
         }
+
+        // 4. PUBLIC 보드 확인 (변경 사항)
+        //        팀원도 아니고 보드 멤버도 아니지만, PUBLIC이면 누구나 조회 가능(VIEWER)
+        if (board.getVisibility() == Visibility.PUBLIC) {
+            return Role.VIEWER;
+        }
+
         // 5. 모두 해당하지 않으면 권한 없음
         return null;
     }

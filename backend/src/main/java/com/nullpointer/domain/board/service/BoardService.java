@@ -43,4 +43,7 @@ public interface BoardService {
 
     // 보드 공유 링크 생성
     String createShareToken(Long boardId, Long userId);
+
+    // 공개 보드 검색
+    List<BoardResponse> searchBoards(String keyword);
 }

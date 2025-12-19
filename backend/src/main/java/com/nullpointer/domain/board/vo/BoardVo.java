@@ -19,7 +19,7 @@ public class BoardVo {
     private String description;
 
     @Builder.Default
-    private Visibility visibility = Visibility.TEAM;
+    private Visibility visibility = Visibility.PUBLIC;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

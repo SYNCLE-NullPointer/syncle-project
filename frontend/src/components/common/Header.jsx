@@ -1,39 +1,88 @@
 import { Bell, Plus, Search } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { boardApi } from '../../api/board.api'
 import defaultProfile from '../../assets/images/default.png'
 import { useAuthQuery } from '../../hooks/auth/useAuthQuery'
 import { useNotificationQuery } from '../../hooks/notification/useNotificationQuery'
 import useUiStore from '../../stores/useUiStore'
 import NotificationMenu from '../modals/NotificationMenu'
 import ProfileMenu from '../modals/ProfileMenu'
+import SearchDropdown from './SearchDropdown'
 
 function Header({ onOpenTeamModal }) {
-  // 알림 데이터 조회
-  // 소켓이 알림을 받으면 'notifications' 쿼리를 무효화시키고,
-  // 자동으로 최신 데이터를 가져와 unreadCount 갱신
   const { unreadCount } = useNotificationQuery()
-
   const { data: user } = useAuthQuery()
   const { activeMenu, toggleMenu, closeAll } = useUiStore()
+
   const location = useLocation()
+  const navigate = useNavigate()
+
+  // 드롭다운 및 검색 상태 관리
+  const [keyword, setKeyword] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+
+  // 외부 클릭 감지를 위한 Ref
+  const searchRef = useRef(null)
 
   const [notiAnchor, setNotiAnchor] = useState(null)
   const [profileAnchor, setProfileAnchor] = useState(null)
 
   useEffect(() => {
-    // 경로가 바뀔 때마다 모든 메뉴 닫기
     closeAll()
   }, [location.pathname, closeAll])
 
-  // 알림 아이콘 클릭
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // 검색어 변경 시 API 호출
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!keyword.trim()) {
+        setSearchResults([])
+        setShowDropdown(false)
+        return
+      }
+
+      setIsSearching(true)
+      try {
+        const res = await boardApi.searchBoards(keyword)
+        setSearchResults(res.data.data)
+        setShowDropdown(true)
+      } catch (error) {
+        console.error('검색 실패:', error)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [keyword])
+
+  // 검색 결과 클릭 핸들러
+  const handleResultClick = (boardId) => {
+    navigate(`/board/${boardId}`) // 해당 보드로 이동
+    setKeyword('') // 검색어 초기화
+    setShowDropdown(false) // 드롭다운 닫기
+  }
+
+  // ... (handleNotiClick, handleProfileClick 유지) ...
   const handleNotiClick = (e) => {
     e.stopPropagation()
     setNotiAnchor(e.currentTarget)
     toggleMenu('notification')
   }
 
-  // 프로필 아이콘 클릭
   const handleProfileClick = (e) => {
     e.stopPropagation()
     setProfileAnchor(e.currentTarget)
@@ -42,24 +91,39 @@ function Header({ onOpenTeamModal }) {
 
   return (
     <nav className="relative z-50 flex h-14 w-full items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
-      {/* ---------------- 좌측: 로고 ---------------- */}
+      {/* 좌측 로고 */}
       <Link to="dashboard" className="flex items-center gap-3">
-        {/* 서비스 로고 */}
         <span className="text-xl font-bold tracking-tight text-gray-800">
           Syncle
         </span>
       </Link>
+
       {/* ---------------- 가운데: 검색 + 팀 생성 ---------------- */}
-      <div className="flex w-full max-w-xl items-center gap-4 px-4">
+      <div
+        className="relative flex w-full max-w-xl items-center gap-4 px-4"
+        ref={searchRef}
+      >
         {/* 검색창 */}
         <div className="relative w-full">
           <input
             type="text"
-            placeholder="검색어를 입력해주세요."
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onFocus={() => keyword.trim() && setShowDropdown(true)}
+            placeholder="보드 검색..."
             className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pr-4 pl-11 text-sm text-gray-700 transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:outline-none"
           />
           <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-gray-400" />
         </div>
+
+        {/* 분리된 드롭다운 컴포넌트 사용 */}
+        {showDropdown && (
+          <SearchDropdown
+            results={searchResults}
+            isSearching={isSearching}
+            onSelect={handleResultClick}
+          />
+        )}
 
         {/* Create 버튼 */}
         <button
@@ -70,7 +134,8 @@ function Header({ onOpenTeamModal }) {
           <span>팀 생성</span>
         </button>
       </div>
-      {/* ---------------- 우측 아이콘들 ---------------- */}
+
+      {/* 우측 아이콘들 */}
       <div className="flex items-center gap-4">
         {/* 알림 아이콘 */}
         <div className="relative">
@@ -83,25 +148,18 @@ function Header({ onOpenTeamModal }) {
             }`}
           >
             <Bell size={22} strokeWidth={2} />
-
-            {/* 읽지 않은 알림 배지 */}
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white shadow-sm ring-2 ring-white">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </button>
-
-          {/* 알림 메뉴 드롭다운 */}
           {activeMenu === 'notification' && (
-            <NotificationMenu
-              onClose={closeAll}
-              anchorEl={notiAnchor} // Floating UI 사용 시 필요
-            />
+            <NotificationMenu onClose={closeAll} anchorEl={notiAnchor} />
           )}
         </div>
 
-        {/* 프로필 아이콘 영역 */}
+        {/* 프로필 아이콘 */}
         <div className="relative">
           <button
             onClick={handleProfileClick}
@@ -117,8 +175,6 @@ function Header({ onOpenTeamModal }) {
               className="h-full w-full object-cover"
             />
           </button>
-
-          {/* 프로필 메뉴 드롭다운 (컴포넌트가 있다면 추가) */}
           {activeMenu === 'profile' && (
             <ProfileMenu onClose={closeAll} anchorEl={profileAnchor} />
           )}
