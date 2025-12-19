@@ -6,7 +6,7 @@ function CreateBoardMenu({ teamId, onClose, onSuccess }) {
   // 입력 상태 관리
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [visibility, setVisibility] = useState('TEAM')
+  const [visibility, setVisibility] = useState('PUBLIC')
 
   const { createBoard } = useBoardMutations(undefined)
 
@@ -70,7 +70,7 @@ function CreateBoardMenu({ teamId, onClose, onSuccess }) {
             className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm hover:cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
             <option value="PRIVATE">Private</option>
-            <option value="TEAM">Team</option>
+            <option value="PUBLIC">Public</option>
           </select>
         </div>
 

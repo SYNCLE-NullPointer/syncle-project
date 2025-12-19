@@ -24,18 +24,18 @@ function VisibilityView({ board, isOwner }) {
         <RadioOption
           value="PRIVATE"
           label="비공개"
-          desc="보드 멤버만 볼 수 있습니다."
+          desc="초대된 멤버만 볼 수 있습니다."
           icon={Lock}
           checked={visibility === 'PRIVATE'} // 현재 상태와 비교하여 true/false 전달
           onChange={handleRadioChange}
           disabled={!isOwner}
         />
         <RadioOption
-          value="TEAM"
-          label="팀 공개"
-          desc="팀에 소속된 모든 멤버가 볼 수 있습니다."
+          value="PUBLIC"
+          label="전체 공개"
+          desc="모든 사용자가 검색하고 조회할 수 있습니다."
           icon={Briefcase}
-          checked={visibility === 'TEAM'}
+          checked={visibility === 'PUBLIC'}
           onChange={handleRadioChange}
           disabled={!isOwner}
         />

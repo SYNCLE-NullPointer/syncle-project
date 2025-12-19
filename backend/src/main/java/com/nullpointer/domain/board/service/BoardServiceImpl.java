@@ -359,6 +359,16 @@ public class BoardServiceImpl implements BoardService {
         return token;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<BoardResponse> searchBoards(String keyword) {
+        // 검색어가 없으면 빈 리스트 반환
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        return boardMapper.searchPublicBoards(keyword);
+    }
+
     /**
      * Helper Methods
      */

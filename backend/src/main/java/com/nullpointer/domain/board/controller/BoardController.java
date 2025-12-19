@@ -55,6 +55,13 @@ public class BoardController {
         return ApiResponse.success(boardService.getTeamBoards(teamId, userId));
     }
 
+    // 보드 검색 API
+    @Operation(summary = "공개 보드 검색", description = "전체 공개된 보드를 검색합니다.")
+    @GetMapping("/boards/search")
+    public ApiResponse<List<BoardResponse>> searchBoards(@RequestParam String keyword) {
+        return ApiResponse.success(boardService.searchBoards(keyword));
+    }
+
     // 보드 상세 조회
     @Operation(summary = "보드 상세 정보 조회", description = "보드 설정 정보를 조회합니다.")
     @GetMapping("/boards/{boardId}")
@@ -144,4 +151,6 @@ public class BoardController {
         String token = boardService.createShareToken(boardId, userId);
         return ApiResponse.success(token);
     }
+
+
 }
