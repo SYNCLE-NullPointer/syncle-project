@@ -15,7 +15,8 @@ function BoardHeader({ board }) {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   // 데이터 변형 훅 (React Query)
-  const { toggleFavorite } = useBoardMutations(board.id)
+  const { toggleFavorite, createShareToken, isCreatingToken } =
+    useBoardMutations(board.id)
 
   // 모달 상태 관리
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
@@ -166,9 +167,13 @@ function BoardHeader({ board }) {
           </button>
 
           {/* 공유 버튼 */}
-          <button className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:cursor-pointer hover:bg-blue-700 active:scale-95">
+          <button
+            onClick={() => createShareToken()}
+            disabled={isCreatingToken}
+            className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:cursor-pointer hover:bg-blue-700 active:scale-95"
+          >
             <Share2 size={16} />
-            <span>공유</span>
+            {isCreatingToken ? '생성 중...' : '공유'}
           </button>
 
           {/* 더보기 메뉴 */}
