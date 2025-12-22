@@ -1,13 +1,13 @@
 package com.nullpointer.domain.card.service;
 
-import com.nullpointer.domain.card.dto.CardResponse;
-import com.nullpointer.domain.card.dto.CreateCardRequest;
-import com.nullpointer.domain.card.dto.MoveCardRequest;
-import com.nullpointer.domain.card.dto.UpdateCardRequest;
+import com.nullpointer.domain.board.mapper.BoardMapper;
+import com.nullpointer.domain.board.vo.BoardVo;
+import com.nullpointer.domain.card.dto.*;
 import com.nullpointer.domain.card.helper.CardEventHelper;
 import com.nullpointer.domain.card.helper.CardOrderManager;
 import com.nullpointer.domain.card.mapper.CardMapper;
 import com.nullpointer.domain.card.vo.CardVo;
+import com.nullpointer.domain.card.vo.enums.Priority;
 import com.nullpointer.domain.list.mapper.ListMapper;
 import com.nullpointer.domain.list.vo.ListVo;
 import com.nullpointer.domain.user.mapper.UserMapper;
@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -34,12 +35,17 @@ public class CardServiceImpl implements CardService {
     private final CardOrderManager cardOrderManager;
     private final CardEventHelper cardEventHelper;
     private final SocketSender socketSender;
+    private final BoardMapper boardMapper;
 
     @Override
     @Transactional
     public CardResponse createCard(Long listId, CreateCardRequest req, Long userId) {
         // 리스트 확인 & 권한 검증
         Long boardId = validateListAndPermission(listId, userId, false);
+        BoardVo board = boardMapper.findBoardByBoardId(boardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+        UserVo actor = userMapper.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 카드 VO 생성 (DTO -> VO)
         CardVo cardVo = CardVo.builder()
@@ -57,6 +63,9 @@ public class CardServiceImpl implements CardService {
 
         // 소켓 전송
         socketSender.sendSocketMessage(boardId, "CARD_CREATE", userId, response);
+
+        // [이벤트] 카드 생성 이벤트 발행
+        cardEventHelper.publishCardCreateEvent(actor, cardVo, boardId, board.getTeamId());
 
         // 담당자 정보 포함 응답 반환
         return response;
@@ -81,15 +90,28 @@ public class CardServiceImpl implements CardService {
     @Transactional
     public void moveCard(Long cardId, MoveCardRequest req, Long userId) {
         // 이동할 카드 조회
-        CardVo card = findCardOrThrow(cardId);
+        CardVo card = cardMapper.findById(cardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CARD_NOT_FOUND));
+
         // 권한 검증 & 보드 id 조회
-        Long boardId = validateListAndPermission(req.getListId(), userId, false);
+        Long boardId = validateListAndPermission(card.getListId(), userId, false);
+
+        BoardVo board = boardMapper.findBoardByBoardId(boardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+
+        // 이동 전 리스트 정보 조회 (로그용)
+        ListVo prevList = listMapper.findById(card.getListId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
         UserVo actor = userMapper.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 순서 및 리스트 변경
         cardOrderManager.moveCardOrder(card, req.getListId(), req.getOrderIndex());
+
+        // 이동 후 리스트 정보 조회
+        ListVo nextList = listMapper.findById(req.getListId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
         // 이동 정보 저장
         Map<String, Object> data = new HashMap<>();
@@ -101,7 +123,7 @@ public class CardServiceImpl implements CardService {
         socketSender.sendSocketMessage(boardId, "CARD_MOVE", userId, data);
 
         // [이벤트] 카드 이동 알림 발행 (담당자가 있고, 본인이 담당자가 아닐 때 <- 내부에서 검증)
-        cardEventHelper.publishCardMoveEvent(actor, card, boardId, req.getListId());
+        cardEventHelper.publishCardMoveEvent(actor, card, boardId, board.getTeamId(), prevList, nextList);
     }
 
     // 카드 수정
@@ -109,20 +131,36 @@ public class CardServiceImpl implements CardService {
     @Transactional
     public CardResponse updateCard(Long cardId, UpdateCardRequest req, Long userId) {
         // 카드 조회
-        CardVo card = findCardOrThrow(cardId);
+        CardVo card = cardMapper.findById(cardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CARD_NOT_FOUND));
         // 권한 검증 & 보드 id 조회
         Long boardId = validateListAndPermission(card.getListId(), userId, false);
-
+        BoardVo board = boardMapper.findBoardByBoardId(boardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
         UserVo actor = userMapper.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        Set<String> changedFields = new HashSet<>();
+        // 1. [캡처] 변경 전 데이터 저장 (로그 상세 메시지용)
+        String prevTitle = card.getTitle();
+        String prevLabel = card.getLabel();
+        Priority prevPriority = card.getPriority();
+        LocalDateTime prevDueDate = card.getDueDate();
+        LocalDateTime prevStartDate = card.getStartDate();
 
-        // 주요 필드 변경 감지 & 카드 객체 업데이트
+        Set<String> changedFields = new HashSet<>();
+        // 2. 주요 필드 변경 감지 & 카드 객체 업데이트
         boolean isAssigneeChanged = applyChanges(card, req, boardId, changedFields);
 
+        // 3. 담당자 이름 조회 (변경된 경우에만)
+        String assigneeNickname = null;
+        if (isAssigneeChanged && req.getAssigneeId() != null) {
+            assigneeNickname = userMapper.findById(req.getAssigneeId())
+                    .map(UserVo::getNickname)
+                    .orElse(null);
+        }
+
         // [이벤트] 카드 설명 변경 시 멘션 알림 발행
-        cardEventHelper.processDescriptionMentions(actor, card, boardId, req.getDescription());
+        cardEventHelper.processDescriptionMentions(actor, card, boardId, board.getTeamId(), req.getDescription());
 
         // 카드 정보 업데이트
         CardVo updateVo = CardVo.builder()
@@ -140,18 +178,28 @@ public class CardServiceImpl implements CardService {
 
         // 업데이트 진행
         cardMapper.updateCard(updateVo);
-
         // 초기화 요청 처리 (날짜, 라벨, 우선순위 제거)
         handleRemoveRequests(cardId, req);
 
         // 업데이트 된 카드 정보 조회
         CardResponse response = cardMapper.findCardDetailById(card.getId());
-
         // 소켓 전송
         socketSender.sendSocketMessage(boardId, "CARD_UPDATE", userId, response);
 
+        // 4. [이벤트] DTO 생성
+        CardUpdateInfo updateInfo = CardUpdateInfo.builder()
+                .changedFields(changedFields)
+                .isAssigneeChanged(isAssigneeChanged)
+                .prevTitle(prevTitle)
+                .prevLabel(prevLabel)
+                .prevPriority(prevPriority)
+                .prevDueDate(prevDueDate)
+                .prevStartDate(prevStartDate)
+                .assigneeNickname(assigneeNickname)
+                .build();
+
         // [이벤트] 카드 변경 알림 발행
-        cardEventHelper.publishCardUpdateEvent(actor, card, boardId, changedFields, isAssigneeChanged);
+        cardEventHelper.publishCardUpdateEvent(actor, card, boardId, board.getTeamId(), updateInfo);
 
         return response;
     }
@@ -160,32 +208,41 @@ public class CardServiceImpl implements CardService {
     @Override
     @Transactional
     public void updateArchiveStatus(Long cardId, boolean isArchived, Long userId) {
-
-        // 카드 조회
-        CardVo card = findCardOrThrow(cardId);
-
+        // 데이터 조회
+        CardVo card = cardMapper.findById(cardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CARD_NOT_FOUND));
         // 권한 검증 & 보드 id 조회
         Long boardId = validateListAndPermission(card.getListId(), userId, false);
-
-        // 업데이트 된 카드 정보 조회
-        CardResponse response = cardMapper.findCardDetailById(card.getId());
-
-        // 소켓 전송
-        socketSender.sendSocketMessage(boardId, "CARD_UPDATE", userId, response);
+        BoardVo board = boardMapper.findBoardByBoardId(boardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+        UserVo actor = userMapper.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 업데이트
         cardMapper.updateCardArchiveStatus(cardId, isArchived);
+
+        // 업데이트 된 카드 정보 조회
+        CardResponse response = cardMapper.findCardDetailById(card.getId());
+        // 소켓 전송
+        socketSender.sendSocketMessage(boardId, "CARD_UPDATE", userId, response);
+
+        // [이벤트] 아카이브 이벤트 발행
+        cardEventHelper.publishCardArchiveEvent(actor, card, boardId, board.getTeamId(), isArchived);
     }
 
     // 카드 삭제
     @Override
     @Transactional
     public void deleteCard(Long cardId, Long userId) {
-        // 카드 조회
-        CardVo card = findCardOrThrow(cardId);
-
+        // 데이터 조회
+        CardVo card = cardMapper.findById(cardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CARD_NOT_FOUND));
         // 권한 검증
         Long boardId = validateListAndPermission(card.getListId(), userId, false);
+        BoardVo board = boardMapper.findBoardByBoardId(boardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+        UserVo actor = userMapper.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 카드 삭제
         cardMapper.deleteCard(cardId);
@@ -197,6 +254,9 @@ public class CardServiceImpl implements CardService {
 
         // 소켓 전송
         socketSender.sendSocketMessage(boardId, "CARD_DELETE", userId, data);
+
+        // [이벤트] 카드 삭제 이벤트 발행
+        cardEventHelper.publishCardDeleteEvent(actor, card, boardId, board.getTeamId());
     }
 
     /**
@@ -218,7 +278,15 @@ public class CardServiceImpl implements CardService {
             changedFields.add("ASSIGNEE");
         }
 
-        // 주요 필드 변경 확인 (완료 여부, 우선순위, 마감일)
+        // 제목 변경
+        if (checkChange(req.getTitle(), card.getTitle())) {
+            changedFields.add("TITLE");
+        }
+        // 설명 변경
+        if (checkChange(req.getDescription(), card.getDescription())) {
+            changedFields.add("DESCRIPTION");
+        }
+        // 주요 필드 변경 확인 (완료 여부, 우선순위, 마감일, 라벨)
         if (checkChange(req.getIsComplete(), card.getIsComplete())) {
             card.setIsComplete(req.getIsComplete());
             changedFields.add("COMPLETE");
@@ -231,14 +299,28 @@ public class CardServiceImpl implements CardService {
             card.setDueDate(req.getDueDate());
             changedFields.add("DUE_DATE");
         }
+        if (checkChange(req.getStartDate(), card.getStartDate())) {
+            card.setStartDate(req.getStartDate());
+            changedFields.add("START_DATE");
+        }
+        if (checkChange(req.getLabel(), card.getLabel())) {
+            card.setLabel(req.getLabel());
+            changedFields.add("LABEL");
+        }
+
+        // 값이 삭제된 경우 감지 (값이 없어서 applyChanges가 감지 못함)
+        // -> 삭제 플래그가 true이고 기존에 값이 있었다면 변경된 것으로 간주
+        if (Boolean.TRUE.equals(req.getRemovePriority()) && card.getPriority() != null) {
+            changedFields.add("PRIORITY");
+        }
+        if (Boolean.TRUE.equals(req.getRemoveDate()) && card.getDueDate() != null) {
+            changedFields.add("DUE_DATE");
+        }
+        if (Boolean.TRUE.equals(req.getRemoveLabel()) && card.getLabel() != null) {
+            changedFields.add("LABEL");
+        }
 
         return isAssigneeChanged;
-    }
-
-    // 카드 id로 카드 조회 (없으면 예외)
-    private CardVo findCardOrThrow(Long cardId) {
-        return cardMapper.findById(cardId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CARD_NOT_FOUND));
     }
 
     // 리스트 id로 소속된 보드를 찾고, 사용자의 편집 권한(MEMBER 이상) 검증
