@@ -12,6 +12,8 @@ import java.util.Set;
 public class CardEvent {
     private Long cardId;
     private String cardTitle;
+    private String prevTitle; // 변경 전 제목
+
     private Long boardId;
     private Long teamId;
 
@@ -26,10 +28,21 @@ public class CardEvent {
     private String actorProfileImg;
 
     private Long assigneeId; // 카드 담당자 (기본 수신자)
+    private String assigneeNickname;
 
     private Boolean isComplete; // 완료 여부
+
+    private String label;
+    private String prevLabel;
+
     private Priority priority; // 중요도
+    private Priority prevPriority; // 변경 전 중요도
+
     private LocalDateTime dueDate; // 마감일
+    private LocalDateTime prevDueDate;
+
+    private LocalDateTime startDate; // 현재 시작일
+    private LocalDateTime prevStartDate;
 
     private String commentContent; // 댓글
     private Long commentId;

@@ -65,7 +65,6 @@
         l.type,
         l.target_name AS targetName,
         l.description,
-        l.detail,
         l.created_at AS createdAt,
         u.nickname AS actorName,
         b.title AS boardTitle
@@ -85,7 +84,6 @@
                                   target_id,
                                   target_name,
                                   description,
-                                  detail,
                                   created_at)
         VALUES (#{userId},
                 #{teamId},
@@ -94,7 +92,6 @@
                 #{targetId},
                 #{targetName},
                 #{description},
-                #{detail},
                 NOW())
     </insert>
 

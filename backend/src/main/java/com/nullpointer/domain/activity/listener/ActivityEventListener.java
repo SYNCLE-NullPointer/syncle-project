@@ -5,9 +5,11 @@ import com.nullpointer.domain.activity.service.ActivityService;
 import com.nullpointer.domain.activity.vo.enums.ActivityType;
 import com.nullpointer.domain.card.event.CardEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.util.StringUtils;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
@@ -17,20 +19,23 @@ import java.util.Set;
 public class ActivityEventListener {
 
     private final ActivityService activityService;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("M월 d일");
 
     /**
      * 카드 이벤트 활동 기록
+     * - @TransactionalEventListener 커밋 성공 시에만 실행
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleCardEvent(CardEvent event) {
+        // 단순 알림용 이벤트는 로깅 제외
         if (event.getEventType() == CardEvent.EventType.DEADLINE_NEAR ||
                 event.getEventType() == CardEvent.EventType.MENTION) return;
 
         ActivityType type = mapToActivityType(event);
         String detailMsg = generateDetail(event);
 
-        String finalDescription = (detailMsg != null && !detailMsg.isEmpty()) ? detailMsg : type.getDescription();
+        String finalDescription = StringUtils.hasText(detailMsg) ? detailMsg : type.getDescription();
 
         ActivitySaveRequest req = ActivitySaveRequest.builder()
                 .userId(event.getActorId())
@@ -110,62 +115,131 @@ public class ActivityEventListener {
      */
     private String generateDetail(CardEvent event) {
         CardEvent.EventType type = event.getEventType();
-        Set<String> changedFields = event.getChangedFields(); // 변경된 필드 목록
+        Set<String> fields = event.getChangedFields();
 
-        // 카드 이동
-        if (type == CardEvent.EventType.MOVED) {
-            if (event.getPrevListTitle() != null && event.getListTitle() != null) {
-                return String.format("'%s' ➔️ '%s'", event.getPrevListTitle(), event.getListTitle());
+        return switch (type) {
+            case CREATED -> "새로운 카드를 생성했습니다.";
+
+            case MOVED -> {
+                String prev = event.getPrevListTitle();
+                String next = event.getListTitle();
+                if (prev != null && next != null) {
+                    yield String.format("리스트를 '%s'에서 '%s'로 이동했습니다.", prev, next);
+                }
+                yield "카드의 리스트를 이동했습니다.";
             }
-            return "리스트 이동";
+
+            case UPDATED -> generateUpdateDetail(event, fields);
+
+            case ATTACHMENT -> {
+                String fileName = fields.stream().findFirst().orElse("파일");
+                yield String.format("'%s' 파일을 첨부했습니다.", truncate(fileName, 20));
+            }
+
+            case CHECKLIST -> {
+                String content = event.getChecklistContent();
+                yield content != null
+                        ? String.format("체크리스트 항목 '%s'을(를) 완료했습니다.", truncate(content, 15))
+                        : "체크리스트 항목을 완료했습니다.";
+            }
+
+            case ASSIGNED -> {
+                // 본인이 본인을 지정한 경우
+                if (event.getActorId().equals(event.getAssigneeId())) {
+                    yield "본인을 담당자로 지정했습니다.";
+                }
+                // 타인을 지정한 경우 (assigneeName 필드 활용 권장)
+                String assigneeName = event.getAssigneeNickname(); // CardEvent에 추가 필요
+                if (StringUtils.hasText(assigneeName)) {
+                    yield String.format("'%s'님을 담당자로 지정했습니다.", assigneeName);
+                }
+                yield "담당자를 변경했습니다.";
+            }
+
+            case COMMENT -> "카드에 댓글을 남겼습니다.";
+
+            case REPLY -> "댓글에 답글을 작성했습니다.";
+
+            case DELETED -> "카드를 삭제했습니다.";
+
+            default -> "";
+        };
+    }
+
+    /**
+     * UPDATED 이벤트 상세 메시지 처리
+     */
+    private String generateUpdateDetail(CardEvent event, Set<String> fields) {
+        if (fields.contains("TITLE")) {
+            return String.format("제목을 '%s'에서 '%s'(으)로 변경했습니다.",
+                    truncate(event.getPrevTitle(), 10), truncate(event.getCardTitle(), 10));
+        }
+        if (fields.contains("DESCRIPTION")) {
+            return "카드 본문 설명을 수정했습니다.";
         }
 
-        // 카드 수정
-        if (type == CardEvent.EventType.UPDATED) {
-            if (changedFields.contains("TITLE")) {
-                return "제목 변경";
+        // 라벨 변경
+        if (fields.contains("LABEL")) {
+            if (event.getLabel() == null) return "라벨을 삭제했습니다.";
+            if (event.getPrevLabel() != null) {
+                return String.format("라벨을 '%s'에서 '%s'(으)로 변경했습니다.", event.getPrevLabel(), event.getLabel());
             }
-            if (changedFields.contains("DESCRIPTION")) {
-                return "설명 수정";
-            }
-            if (changedFields.contains("PRIORITY")) {
-                return String.format("중요도: %s", event.getPriority().getLabel());
-            }
-            if (changedFields.contains("DUE_DATE")) {
-                // 날짜 포맷팅 (예: 12월 25일)
-                String dateStr = event.getDueDate() != null
-                        ? event.getDueDate().format(DateTimeFormatter.ofPattern("MM/dd"))
-                        : "삭제됨";
-                return String.format("마감일: %s", dateStr);
-            }
-            if (changedFields.contains("LABEL")) {
-                // 라벨명이 있다면 표시
-                return "라벨 변경";
-            }
-            return "내용 수정";
+            return String.format("라벨 '%s'을(를) 추가했습니다.", event.getLabel());
         }
 
-        // 파일 첨부
-        if (type == CardEvent.EventType.ATTACHMENT) {
-            String fileName = changedFields.stream().findFirst().orElse("파일");
-            // 파일명이 너무 길면 자르기
-            return fileName.length() > 20 ? fileName.substring(0, 17) + "..." : fileName;
+        // 중요도 변경
+        if (fields.contains("PRIORITY")) {
+            String newPriority = event.getPriority() != null ? event.getPriority().getLabel() : "없음";
+            // prevPriority가 있다면: "중요도를 '낮음'에서 '높음'으로 변경했습니다."
+            if (event.getPrevPriority() != null) {
+                return String.format("중요도를 '%s'에서 '%s'(으)로 변경했습니다.",
+                        event.getPrevPriority().getLabel(), newPriority);
+            }
+            return String.format("중요도를 '%s'(으)로 설정했습니다.", newPriority);
         }
 
-        // 체크리스트
-        if (type == CardEvent.EventType.CHECKLIST) {
-            return event.getChecklistContent() != null
-                    ? String.format("항목 완료: %s", event.getChecklistContent())
-                    : "체크리스트 완료";
+        // 시작일 변경
+        if (fields.contains("START_DATE")) {
+            if (event.getStartDate() == null) return "시작일을 삭제했습니다.";
+            String dateStr = event.getStartDate().format(DATE_FORMATTER);
+            if (event.getPrevStartDate() != null) {
+                String prevDateStr = event.getPrevStartDate().format(DATE_FORMATTER);
+                return String.format("시작일을 %s에서 %s로 변경했습니다.", prevDateStr, dateStr);
+            }
+            return String.format("시작일을 %s로 설정했습니다.", dateStr);
         }
 
-        // 담당자 지정
-        if (type == CardEvent.EventType.ASSIGNED) {
-            // 본인이 본인을 배정한 경우 vs 남이 배정한 경우 구분 가능
-            return "담당자로 지정됨";
+        // 마감일 변경
+        if (fields.contains("DUE_DATE")) {
+            if (event.getDueDate() == null) return "마감일을 삭제했습니다.";
+            String dateStr = event.getDueDate().format(DATE_FORMATTER);
+            if (event.getPrevDueDate() != null) {
+                String prevDateStr = event.getPrevDueDate().format(DATE_FORMATTER);
+                return String.format("마감일을 %s에서 %s로 변경했습니다.", prevDateStr, dateStr);
+            }
+            return String.format("마감일을 %s로 설정했습니다.", dateStr);
         }
 
-        return "";
+        // 완료 여부
+        if (fields.contains("COMPLETE")) {
+            return Boolean.TRUE.equals(event.getIsComplete())
+                    ? "카드를 완료 상태로 변경했습니다."
+                    : "카드의 완료 처리를 취소했습니다.";
+        }
+
+        // 아카이브
+        if (fields.contains("ARCHIVE")) {
+            return Boolean.TRUE.equals(event.getIsArchived())
+                    ? "카드를 보관함으로 이동시켰습니다."
+                    : "보관된 카드를 다시 복구했습니다.";
+        }
+
+        return "카드 정보를 수정했습니다.";
+    }
+
+    private String truncate(String str, int length) {
+        if (str == null) return "";
+        return str.length() > length ? str.substring(0, length - 3) + "..." : str;
     }
 
 }

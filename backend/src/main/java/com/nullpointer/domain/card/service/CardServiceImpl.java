@@ -2,14 +2,12 @@ package com.nullpointer.domain.card.service;
 
 import com.nullpointer.domain.board.mapper.BoardMapper;
 import com.nullpointer.domain.board.vo.BoardVo;
-import com.nullpointer.domain.card.dto.CardResponse;
-import com.nullpointer.domain.card.dto.CreateCardRequest;
-import com.nullpointer.domain.card.dto.MoveCardRequest;
-import com.nullpointer.domain.card.dto.UpdateCardRequest;
+import com.nullpointer.domain.card.dto.*;
 import com.nullpointer.domain.card.helper.CardEventHelper;
 import com.nullpointer.domain.card.helper.CardOrderManager;
 import com.nullpointer.domain.card.mapper.CardMapper;
 import com.nullpointer.domain.card.vo.CardVo;
+import com.nullpointer.domain.card.vo.enums.Priority;
 import com.nullpointer.domain.list.mapper.ListMapper;
 import com.nullpointer.domain.list.vo.ListVo;
 import com.nullpointer.domain.user.mapper.UserMapper;
@@ -22,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -141,9 +140,24 @@ public class CardServiceImpl implements CardService {
         UserVo actor = userMapper.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        // 1. [캡처] 변경 전 데이터 저장 (로그 상세 메시지용)
+        String prevTitle = card.getTitle();
+        String prevLabel = card.getLabel();
+        Priority prevPriority = card.getPriority();
+        LocalDateTime prevDueDate = card.getDueDate();
+        LocalDateTime prevStartDate = card.getStartDate();
+
         Set<String> changedFields = new HashSet<>();
-        // 주요 필드 변경 감지 & 카드 객체 업데이트
+        // 2. 주요 필드 변경 감지 & 카드 객체 업데이트
         boolean isAssigneeChanged = applyChanges(card, req, boardId, changedFields);
+
+        // 3. 담당자 이름 조회 (변경된 경우에만)
+        String assigneeNickname = null;
+        if (isAssigneeChanged && req.getAssigneeId() != null) {
+            assigneeNickname = userMapper.findById(req.getAssigneeId())
+                    .map(UserVo::getNickname)
+                    .orElse(null);
+        }
 
         // [이벤트] 카드 설명 변경 시 멘션 알림 발행
         cardEventHelper.processDescriptionMentions(actor, card, boardId, board.getTeamId(), req.getDescription());
@@ -164,18 +178,28 @@ public class CardServiceImpl implements CardService {
 
         // 업데이트 진행
         cardMapper.updateCard(updateVo);
-
         // 초기화 요청 처리 (날짜, 라벨, 우선순위 제거)
         handleRemoveRequests(cardId, req);
 
         // 업데이트 된 카드 정보 조회
         CardResponse response = cardMapper.findCardDetailById(card.getId());
-
         // 소켓 전송
         socketSender.sendSocketMessage(boardId, "CARD_UPDATE", userId, response);
 
+        // 4. [이벤트] DTO 생성
+        CardUpdateInfo updateInfo = CardUpdateInfo.builder()
+                .changedFields(changedFields)
+                .isAssigneeChanged(isAssigneeChanged)
+                .prevTitle(prevTitle)
+                .prevLabel(prevLabel)
+                .prevPriority(prevPriority)
+                .prevDueDate(prevDueDate)
+                .prevStartDate(prevStartDate)
+                .assigneeNickname(assigneeNickname)
+                .build();
+
         // [이벤트] 카드 변경 알림 발행
-        cardEventHelper.publishCardUpdateEvent(actor, card, boardId, board.getTeamId(), changedFields, isAssigneeChanged);
+        cardEventHelper.publishCardUpdateEvent(actor, card, boardId, board.getTeamId(), updateInfo);
 
         return response;
     }
@@ -199,7 +223,6 @@ public class CardServiceImpl implements CardService {
 
         // 업데이트 된 카드 정보 조회
         CardResponse response = cardMapper.findCardDetailById(card.getId());
-
         // 소켓 전송
         socketSender.sendSocketMessage(boardId, "CARD_UPDATE", userId, response);
 
@@ -275,6 +298,10 @@ public class CardServiceImpl implements CardService {
         if (checkChange(req.getDueDate(), card.getDueDate())) {
             card.setDueDate(req.getDueDate());
             changedFields.add("DUE_DATE");
+        }
+        if (checkChange(req.getStartDate(), card.getStartDate())) {
+            card.setStartDate(req.getStartDate());
+            changedFields.add("START_DATE");
         }
         if (checkChange(req.getLabel(), card.getLabel())) {
             card.setLabel(req.getLabel());

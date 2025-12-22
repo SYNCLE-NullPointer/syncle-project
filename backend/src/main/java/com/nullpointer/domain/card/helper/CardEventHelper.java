@@ -1,5 +1,6 @@
 package com.nullpointer.domain.card.helper;
 
+import com.nullpointer.domain.card.dto.CardUpdateInfo;
 import com.nullpointer.domain.card.event.CardEvent;
 import com.nullpointer.domain.card.vo.CardVo;
 import com.nullpointer.domain.list.vo.ListVo;
@@ -100,13 +101,13 @@ public class CardEventHelper {
     }
 
     // [이벤트] 카드 수정 이벤트 발행
-    public void publishCardUpdateEvent(UserVo actor, CardVo card, Long boardId, Long teamId, Set<String> changedFields, boolean isAssigneeChanged) {
+    public void publishCardUpdateEvent(UserVo actor, CardVo card, Long boardId, Long teamId, CardUpdateInfo info) {
         // 수정한 항목이 없으면 알림 스킵
-        if (changedFields.isEmpty()) {
+        if (info.getChangedFields().isEmpty()) {
             return;
         }
 
-        CardEvent.EventType type = isAssigneeChanged ? CardEvent.EventType.ASSIGNED : CardEvent.EventType.UPDATED;
+        CardEvent.EventType type = info.isAssigneeChanged() ? CardEvent.EventType.ASSIGNED : CardEvent.EventType.UPDATED;
 
         CardEvent event = CardEvent.builder()
                 .cardId(card.getId())
@@ -122,7 +123,11 @@ public class CardEventHelper {
                 .priority(card.getPriority())
                 .dueDate(card.getDueDate())
                 .eventType(type)
-                .changedFields(changedFields)
+                // DTO에서 데이터 매핑
+                .changedFields(info.getChangedFields())
+                .prevPriority(info.getPrevPriority())
+                .prevDueDate(info.getPrevDueDate())
+                .assigneeNickname(info.getAssigneeNickname())
                 .build();
 
         publisher.publishEvent(event);
