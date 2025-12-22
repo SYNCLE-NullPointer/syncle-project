@@ -123,7 +123,7 @@ public class EmailServiceImpl implements EmailService {
 
             // 메일 전송
             mailSender.send(mimeMessage);
-            log.info("인증 메일 발송 성공: {}", toEmail);
+            log.info("메일 발송 성공: {}", toEmail);
         } catch (MessagingException e) {
             log.error("메일 생성 중 오류 발생: {}", e.getMessage());
         }

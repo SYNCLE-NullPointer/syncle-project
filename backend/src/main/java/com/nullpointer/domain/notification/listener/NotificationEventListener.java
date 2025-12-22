@@ -11,12 +11,15 @@ import com.nullpointer.domain.user.mapper.UserMapper;
 import com.nullpointer.domain.user.vo.UserVo;
 import com.nullpointer.global.common.SocketSender;
 import com.nullpointer.global.common.enums.RedisKeyType;
+import com.nullpointer.global.email.EmailService;
 import com.nullpointer.global.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,6 +34,10 @@ public class NotificationEventListener {
     private final UserMapper userMapper;
     private final SocketSender socketSender;
     private final NotificationSettingMapper settingMapper;
+    private final EmailService emailService;
+
+    @Value("${app.domain.frontend.url}")
+    private String frontendUrl;
 
     /**
      * 카드 이벤트 처리 리스너
@@ -158,6 +165,7 @@ public class NotificationEventListener {
             case TEAM_INVITE:
                 message = String.format("'%s'님이 회원님을 '%s' 팀에 초대했습니다.", event.getSenderNickname(), event.getTargetName());
                 targetUrl = "/teams/" + event.getTargetId() + "/boards"; // 팀 페이지로 이동
+                sendTeamInvitationEmail(event);
                 break;
             case BOARD_INVITE:
                 message = String.format("'%s'님이 회원님을 '%s' 보드에 추가했습니다.", event.getSenderNickname(), event.getTargetName());
@@ -297,7 +305,7 @@ public class NotificationEventListener {
         return String.format("담당 카드 '%s'의 내용이 수정되었습니다.", cardTitle);
     }
 
-    // Redis 저장, 소켓 전송
+    // Redis 알림 저장, 소켓 전송 (소켓/푸시/이메일)
     private void saveAndSendNotification(NotificationDto noti) {
         Long receiverId = noti.getReceiverId();
 
@@ -305,23 +313,23 @@ public class NotificationEventListener {
         NotificationSettingVo settings = settingMapper.findByUserId(receiverId)
                 .orElse(NotificationSettingVo.createDefault(receiverId));
 
-        // 알림 발송 여부 체크
-        if (!shouldSendNotification(settings, noti.getType())) {
-            log.info("알림 설정에 의해 발송 차단됨: receiverId={}, type={}", receiverId, noti.getType());
-            return;
-        }
+        // 1. 방해 금지 모드이면 모든 알림 중단
+        if (settings.isDnd()) return;
 
-        // Redis 저장
-        // key: "np:notification:{userId}"
-        String key = RedisKeyType.NOTIFICATION.getKey(String.valueOf(noti.getReceiverId()));
-        redisUtil.addList(key, noti, RedisKeyType.NOTIFICATION.getDefaultTtl());
-
-        // 용량 관리 (최근 50개만 유지)
-        redisUtil.trimList(key, 110);
-
+        // 수신자 정보 조회
         UserVo receiver = userMapper.findById(noti.getReceiverId()).orElse(null);
+        if (receiver == null) return;
 
-        if (receiver != null) {
+        // 2. 실시간 알림 설정 확인
+        if (shouldSendPush(settings, noti.getType())) {
+            // Redis 저장
+            // key: "np:notification:{userId}"
+            String key = RedisKeyType.NOTIFICATION.getKey(String.valueOf(noti.getReceiverId()));
+            redisUtil.addList(key, noti, RedisKeyType.NOTIFICATION.getDefaultTtl());
+
+            // 용량 관리 (최근 50개만 유지)
+            redisUtil.trimList(key, 110);
+
             // 이메일로 소켓 메시지 전송
             // WebSocket 실시간 전송
             // 구독 경로: /queue/notifications/{email} <- Spring Security의 username이 이메일이기 때문
@@ -332,21 +340,57 @@ public class NotificationEventListener {
                     noti.getSenderId(),     // 보낸 사람 ID
                     noti.getMessage(),      // "홍길동님이 카드를 이동했습니다."
                     noti);
+        }
 
-            log.info("알림 발송 완료: receiverId={}", noti.getReceiverId());
-        } else {
-            log.warn("알림 수신자를 찾을 수 없음: id={}", noti.getReceiverId());
+        // 3. 활동 이메일 설정 확인 (멘션, 담당자 지정, 보드 초대)
+        if (shouldSendActivityEmail(settings, noti.getType())) {
+            String subject = "[SYNCLE] 새로운 알림이 도착했습니다.";
+            emailService.sendActivityNotification(
+                    receiver.getEmail(),
+                    subject,
+                    noti.getMessage(),
+                    noti.getTargetUrl() // 클릭 시 이동할 경로
+            );
+            log.info("활동 알림 메일 발송: receiver={}", receiver.getEmail());
         }
     }
 
-    // 알림 설정과 타입을 비교하여 발송 여부 결정
-    private boolean shouldSendNotification(NotificationSettingVo settings, NotificationType type) {
-        // 1. 방해 금지 모드이면 무조건 false
-        if (settings.isDnd()) {
-            return false;
-        }
+    // 초대 이메일 발송 처리
+    private void sendTeamInvitationEmail(InvitationEvent event) {
+        Long receiverId = event.getReceiverId();
 
-        // 2. 타입별 설정 확인
+        // 수신자의 알림 설정 조회 (없으면 기본값)
+        NotificationSettingVo settings = settingMapper.findByUserId(receiverId)
+                .orElse(NotificationSettingVo.createDefault(receiverId));
+
+        // DND이거나 설정 OFF이면 발송 x
+        if (settings.isDnd() || !settings.isEmailInvites()) return;
+
+        // 수신자 정보 조회
+        UserVo receiver = userMapper.findById(receiverId).orElse(null);
+        if (receiver == null) return;
+
+
+        // 수락 링크 생성
+        String inviteUrl = UriComponentsBuilder.fromUriString(frontendUrl)
+                .path("/invite/accept")
+                .queryParam("token", event.getToken())
+                .build()
+                .toUriString();
+
+        // 메일 발송
+        emailService.sendInvitationEmail(
+                receiver.getEmail(),
+                inviteUrl,
+                event.getTargetName(), // 팀 이름
+                event.getSenderNickname()); // 초대한 사람
+
+        log.info("팀 초대 메일 발송 완료: receiver={}", receiver.getEmail());
+    }
+
+    // 알림 설정과 타입을 비교하여 푸시/소켓 알림 발송 여부 결정
+    private boolean shouldSendPush(NotificationSettingVo settings, NotificationType type) {
+        // 타입별 설정 확인
         return switch (type) {
             // 멘션
             case MENTION -> settings.isPushMentions();
@@ -365,6 +409,16 @@ public class NotificationEventListener {
                  BOARD_INVITE, BOARD_MEMBER_KICKED, BOARD_MEMBER_LEFT, BOARD_DELETED, PERMISSION_CHANGED -> true;
 
             default -> true;
+        };
+    }
+
+    // 활동 이메일 발송 여부 결정 (초대 제외)
+    private boolean shouldSendActivityEmail(NotificationSettingVo settings, NotificationType type) {
+        return switch (type) {
+            case MENTION -> settings.isEmailMentions();
+            case CARD_ASSIGNED -> settings.isEmailAssignments();
+            case BOARD_INVITE -> settings.isEmailInvites();
+            default -> false;
         };
     }
 
