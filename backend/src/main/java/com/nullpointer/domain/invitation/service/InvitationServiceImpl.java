@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -145,14 +144,9 @@ public class InvitationServiceImpl implements InvitationService {
                     RedisKeyType.INVITATION.getDefaultTtl()
             );
 
-            // 이메일 전송
-            String inviteUrl = UriComponentsBuilder.fromUriString(frontendUrl)
-                    .path("/invite/accept")
-                    .queryParam("token", invitation.getToken())
-                    .build()
-                    .toUriString();
-
-            emailService.sendInvitationEmail(receiver.getEmail(), inviteUrl, team.getName(), inviter.getNickname());
+            /**
+             * publishInviteEvent가 실행되면 NotificationListener가 초대 메일 발송
+             */
 
             // [알림] 초대 알림 발송
             publishInviteEvent(inviter, receiver.getId(), team.getId(), team.getName(), invitation.getToken());
