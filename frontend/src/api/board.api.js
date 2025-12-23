@@ -100,4 +100,11 @@ export const boardApi = {
   },
   // 파일 삭제
   deleteFile: (fileId) => api.delete(`/files/${fileId}`),
+
+  // 보드 상세 정보 조회
+  getBoardDetail: (boardId) => api.get(`/boards/${boardId}`),
+
+  // 보드 권한 설정 수정
+  updateBoardPermissions: (boardId, permissions) =>
+    api.put(`/boards/${boardId}/permissions`, permissions),
 }

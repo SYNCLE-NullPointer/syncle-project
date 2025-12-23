@@ -175,7 +175,10 @@ const normalizeBoardData = (dto) => {
   // 3. 최종 보드 객체 반환
   return {
     ...dto,
-
+    invitationPermission: dto.invitationPermission || 'OWNER',
+    boardSharingPermission: dto.boardSharingPermission || 'OWNER',
+    listEditPermission: dto.listEditPermission || 'OWNER',
+    cardDeletePermission: dto.cardDeletePermission || 'OWNER',
     // 멤버 리스트 변환
     members: (dto.boardMembers || []).map(mapMember), // 보드 헤더 표시용
     teamMembers: (dto.teamMembers || []).map(mapMember), // 초대 모달 등 사용

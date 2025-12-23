@@ -23,6 +23,7 @@ function useBoardPermission(board) {
     let isExplicitMember = false
 
     // 2. 명시적인 보드 멤버인지 확인
+    console.log('boardMembers:', board.members)
     const boardMember = board.members.find((m) => m.id === user.id)
 
     if (boardMember) {
