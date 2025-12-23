@@ -49,4 +49,6 @@ public interface BoardMapper {
 
     // 공개된 모든 보드 검색
     List<BoardResponse> searchPublicBoards(@Param("keyword") String keyword);
+
+    //
 }

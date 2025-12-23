@@ -27,7 +27,8 @@ function useTeamPermission(team) {
     const teamCreateRole = team.boardCreateRole || 'MEMBER'
 
     // (설정이 MEMBER 이거나) 또는 (내 역할이 OWNER) 라면 생성 가능
-    const canCreateBoard = teamCreateRole === 'MEMBER' || myRole === 'OWNER'
+    const canCreateBoard =
+      myRole === 'OWNER' || (teamCreateRole === 'MEMBER' && myRole === 'MEMBER')
 
     // 3. 팀 관리 권한 (설정 수정, 팀 삭제 등) -> 관리자만 가능
     const canManageTeam = myRole === 'OWNER'

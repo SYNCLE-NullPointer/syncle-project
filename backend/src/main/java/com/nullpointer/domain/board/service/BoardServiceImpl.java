@@ -5,12 +5,12 @@ import com.nullpointer.domain.activity.service.ActivityService;
 import com.nullpointer.domain.activity.vo.enums.ActivityType;
 import com.nullpointer.domain.board.dto.request.CreateBoardRequest;
 import com.nullpointer.domain.board.dto.request.UpdateBoardRequest;
-import com.nullpointer.domain.board.dto.response.BoardDetailResponse;
-import com.nullpointer.domain.board.dto.response.BoardResponse;
-import com.nullpointer.domain.board.dto.response.BoardViewResponse;
-import com.nullpointer.domain.board.dto.response.MemberBoardResponse;
+import com.nullpointer.domain.board.dto.response.*;
 import com.nullpointer.domain.board.mapper.BoardMapper;
+import com.nullpointer.domain.board.mapper.BoardSettingMapper;
+import com.nullpointer.domain.board.vo.BoardSettingVo;
 import com.nullpointer.domain.board.vo.BoardVo;
+import com.nullpointer.domain.board.vo.enums.PermissionLevel;
 import com.nullpointer.domain.board.vo.enums.Visibility;
 import com.nullpointer.domain.file.service.S3FileStorageService;
 import com.nullpointer.domain.invitation.event.InvitationEvent;
@@ -49,6 +49,7 @@ public class BoardServiceImpl implements BoardService {
     private static final int MAX_BOARDS_PER_TEAM = 10;
 
     private final BoardMapper boardMapper;
+    private final BoardSettingMapper boardSettingMapper;
     private final BoardMemberMapper boardMemberMapper;
     private final TeamValidator teamVal;
     private final MemberValidator memberVal;
@@ -98,6 +99,16 @@ public class BoardServiceImpl implements BoardService {
 
         boardMapper.insertBoard(boardVo);
 
+        // 보드 설정 생성
+        BoardSettingVo defaultSettings = BoardSettingVo.builder()
+                .boardId(boardVo.getId())
+                .invitationPermission(PermissionLevel.OWNER)
+                .boardSharingPermission(PermissionLevel.OWNER)
+                .listEditPermission(PermissionLevel.OWNER)
+                .cardDeletePermission(PermissionLevel.OWNER)
+                .build();
+        boardSettingMapper.insertBoardSettings(defaultSettings);
+
         // 보드 생성 로그 저장
         createBoardLog(userId, teamId, boardVo);
 
@@ -123,6 +134,16 @@ public class BoardServiceImpl implements BoardService {
 
         // 방금 만든 보드 ID 가져오기
         Long boardId = board.getId();
+
+        // 보드 설정 생성
+        BoardSettingVo defaultSettings = BoardSettingVo.builder()
+                .boardId(boardId)
+                .invitationPermission(PermissionLevel.OWNER)
+                .boardSharingPermission(PermissionLevel.OWNER)
+                .listEditPermission(PermissionLevel.OWNER)
+                .cardDeletePermission(PermissionLevel.OWNER)
+                .build();
+        boardSettingMapper.insertBoardSettings(defaultSettings);
 
         // 2. 보드 멤버 연결
         BoardMemberVo boardMember = BoardMemberVo.builder().boardId(boardId).userId(userId).role(Role.OWNER).build();
@@ -160,7 +181,8 @@ public class BoardServiceImpl implements BoardService {
 
         // 보드 유효성 검증
         BoardVo boardVo = boardVal.getValidBoard(boardId);
-        return BoardDetailResponse.from(boardVo);
+        BoardSettingVo settingVo = boardSettingMapper.findBoardSettingsByBoardId(boardId);
+        return BoardDetailResponse.from(boardVo, settingVo);
     }
 
     @Override
@@ -192,6 +214,29 @@ public class BoardServiceImpl implements BoardService {
 
         // 소켓 전송
         socketSender.sendSocketMessage(boardId, "BOARD_UPDATED", userId, null);
+    }
+
+    // 보드 설정 변경
+    @Override
+    @Transactional
+    public void updateBoardSettings(Long boardId, UpdateBoardSettingRequest req, Long userId) {
+        // 관리자만 설정 변경 가능
+        memberVal.validateBoardManager(boardId, userId);
+
+        // 공통 검증 메서드로 보드 조회
+        boardVal.getValidBoard(boardId);
+
+        BoardSettingVo settingVo = BoardSettingVo.builder()
+                .boardId(boardId)
+                .invitationPermission(req.getInvitation())
+                .boardSharingPermission(req.getBoardSharing())
+                .listEditPermission(req.getListEdit())
+                .cardDeletePermission(req.getCardDelete())
+                .build();
+
+        boardSettingMapper.updateBoardSettings(settingVo);
+
+        // (선택 사항) 로그 저장, 소켓 전송 등 추가 가능
     }
 
     @Override
@@ -310,6 +355,13 @@ public class BoardServiceImpl implements BoardService {
         // 팀 멤버 조회
         List<TeamMemberResponse> teamMembers = teamMemberMapper.findMembersByTeamId(response.getTeamId());
 
+        // 설정 정보 조회
+        BoardSettingVo settingVo = boardSettingMapper.findBoardSettingsByBoardId(boardId);
+        PermissionLevel invitation = settingVo != null ? settingVo.getInvitationPermission() : PermissionLevel.OWNER;
+        PermissionLevel sharing = settingVo != null ? settingVo.getBoardSharingPermission() : PermissionLevel.OWNER;
+        PermissionLevel listEdit = settingVo != null ? settingVo.getListEditPermission() : PermissionLevel.OWNER;
+        PermissionLevel cardDelete = settingVo != null ? settingVo.getCardDeletePermission() : PermissionLevel.OWNER;
+
         // 현재 유저가 이 보드를 즐겨찾기 했는지 확인
         boolean isFavorite = boardMapper.existsFavorite(boardId, userId);
 
@@ -349,6 +401,10 @@ public class BoardServiceImpl implements BoardService {
                 .boardMembers(boardMembers)
                 .teamMembers(teamMembers)
                 .isFavorite(isFavorite)
+                .invitationPermission(invitation)
+                .boardSharingPermission(sharing)
+                .listEditPermission(listEdit)
+                .cardDeletePermission(cardDelete)
                 .build();
     }
 

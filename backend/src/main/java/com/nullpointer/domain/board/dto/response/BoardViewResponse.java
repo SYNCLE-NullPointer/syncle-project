@@ -1,6 +1,7 @@
 package com.nullpointer.domain.board.dto.response;
 
 import com.nullpointer.domain.board.vo.BoardVo;
+import com.nullpointer.domain.board.vo.enums.PermissionLevel;
 import com.nullpointer.domain.board.vo.enums.Visibility;
 import com.nullpointer.domain.list.dto.ListWithCardsResponse;
 import com.nullpointer.domain.member.dto.board.BoardMemberResponse;
@@ -35,6 +36,12 @@ public class BoardViewResponse {
     // 멤버 정보
     private List<BoardMemberResponse> boardMembers;
     private List<TeamMemberResponse> teamMembers;
+
+    // 권한 설정 필드들
+    private PermissionLevel invitationPermission;
+    private PermissionLevel boardSharingPermission;
+    private PermissionLevel listEditPermission;
+    private PermissionLevel cardDeletePermission;
 
     // 로그인한 사용자의 즐겨찾기 여부
     private Boolean isFavorite;

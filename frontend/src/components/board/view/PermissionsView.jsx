@@ -1,15 +1,23 @@
-import React, { useState } from 'react'
-import useBoardStore from '../../../stores/useBoardStore'
+import React, { useEffect, useState } from 'react'
+import { useBoardSettings } from '../../../hooks/board/useBoardSettings'
 
 function PermissionsView({ board, isOwner }) {
-  const { updatePermissions } = useBoardStore()
-  const [perms, setPerms] = useState(
-    board.permissions || {
-      comment: 'MEMBERS',
-      invitation: 'OWNER',
-      edit: 'OWNER',
-    },
-  )
+  const { settings, updateSettings, isLoading } = useBoardSettings(board.id)
+
+  // 로컬 상태 관리 (사용자 입력 중에는 즉시 반영되어야 하므로)
+  const [perms, setPerms] = useState({
+    invitation: 'OWNER',
+    boardSharing: 'OWNER',
+    listEdit: 'OWNER',
+    cardDelete: 'OWNER',
+  })
+
+  // 서버에서 불러온 설정값이 있으면 로컬 상태 동기화
+  useEffect(() => {
+    if (settings) {
+      setPerms(settings)
+    }
+  }, [settings])
 
   const handleChange = (key, value) => {
     setPerms((prev) => ({ ...prev, [key]: value }))
@@ -17,37 +25,25 @@ function PermissionsView({ board, isOwner }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    updatePermissions(board.id, perms)
-    alert('권한 설정이 저장되었습니다.')
+    // Hook의 mutate 함수 호출 (낙관적 업데이트 자동 적용)
+    updateSettings(perms)
+    alert('권한 설정이 저장되었습니다.') // 필요 시 Toast로 변경 권장
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4 py-2">
-      <div className="space-y-4">
-        {/* 댓글 작성 권한 */}
-        <div>
-          <label className="mb-1 block text-xs font-bold text-gray-500 uppercase">
-            댓글 작성
-          </label>
-          <select
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100 disabled:text-gray-500"
-            value={perms.comment}
-            onChange={(e) => handleChange('comment', e.target.value)}
-            disabled={!isOwner}
-          >
-            <option value="MEMBERS">멤버만 가능</option>
-            <option value="VIEWERS">관찰자 포함</option>
-            <option value="DISABLED">사용 안 함</option>
-          </select>
-          <p className="mt-1 text-xs text-gray-400">
-            카드에 댓글을 남길 수 있는 사용자를 설정합니다.
-          </p>
-        </div>
+  if (isLoading)
+    return (
+      <div className="py-4 text-center text-xs text-gray-500">
+        설정 로딩 중...
+      </div>
+    )
 
-        {/* 초대 권한 */}
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6 py-2">
+      <div className="space-y-5">
+        {/* 1. 멤버 초대 권한 */}
         <div>
           <label className="mb-1 block text-xs font-bold text-gray-500 uppercase">
-            초대 권한
+            멤버 초대
           </label>
           <select
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100 disabled:text-gray-500"
@@ -55,43 +51,75 @@ function PermissionsView({ board, isOwner }) {
             onChange={(e) => handleChange('invitation', e.target.value)}
             disabled={!isOwner}
           >
-            <option value="MEMBERS">멤버도 초대 가능</option>
-            <option value="OWNER">관리자(Owner)만 가능</option>
+            <option value="OWNER">관리자만 가능</option>
+            <option value="MEMBERS">모든 멤버 가능</option>
           </select>
         </div>
 
-        {/* 보드 편집 권한 */}
+        {/* 2. 보드 공유 권한 */}
         <div>
           <label className="mb-1 block text-xs font-bold text-gray-500 uppercase">
-            보드 수정 및 삭제
+            보드 공유 설정 (공개/비공개)
           </label>
           <select
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100 disabled:text-gray-500"
-            value={perms.edit}
-            onChange={(e) => handleChange('edit', e.target.value)}
+            value={perms.boardSharing}
+            onChange={(e) => handleChange('boardSharing', e.target.value)}
             disabled={!isOwner}
           >
-            <option value="OWNER">관리자(Owner)만 가능</option>
-            <option value="MEMBERS">멤버도 가능</option>
+            <option value="OWNER">관리자만 가능</option>
+            <option value="MEMBERS">모든 멤버 가능</option>
           </select>
-          <p className="mt-1 text-xs text-gray-400">
-            보드 정보 수정, 리스트 추가/삭제, 보드 삭제 권한입니다.
-          </p>
+        </div>
+
+        {/* 3. 리스트 편집 권한 */}
+        <div>
+          <label className="mb-1 block text-xs font-bold text-gray-500 uppercase">
+            리스트(컬럼) 추가 및 변경
+          </label>
+          <select
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100 disabled:text-gray-500"
+            value={perms.listEdit}
+            onChange={(e) => handleChange('listEdit', e.target.value)}
+            disabled={!isOwner}
+          >
+            <option value="OWNER">관리자만 가능</option>
+            <option value="MEMBERS">모든 멤버 가능</option>
+          </select>
+        </div>
+
+        {/* 4. 카드 삭제 권한 */}
+        <div>
+          <label className="mb-1 block text-xs font-bold text-gray-500 uppercase">
+            카드 삭제
+          </label>
+          <select
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100 disabled:text-gray-500"
+            value={perms.cardDelete}
+            onChange={(e) => handleChange('cardDelete', e.target.value)}
+            disabled={!isOwner}
+          >
+            <option value="OWNER">관리자만 가능</option>
+            <option value="MEMBERS">모든 멤버 가능</option>
+          </select>
         </div>
       </div>
 
-      {isOwner ? (
-        <button
-          type="submit"
-          className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-95"
-        >
-          권한 저장
-        </button>
-      ) : (
-        <p className="text-center text-xs text-gray-400">
-          관리자만 권한 설정을 변경할 수 있습니다.
-        </p>
-      )}
+      {/* 저장 버튼 */}
+      <div className="pt-2">
+        {isOwner ? (
+          <button
+            type="submit"
+            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-95"
+          >
+            권한 설정 저장
+          </button>
+        ) : (
+          <p className="text-center text-xs text-gray-400">
+            관리자만 권한 설정을 변경할 수 있습니다.
+          </p>
+        )}
+      </div>
     </form>
   )
 }

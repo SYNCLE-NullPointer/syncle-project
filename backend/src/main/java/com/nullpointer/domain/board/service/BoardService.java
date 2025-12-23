@@ -2,10 +2,7 @@ package com.nullpointer.domain.board.service;
 
 import com.nullpointer.domain.board.dto.request.CreateBoardRequest;
 import com.nullpointer.domain.board.dto.request.UpdateBoardRequest;
-import com.nullpointer.domain.board.dto.response.BoardDetailResponse;
-import com.nullpointer.domain.board.dto.response.BoardResponse;
-import com.nullpointer.domain.board.dto.response.BoardViewResponse;
-import com.nullpointer.domain.board.dto.response.MemberBoardResponse;
+import com.nullpointer.domain.board.dto.response.*;
 
 import java.util.List;
 
@@ -46,4 +43,7 @@ public interface BoardService {
 
     // 공개 보드 검색
     List<BoardResponse> searchBoards(String keyword);
+
+    // 보드 설정 수정
+    void updateBoardSettings(Long boardId, UpdateBoardSettingRequest req, Long userId);
 }

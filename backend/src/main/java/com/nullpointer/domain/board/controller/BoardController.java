@@ -6,10 +6,7 @@ import com.nullpointer.domain.activity.dto.response.ActivityStatsResponse;
 import com.nullpointer.domain.activity.service.ActivityService;
 import com.nullpointer.domain.board.dto.request.CreateBoardRequest;
 import com.nullpointer.domain.board.dto.request.UpdateBoardRequest;
-import com.nullpointer.domain.board.dto.response.BoardDetailResponse;
-import com.nullpointer.domain.board.dto.response.BoardResponse;
-import com.nullpointer.domain.board.dto.response.BoardViewResponse;
-import com.nullpointer.domain.board.dto.response.MemberBoardResponse;
+import com.nullpointer.domain.board.dto.response.*;
 import com.nullpointer.domain.board.service.BoardService;
 import com.nullpointer.global.common.ApiResponse;
 import com.nullpointer.global.common.annotation.LoginUser;
@@ -152,5 +149,12 @@ public class BoardController {
         return ApiResponse.success(token);
     }
 
-
+    @Operation(summary = "보드 권한 설정 수정", description = "해당 보드의 권한 설정을 변경합니다.")
+    @PutMapping("/boards/{boardId}/permissions")
+    public ApiResponse<String> updateBoardPermissions(@PathVariable Long boardId,
+                                                      @RequestBody UpdateBoardSettingRequest req,
+                                                      @LoginUser Long userId) {
+        boardService.updateBoardSettings(boardId, req, userId);
+        return ApiResponse.success("권한 설정이 저장되었습니다.");
+    }
 }
