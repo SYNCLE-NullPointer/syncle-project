@@ -38,7 +38,7 @@ public class CardEventHelper {
                 .actorId(actor.getId())
                 .actorNickname(actor.getNickname())
                 .actorProfileImg(actor.getProfileImg())
-                .assigneeId(actor.getId())
+                .assigneeId(card.getAssigneeId())
                 .assigneeNickname(assigneeNickname) // 담당자 변경 시에만 값 존재
                 .fieldName(fieldName) // 상세 변경 시에만 값 존재
                 .oldValue(oldValue)

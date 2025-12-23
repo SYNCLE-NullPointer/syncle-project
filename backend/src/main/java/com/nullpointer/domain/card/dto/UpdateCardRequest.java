@@ -1,6 +1,5 @@
 package com.nullpointer.domain.card.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.nullpointer.domain.card.vo.enums.Priority;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,10 +23,7 @@ public class UpdateCardRequest {
     private String label;
     private String labelColor;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startDate;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime dueDate;
 
     // 삭제 플래그

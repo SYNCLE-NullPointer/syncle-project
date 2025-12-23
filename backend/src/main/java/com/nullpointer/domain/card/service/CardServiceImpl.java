@@ -167,7 +167,23 @@ public class CardServiceImpl implements CardService {
 
         checkAndUpdate(actor, card, boardId, teamId,
                 req.getIsArchived(), card.getIsArchived(), "카드 상태",
-                this::convertArchive, val -> cardMapper.updateCardArchiveStatus(cardId, val));
+                this::convertArchive, card::setIsArchived);
+
+        if (req.getLabel() != null && !req.getLabel().equals(card.getLabel())) {
+            checkAndUpdate(actor, card, boardId, teamId,
+                    req.getLabel(), card.getLabel(), "라벨",
+                    val -> val == null ? "없음" : val, card::setLabel);
+        }
+        
+        // 라벨 색상 (로그 없음)
+        if (req.getLabelColor() != null) {
+            card.setLabelColor(req.getLabelColor());
+        }
+
+        // 시작일 (로그 없이 값만 업데이트)
+        if (req.getStartDate() != null && !req.getStartDate().equals(card.getStartDate())) {
+            card.setStartDate(req.getStartDate());
+        }
 
         // 3. 삭제 플래그 처리 (초기화)
         handleRemovals(req, card, actor, boardId, teamId);
@@ -249,7 +265,7 @@ public class CardServiceImpl implements CardService {
 
             // 상세 변경 이벤트 발행 (A -> B)
             cardEventHelper.publishCardUpdateEvent(actor, card, boardId, teamId, null, fieldName, oldStr, newStr);
-            setter.accept(oldValue);
+            setter.accept(newValue);
         }
     }
 
@@ -261,11 +277,11 @@ public class CardServiceImpl implements CardService {
             String nickname = userMapper.findById(newAssigneeId)
                     .map(UserVo::getNickname).orElse("알 수 없음"); // 닉네임 조회
 
-            // 담당자 변경 이벤트 발행
-            cardEventHelper.publishCardUpdateEvent(actor, card, boardId, teamId, nickname, null, null, null);
-
             card.setAssigneeId(newAssigneeId);
             cardMapper.updateCardAssignee(card.getId(), newAssigneeId);
+
+            // 담당자 변경 이벤트 발행
+            cardEventHelper.publishCardUpdateEvent(actor, card, boardId, teamId, nickname, null, null, null);
         }
     }
 
