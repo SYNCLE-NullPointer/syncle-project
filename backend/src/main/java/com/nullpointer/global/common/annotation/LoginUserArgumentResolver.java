@@ -16,10 +16,10 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
     // 1. 이 리졸버가 지원하는 파라미터인지 검사
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        // @LoginUser 어노테이션이 붙어있고 && 파라미터 타입이 Long 인 경우만 처리
         boolean hasAnnotation = parameter.hasParameterAnnotation(LoginUser.class);
-        boolean isLongType = Long.class.isAssignableFrom(parameter.getParameterType());
-        return hasAnnotation && isLongType;
+        Class<?> paramType = parameter.getParameterType();
+        // Long 타입 또는 CustomUserDetails 타입을 모두 지원하도록 수정
+        return hasAnnotation && (Long.class.isAssignableFrom(paramType) || CustomUserDetails.class.isAssignableFrom(paramType));
     }
 
     // 2. 실제로 파라미터에 넣어줄 값을 생성
@@ -29,12 +29,15 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
                                   NativeWebRequest webRequest,
                                   WebDataBinderFactory binderFactory) throws Exception {
 
-        // 시큐리티 컨텍스트에서 인증 정보 꺼내기
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
-            // 여기서 userId (Long) 반환
-            return userDetails.getUserId();
+            // 파라미터 타입에 따라 다른 값 반환
+            if (Long.class.isAssignableFrom(parameter.getParameterType())) {
+                return userDetails.getUserId();
+            } else if (CustomUserDetails.class.isAssignableFrom(parameter.getParameterType())) {
+                return userDetails; // CustomUserDetails 객체 자체를 반환
+            }
         }
 
         // 인증되지 않은 경우 null 반환 (필요 시 예외 발생 가능)

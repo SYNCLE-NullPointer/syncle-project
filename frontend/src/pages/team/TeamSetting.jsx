@@ -60,11 +60,7 @@ export default function TeamSetting() {
   }
 
   const handleDeleteTeam = async () => {
-    if (
-      window.confirm(
-        '정말 이 팀을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없으며...',
-      )
-    ) {
+    if (window.confirm('정말 이 팀을 삭제하시겠습니까?')) {
       try {
         await deleteTeam(teamId)
         navigate('/dashboard')

@@ -11,10 +11,12 @@ import MembersView from './view/MembersView'
 import PermissionsView from './view/PermissionsView'
 import VisibilityView from './view/VisibilityView'
 import FilesView from './view/FilesView'
+import { useToast } from '../../hooks/useToast'
 
 function BoardSettings({ board }) {
   const navigate = useNavigate()
   const menuRef = useRef(null)
+  const { showToast } = useToast()
 
   // UI 상태 가져오기
   const {
@@ -63,12 +65,12 @@ function BoardSettings({ board }) {
       // [변경] 삭제 요청 및 성공 시 이동 처리
       deleteBoard(undefined, {
         onSuccess: () => {
-          alert('보드가 삭제되었습니다.')
           // 팀 보드 목록 페이지로 이동 (board.teamId 활용)
           navigate(`/teams/${board.teamId}/boards`)
+          showToast('보드가 성공적으로 삭제되었습니다.', 'success')
         },
         onError: () => {
-          alert('보드 삭제에 실패했습니다.')
+          showToast('보드 삭제에 실패했습니다.', 'error')
         },
       })
     }

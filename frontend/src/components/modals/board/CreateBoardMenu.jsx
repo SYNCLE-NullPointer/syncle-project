@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useBoardMutations } from '../../../hooks/board/useBoardMutations'
 import { X } from 'lucide-react'
+import { useToast } from '../../../hooks/useToast'
 
 function CreateBoardMenu({ teamId, onClose, onSuccess }) {
   // 입력 상태 관리
@@ -9,6 +10,7 @@ function CreateBoardMenu({ teamId, onClose, onSuccess }) {
   const [visibility, setVisibility] = useState('PUBLIC')
 
   const { createBoard } = useBoardMutations(undefined)
+  const { showToast } = useToast()
 
   // 폼 제출 핸들러
   const handleSubmit = async (e) => {
@@ -20,8 +22,12 @@ function CreateBoardMenu({ teamId, onClose, onSuccess }) {
       {
         onSuccess: (res) => {
           const newBoard = res.data.data
+          showToast('새로운 보드가 생성되었습니다.', 'success')
           if (onSuccess) onSuccess(newBoard)
           onClose()
+        },
+        onError: (error) => {
+          showToast('보드 생성 중 오류가 발생했습니다.', 'error')
         },
       },
     )

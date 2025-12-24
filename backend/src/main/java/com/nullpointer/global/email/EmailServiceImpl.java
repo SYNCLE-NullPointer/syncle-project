@@ -1,6 +1,8 @@
 package com.nullpointer.global.email;
 
+import com.nullpointer.global.common.enums.ErrorCode;
 import com.nullpointer.global.common.enums.VerificationType;
+import com.nullpointer.global.exception.BusinessException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -106,6 +108,33 @@ public class EmailServiceImpl implements EmailService {
     }
 
     /**
+     * 문의하기 발송
+     */
+    @Override
+    @Async
+    public void sendInquiryEmail(String userEmail, String type, String title, String content) {
+        String adminEmail = "syncle2025@gmail.com";
+        String typeLabel = getInquiryTypeLabel(type);
+        String subject = "[SYNCLE 문의] " + typeLabel + " - " + title;
+
+        // 문의 내용 구성
+        String bodyContent = String.format(
+                "<strong>보낸 사람:</strong> %s<br>" +
+                        "<strong>문의 유형:</strong> %s<br><br>" +
+                        "<strong>제목:</strong> %s<br><br>" +
+                        "<strong>내용:</strong> <span style=\"white-space: pre-wrap; color: #333;\">%s</span>",
+                userEmail, typeLabel, title, content
+        );
+
+        String actionHtml = ""; // 버튼 없음
+        String footer = "본 메일은 관리자 전용 문의 알림입니다.";
+
+        // buildHtmlTemplate 및 sendMimeMessage 재사용
+        String html = buildHtmlTemplate("새로운 문의 접수", bodyContent, actionHtml, footer);
+        sendMimeMessage(adminEmail, subject, html);
+    }
+
+    /**
      * Helper Methods
      */
 
@@ -177,6 +206,18 @@ public class EmailServiceImpl implements EmailService {
                     %s
                 </a>
                 """.formatted(url, text);
+    }
+
+    // 문의 유형 한글 변환
+    private String getInquiryTypeLabel(String type) {
+        if (type == null) return "알 수 없음";
+        return switch (type) {
+            case "ACCOUNT" -> "계정 관련";
+            case "BUG" -> "버그 신고";
+            case "USAGE" -> "이용 문의";
+            case "OTHER" -> "기타";
+            default -> type;
+        };
     }
 
 }

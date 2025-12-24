@@ -20,7 +20,7 @@ spring:
   mail:
     host: smtp.gmail.com # Gmail의 SMTP 서버 호스트
     port: 587 # Gmail STMP 서버는 587번 포트 사용
-    username: ksm13563661@gmail.com
+    username: syncle2025@gmail.com
     properties:
       mail:
         smtp:
@@ -61,8 +61,7 @@ server:
 
 mybatis:
   mapper-locations: classpath:mappers/**/*.xml
-  type-aliases-package:
-    com.nullpointer.domain.*.vo, com.nullpointer.domain.*.dto
+  type-aliases-package: com.nullpointer.domain.*.vo, com.nullpointer.domain.*.dto
 
   configuration:
     map-underscore-to-camel-case: true

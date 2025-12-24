@@ -15,5 +15,7 @@ public interface EmailService {
 
     // 초대 알림 발송
     void sendActivityNotification(String toEmail, String subject, String message, String linkUrl);
-    
+
+    // 문의하기 발송
+    void sendInquiryEmail(String userEmail, String type, String title, String content);
 }
