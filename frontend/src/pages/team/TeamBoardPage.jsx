@@ -14,9 +14,8 @@ function TeamBoardPage() {
 
   // 팀 정보 조회
   const { data: team, isLoading, refetch } = useTeamDetailQuery(teamId)
-  console.log('서버에서 받은 팀 데이터:', team)
   // 보드 생성 권한 정보 조회
-  const { canCreateBoard } = useTeamPermission(team)
+  const { canCreateBoard, canManageTeam } = useTeamPermission(team)
   if (isLoading) return <div>Loading...</div>
   if (!team) return <div>팀 정보를 불러올 수 없습니다.</div>
 
@@ -74,12 +73,14 @@ function TeamBoardPage() {
                   )}
                 </div>
               ))}
-            <button
-              className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-gray-300 bg-white text-gray-400 transition-colors hover:cursor-pointer hover:border-blue-400 hover:text-blue-600"
-              onClick={() => setIsInviteModalOpen(true)}
-            >
-              <Plus size={16} />
-            </button>
+            {canManageTeam && (
+              <button
+                className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-gray-300 bg-white text-gray-400 transition-colors hover:cursor-pointer hover:border-blue-400 hover:text-blue-600"
+                onClick={() => setIsInviteModalOpen(true)}
+              >
+                <Plus size={16} />
+              </button>
+            )}
           </div>
         </section>
 
@@ -112,10 +113,10 @@ function TeamBoardPage() {
         </section>
       </div>
       {/* 멤버 초대 모달 */}
-      {isInviteModalOpen && (
+      {canManageTeam && isInviteModalOpen && (
         <InviteMemberModal
           teamId={teamId}
-          currentMembers={team.members} // 이미 있는 멤버 제외용
+          currentMembers={team.members}
           onClose={() => setIsInviteModalOpen(false)}
         />
       )}

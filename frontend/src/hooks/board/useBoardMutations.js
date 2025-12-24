@@ -1,9 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { boardApi } from '../../api/board.api'
+import { useToast } from '../useToast'
 
 export const useBoardMutations = (boardId) => {
   const queryClient = useQueryClient()
   const queryKey = ['board', boardId]
+  const { showToast } = useToast()
 
   // 즐겨찾기 토글
   const toggleFavoriteMutation = useMutation({
@@ -19,6 +21,8 @@ export const useBoardMutations = (boardId) => {
       // 3. 팀 보드 목록 갱신 (TeamBoardPage)
       queryClient.invalidateQueries({ queryKey: ['teams'] }) // 팀 목록
       queryClient.invalidateQueries({ queryKey: ['team'] }) // 개별 팀 상세 (보드 목록 포함)
+
+      showToast('즐겨찾기가 변경되었습니다.', 'success')
     },
 
     onError: (err, variables, context) => {
@@ -28,10 +32,10 @@ export const useBoardMutations = (boardId) => {
       }
 
       // 5. 에러 메시지 처리
-      if (err.response?.data?.errorCode === 'FAVORITE_LIMIT_EXCEEDED') {
-        alert('즐겨찾기는 최대 4개까지만 가능합니다.')
+      if (err.response?.data?.errorCode === 'B007') {
+        showToast('즐겨찾기는 최대 4개까지 가능합니다.', 'warning')
       } else {
-        alert('즐겨찾기 변경에 실패했습니다.')
+        showToast('즐겨찾기 변경에 실패했습니다.', 'error')
       }
     },
 

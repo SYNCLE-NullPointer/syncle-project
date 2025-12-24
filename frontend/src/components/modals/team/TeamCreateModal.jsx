@@ -1,19 +1,35 @@
 import React, { useState } from 'react'
 import { Users, X } from 'lucide-react'
 import { useTeamMutations } from '../../../hooks/team/useTeamMutations'
+import { useToast } from '../../../hooks/useToast'
 
 function TeamCreateModal({ onClose }) {
   // 팀 정보 상태
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const { createTeam } = useTeamMutations()
+  const { showToast } = useToast()
 
   // 팀 생성 핸들러
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!name.trim()) return
+    if (!name.trim()) {
+      showToast('팀 이름을 입력해주세요.', 'warning')
+      return
+    }
 
-    createTeam({ name, description }, { onSuccess: onClose })
+    createTeam(
+      { name, description },
+      {
+        onSuccess: () => {
+          showToast('팀이 성공적으로 생성되었습니다.', 'success')
+          onClose()
+        },
+        onError: () => {
+          showToast('팀 생성에 실패했습니다.', 'error')
+        },
+      },
+    )
   }
 
   return (
