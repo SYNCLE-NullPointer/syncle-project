@@ -7,6 +7,7 @@ import { Lock, Globe, MoreHorizontal, Plus, Share2, Star } from 'lucide-react'
 import BoardFilter from '../sidebar/BoardFilter'
 import { useBoardDisplayMembers } from '../../utils/useBoardDisplayMembers'
 import useBoardPermission from '../../hooks/board/useBoardPermission'
+import logo from '../../assets/images/logo_v5.png'
 
 function BoardHeader({ board }) {
   // UI 상태 제어 함수 (Store)
@@ -26,8 +27,6 @@ function BoardHeader({ board }) {
   // 모달 상태 관리
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
 
-  const teamName = board.teamName
-  const teamInitial = teamName.substring(0, 1).toUpperCase()
   const isPrivate = board.visibility === 'PRIVATE'
 
   // 멤버 리스트 계산 로직
@@ -58,17 +57,17 @@ function BoardHeader({ board }) {
       <header className="z-20 flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
         {/* 왼쪽: 보드 정보 */}
         <div className="flex items-center gap-4">
-          {/* 팀 아이콘 클릭 시 팀 페이지로 이동 */}
+          {/* 대쉬보드 페이지로 이동 */}
           <Link
-            to={`/teams/${board.teamId}/boards`}
+            to="/dashboard"
             className="group flex items-center gap-2 rounded-md transition-opacity hover:opacity-80"
-            title={`${teamName} 팀 페이지로 이동`}
+            title="대시보드로 이동"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-600 shadow-sm transition-transform group-hover:scale-105">
-              <span className="text-sm font-bold text-white">
-                {teamInitial}
-              </span>
-            </div>
+            <img
+              src={logo}
+              alt="Syncle Logo"
+              className="h-8 w-auto object-contain"
+            />
           </Link>
 
           {/* 보드 이름 & 즐겨찾기 */}
