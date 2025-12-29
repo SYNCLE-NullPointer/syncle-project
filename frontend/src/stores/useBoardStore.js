@@ -11,10 +11,7 @@ const useBoardStore = create((...a) => ({
    * 컴포넌트에서는 import useBoardStore 사용
    */
   ...createBoardSlice(...a),
-  // ...createListSlice(...a),
   ...createCardSlice(...a),
-  // ...createMemeberSlice(...a),
-  // ...createChecklistSlice(...a),
 }))
 
 export default useBoardStore

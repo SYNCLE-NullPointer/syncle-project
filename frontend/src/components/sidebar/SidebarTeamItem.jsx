@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { getTeamColorClass } from '../../constants/themeConstants'
@@ -43,22 +44,11 @@ function SidebarTeamItem({ team, isSelected, onToggle }) {
           <span className="truncate text-sm font-medium">{tName}</span>
         </div>
 
-        {/* 화살표 회전 애니메이션 */}
-        <svg
+        <ChevronDown
           className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
             isSelected ? 'rotate-180' : ''
           }`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        />
       </button>
 
       {/* 하위 메뉴 (펼쳐졌을 때만 렌더링) */}
