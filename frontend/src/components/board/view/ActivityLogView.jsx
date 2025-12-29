@@ -40,11 +40,11 @@ export default function ActivityLogView({ boardId }) {
   }, [hasNextPage, fetchNextPage])
 
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="mt-2 flex min-h-0 flex-1 flex-col bg-white">
       {/* 2. 로그 리스트 */}
       <div
         ref={scrollContainerRef}
-        className="scrollbar-thin flex-1 overflow-y-auto"
+        className="scrollbar-thin min-h-0 overflow-y-auto"
       >
         {isLoading ? (
           <div className="flex h-40 items-center justify-center">
@@ -60,12 +60,12 @@ export default function ActivityLogView({ boardId }) {
             <p className="text-sm">아직 기록된 활동이 없습니다.</p>
           </div>
         ) : (
-          <div className="flex flex-col pb-4">
+          <div className="flex flex-col pb-2">
             {/* 그룹화된 데이터 렌더링 */}
             {groupedLogs?.map(({ date, logs }) => (
               <div key={date}>
                 {/* 날짜 구분선 */}
-                <div className="sticky top-0 z-10 border-b border-gray-100 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-500">
+                <div className="sticky top-0 z-10 border-b border-gray-100 bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-500">
                   {date}
                 </div>
 
@@ -79,14 +79,16 @@ export default function ActivityLogView({ boardId }) {
             ))}
 
             {/* 로딩 트리거 */}
-            <div
-              ref={observerRef}
-              className="flex h-10 items-center justify-center"
-            >
-              {isFetchingNextPage && (
-                <Loader2 className="animate-spin text-blue-500" />
-              )}
-            </div>
+            {(hasNextPage || isFetchingNextPage) && (
+              <div
+                ref={observerRef}
+                className="flex h-10 items-center justify-center"
+              >
+                {isFetchingNextPage && (
+                  <Loader2 className="animate-spin text-blue-500" />
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

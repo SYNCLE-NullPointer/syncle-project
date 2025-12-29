@@ -164,7 +164,7 @@ function BoardSettings({ board }) {
         <h2 className="text-base font-bold text-gray-800">{getTitle()}</h2>
       </div>
       {/* 콘텐츠 영역 */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-col overflow-hidden">
         {renderContent()}
       </div>
     </div>
