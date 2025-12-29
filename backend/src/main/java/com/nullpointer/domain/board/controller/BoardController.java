@@ -12,10 +12,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @Tag(name = "Board", description = "보드 CRUD 및 설정 API")
 @RestController
 @RequestMapping("/api")
@@ -101,6 +103,9 @@ public class BoardController {
 
         List<ActivityLogResponse> response
                 = activityService.getBoardActivities(boardId, cursorId, size);
+
+        log.info("조회된 활동 로그 개수: {}", response.size());
+        log.info("조회된 활동 로그 데이터: {}", response);
 
         return ApiResponse.success(response);
     }

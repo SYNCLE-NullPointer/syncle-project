@@ -123,7 +123,7 @@ function BoardSettings({ board }) {
       case 'FILES':
         return <FilesView board={board} />
       case 'ACTIVITY':
-        return <ActivityLogView board={board} />
+        return <ActivityLogView boardId={board.id} />
       case 'ARCHIVE':
         return <ArchiveView board={board} />
       default:
@@ -145,7 +145,7 @@ function BoardSettings({ board }) {
   return (
     <div
       ref={menuRef}
-      className="animate-in fade-in zoom-in-95 absolute top-14 right-4 z-50 w-80 overflow-hidden rounded-xl border border-gray-200 bg-white p-3 shadow-2xl duration-200"
+      className="animate-in fade-in zoom-in-95 absolute top-14 right-4 z-50 flex w-80 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white p-3 shadow-2xl duration-200"
       style={{ maxHeight: 'calc(100vh - 80px)' }} // 화면 높이에 맞춰 최대 높이 제한
     >
       {/* 공통 헤더 */}
@@ -164,7 +164,7 @@ function BoardSettings({ board }) {
         <h2 className="text-base font-bold text-gray-800">{getTitle()}</h2>
       </div>
       {/* 콘텐츠 영역 */}
-      <div className="h-[calc(100%-3.5rem)] overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {renderContent()}
       </div>
     </div>

@@ -14,15 +14,25 @@ export default function ActivityLogView({ boardId }) {
     isError,
   } = useInfiniteBoardLogs(boardId)
 
-  // Intersection Observer (무한 스크롤 트리거)
+  // 1. 스크롤이 생기는 컨테이너를 잡기 위한 ref 생성
+  const scrollContainerRef = useRef(null)
+
+  // 무한 스크롤 트리거
   const observerRef = useRef()
 
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasNextPage) {
-        fetchNextPage()
-      }
-    })
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage) {
+          console.log('>>> 스크롤 바닥 감지! 데이터 요청 <<<')
+          fetchNextPage()
+        }
+      },
+      {
+        root: scrollContainerRef.current,
+        threshold: 0.5,
+      },
+    )
 
     if (observerRef.current) observer.observe(observerRef.current)
 
@@ -32,7 +42,10 @@ export default function ActivityLogView({ boardId }) {
   return (
     <div className="flex h-full flex-col bg-white">
       {/* 2. 로그 리스트 */}
-      <div className="scrollbar-thin flex-1 overflow-y-auto">
+      <div
+        ref={scrollContainerRef}
+        className="scrollbar-thin flex-1 overflow-y-auto"
+      >
         {isLoading ? (
           <div className="flex h-40 items-center justify-center">
             <Loader2 className="animate-spin text-blue-500" />
