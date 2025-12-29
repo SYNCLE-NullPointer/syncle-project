@@ -118,7 +118,7 @@ const BoardFilter = ({ board, onClose }) => {
       {/* 헤더 */}
       <div className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-white px-5 py-4">
         <div className="flex items-center gap-2 font-semibold text-gray-800">
-          <Filter className="h-4 w-4 text-indigo-600" />
+          <Filter className="h-4 w-4 text-blue-600" />
           <span>필터</span>
         </div>
         <button
@@ -133,25 +133,25 @@ const BoardFilter = ({ board, onClose }) => {
       <div className="flex shrink-0 border-b border-gray-100 px-4 pt-2">
         <button
           onClick={() => setActiveTab('properties')}
-          className={`relative flex-1 pb-3 text-sm font-medium transition-colors ${activeTab === 'properties' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`relative flex-1 pb-3 text-sm font-medium transition-colors ${activeTab === 'properties' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
           속성
           {activeTab === 'properties' && (
             <motion.div
               layoutId="activeTab"
-              className="absolute right-0 bottom-0 left-0 h-0.5 bg-indigo-600"
+              className="absolute right-0 bottom-0 left-0 h-0.5 bg-blue-600"
             />
           )}
         </button>
         <button
           onClick={() => setActiveTab('members')}
-          className={`relative flex-1 pb-3 text-sm font-medium transition-colors ${activeTab === 'members' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`relative flex-1 pb-3 text-sm font-medium transition-colors ${activeTab === 'members' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
           멤버
           {activeTab === 'members' && (
             <motion.div
               layoutId="activeTab"
-              className="absolute right-0 bottom-0 left-0 h-0.5 bg-indigo-600"
+              className="absolute right-0 bottom-0 left-0 h-0.5 bg-blue-600"
             />
           )}
         </button>
@@ -177,7 +177,7 @@ const BoardFilter = ({ board, onClose }) => {
                 <select
                   value={filter.sortBy}
                   onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  className="block w-full rounded-md border border-gray-200 bg-white p-2 text-sm text-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
+                  className="block w-full rounded-md border border-gray-200 bg-white p-2 text-sm text-gray-700 focus:border-blue-500 focus:ring-blue-500"
                 >
                   <option value="manual">기본 정렬</option>
                   <option value="newest">최신 생성순</option>
@@ -199,7 +199,7 @@ const BoardFilter = ({ board, onClose }) => {
                     handleFilterChange('keyword', e.target.value)
                   }
                   placeholder="제목으로 검색..."
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                 />
               </div>
 
@@ -223,7 +223,7 @@ const BoardFilter = ({ board, onClose }) => {
                           type="checkbox"
                           checked={filter.labels.includes(lbl.name)}
                           onChange={() => toggleArrayFilter('labels', lbl.name)}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                         <div
                           className={`ml-2 flex h-6 items-center rounded px-2 text-xs font-medium text-white`}
@@ -279,7 +279,7 @@ const BoardFilter = ({ board, onClose }) => {
                         onChange={() =>
                           toggleArrayFilter('dueDates', option.id)
                         }
-                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <div className="ml-3 flex items-center gap-2 text-sm text-gray-600 group-hover:text-gray-900">
                         <option.icon className={`h-4 w-4 ${option.color}`} />
@@ -307,7 +307,7 @@ const BoardFilter = ({ board, onClose }) => {
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
                   placeholder="멤버 이름 검색..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-3 pl-9 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-3 pl-9 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                 />
               </div>
               <div className="space-y-1">
@@ -320,7 +320,7 @@ const BoardFilter = ({ board, onClose }) => {
                       type="checkbox"
                       checked={filter.memberIds.includes(m.id)}
                       onChange={() => toggleArrayFilter('memberIds', m.id)}
-                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <div className="ml-3 flex items-center gap-3">
                       {m.profileImg ? (
@@ -330,7 +330,7 @@ const BoardFilter = ({ board, onClose }) => {
                           className="h-8 w-8 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
                           {m.name[0]}
                         </div>
                       )}
@@ -357,7 +357,7 @@ const BoardFilter = ({ board, onClose }) => {
       {/* 하단 버튼 */}
       <div className="flex shrink-0 items-center justify-between border-t border-gray-100 bg-gray-50 p-4">
         <div className="text-xs text-gray-500">
-          <span className="font-semibold text-indigo-600">
+          <span className="font-semibold text-blue-600">
             {activeFilterCount}개
           </span>
           의 필터 적용 중
@@ -371,7 +371,7 @@ const BoardFilter = ({ board, onClose }) => {
           </button>
           <button
             onClick={onClose}
-            className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
           >
             닫기
           </button>

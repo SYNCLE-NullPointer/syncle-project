@@ -3,7 +3,15 @@ import useBoardStore from '../../stores/useBoardStore'
 import { Link } from 'react-router-dom'
 import InviteBoardMemeberModal from '../modals/board/InviteBoardMemeberModal'
 import { useBoardMutations } from '../../hooks/board/useBoardMutations'
-import { Lock, Globe, MoreHorizontal, Plus, Share2, Star } from 'lucide-react'
+import {
+  Lock,
+  Globe,
+  MoreHorizontal,
+  Plus,
+  Share2,
+  Star,
+  Filter,
+} from 'lucide-react'
 import BoardFilter from '../sidebar/BoardFilter'
 import { useBoardDisplayMembers } from '../../utils/useBoardDisplayMembers'
 import useBoardPermission from '../../hooks/board/useBoardPermission'
@@ -155,19 +163,7 @@ function BoardHeader({ board }) {
             }}
             className={`flex items-center space-x-2 rounded-md px-3 py-1.5 transition-colors ${isFilterOpen ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-            </svg>
+            <Filter size={16} />
             <span className="text-sm font-medium">필터</span>
           </button>
 

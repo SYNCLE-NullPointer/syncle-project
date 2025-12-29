@@ -1,6 +1,6 @@
+import { ChevronDown } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { getTeamColorClass } from '../../constants/themeConstants'
 
 function SidebarTeamItem({ team, isSelected, onToggle }) {
   // team 객체에서 안전하게 id와 name 추출
@@ -12,9 +12,6 @@ function SidebarTeamItem({ team, isSelected, onToggle }) {
 
   // 현재 URL이 이 팀의 경로에 속해 있는지 확인
   const isTeamActive = location.pathname.startsWith(`/teams/${tId}`)
-
-  // "NullPointer" 등 팀 이름에 따라 항상 고정된 색상 클래스 획득
-  const bgClass = getTeamColorClass(team.title)
 
   const teamHeaderClass =
     !isSelected && isTeamActive
@@ -41,22 +38,11 @@ function SidebarTeamItem({ team, isSelected, onToggle }) {
           <span className="truncate text-sm font-medium">{tName}</span>
         </div>
 
-        {/* 화살표 회전 애니메이션 */}
-        <svg
+        <ChevronDown
           className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
             isSelected ? 'rotate-180' : ''
           }`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        />
       </button>
 
       {/* 하위 메뉴 (펼쳐졌을 때만 렌더링) */}
