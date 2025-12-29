@@ -85,11 +85,11 @@
         l.description,
         l.created_at AS createdAt,
         u.nickname AS actorName,
-        u.profile_image AS actorProfileImg,
+        u.profile_img AS actorProfileImg,
         b.title AS boardTitle,
         t.name AS teamName
         FROM activity_log l
-        JOIN user u ON l.user_id = u.id
+        LEFT JOIN user u ON l.user_id = u.id
         LEFT JOIN board b ON l.board_id = b.id
         LEFT JOIN team t ON l.team_id = t.id
         WHERE l.board_id = #{boardId}
