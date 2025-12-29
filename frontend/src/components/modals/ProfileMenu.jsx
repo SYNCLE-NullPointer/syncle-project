@@ -16,7 +16,6 @@ import {
   CreditCard,
   HelpCircle,
   LogOut,
-  Palette,
   Settings,
   User,
 } from 'lucide-react'
@@ -106,14 +105,6 @@ function ProfileMenu({ onClose, anchorEl }) {
             <CreditCard size={20} className="text-gray-500" />
             <span>내 카드</span>
           </button>
-
-          <button
-            onClick={() => handleNavigate('/profile/security')}
-            className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
-          >
-            <Settings size={20} className="text-gray-500" />
-            <span>설정</span>
-          </button>
         </div>
       </div>
 
@@ -122,9 +113,12 @@ function ProfileMenu({ onClose, anchorEl }) {
       {/* 3. 추가 기능 섹션 */}
       <div className="p-2">
         <div className="flex flex-col gap-1">
-          <button className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200">
-            <Palette size={20} className="text-gray-500" />
-            <span>테마 변경</span>
+          <button
+            onClick={() => handleNavigate('/profile/security')}
+            className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+          >
+            <Settings size={20} className="text-gray-500" />
+            <span>설정</span>
           </button>
           <button
             onClick={() => navigate('/support')}

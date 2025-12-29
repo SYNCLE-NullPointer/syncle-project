@@ -12,6 +12,7 @@ import com.nullpointer.domain.member.mapper.TeamMemberMapper;
 import com.nullpointer.domain.member.service.TeamMemberService;
 import com.nullpointer.domain.member.vo.BoardMemberVo;
 import com.nullpointer.domain.member.vo.enums.Role;
+import com.nullpointer.domain.notification.dto.NotificationDto;
 import com.nullpointer.domain.notification.vo.enums.NotificationType;
 import com.nullpointer.domain.team.mapper.TeamMapper;
 import com.nullpointer.domain.team.vo.TeamVo;
@@ -26,6 +27,7 @@ import com.nullpointer.global.validator.MemberValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +48,7 @@ public class InvitationServiceImpl implements InvitationService {
     private final BoardMemberMapper boardMemberMapper;
     private final ApplicationEventPublisher publisher;
     private final SocketSender socketSender;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Value("${app.domain.frontend.url}")
     private String frontendUrl;
@@ -186,6 +189,9 @@ public class InvitationServiceImpl implements InvitationService {
 
         // 5. 실제 멤버로 등록 (신규 멤버 추가 or 탈퇴 멤버 복구)
         teamMemberService.addMember(invitation.getTeamId(), loginUserId, Role.MEMBER);
+
+        // 해당 초대에 대한 알림을 찾아 읽음 처리
+        markNotificationAsRead(loginUserId, token);
 
         // 알림을 받을 초대자(Inviter) 정보 조회
         UserVo inviter = userMapper.findById(invitation.getInviterId())
@@ -337,5 +343,38 @@ public class InvitationServiceImpl implements InvitationService {
                 .build();
 
         publisher.publishEvent(event);
+    }
+
+    /**
+     * 초대 수락 시 해당 알림을 읽음 처리
+     */
+    private void markNotificationAsRead(Long userId, String token) {
+        try {
+            String key = RedisKeyType.NOTIFICATION.getKey(String.valueOf(userId));
+            List<Object> notifications = redisTemplate.opsForList().range(key, 0, -1);
+
+            if (notifications == null || notifications.isEmpty()) return;
+
+            for (int i = 0; i < notifications.size(); i++) {
+                Object obj = notifications.get(i);
+                if (obj instanceof NotificationDto) {
+                    NotificationDto noti = (NotificationDto) obj;
+                    // 팀 초대 알림이고, 토큰이 일치하는 경우 읽음 처리
+                    if (noti != null && NotificationType.TEAM_INVITE.equals(noti.getType()) &&
+                            token != null && token.equals(noti.getToken())) {
+
+                        NotificationDto updatedNoti = noti.toBuilder()
+                                .isRead(true)
+                                .build();
+
+                        redisTemplate.opsForList().set(key, i, updatedNoti);
+                        break; // 하나만 찾아서 수정하면 되므로 종료
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 알림 업데이트 실패가 초대 수락 로직 전체를 롤백시키지 않도록 예외 로깅만 처리
+            System.err.println("알림 읽음 처리 중 오류 발생: " + e.getMessage());
+        }
     }
 }
