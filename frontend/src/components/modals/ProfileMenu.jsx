@@ -99,33 +99,18 @@ function ProfileMenu({ onClose, anchorEl }) {
           </button>
 
           <button
-            // 아직 경로가 없다면 임시 처리
+            onClick={() => navigate('/support')}
             className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
           >
-            <CreditCard size={20} className="text-gray-500" />
-            <span>내 카드</span>
+            <HelpCircle size={20} className="text-gray-500" />
+            <span>문의하기</span>
           </button>
-        </div>
-      </div>
-
-      <div className="mx-2 my-1 h-px bg-gray-100" />
-
-      {/* 3. 추가 기능 섹션 */}
-      <div className="p-2">
-        <div className="flex flex-col gap-1">
           <button
             onClick={() => handleNavigate('/profile/security')}
             className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
           >
             <Settings size={20} className="text-gray-500" />
             <span>설정</span>
-          </button>
-          <button
-            onClick={() => navigate('/support')}
-            className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
-          >
-            <HelpCircle size={20} className="text-gray-500" />
-            <span>문의하기</span>
           </button>
         </div>
       </div>

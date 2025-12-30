@@ -187,7 +187,7 @@ export default function NotificationSettingPage() {
             />
             <ToggleItem
               label="카드 이동 (상태 변경)"
-              subLabel="주의: 보드 내 모든 카드의 이동 알림을 받습니다 (알림 많음)"
+              subLabel="주의: 보드 내 모든 카드의 이동 알림을 받습니다"
               checked={settings.push.cardMoves}
               onChange={() => handleToggle('push', 'cardMoves')}
             />
