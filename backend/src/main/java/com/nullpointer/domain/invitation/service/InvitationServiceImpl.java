@@ -266,6 +266,16 @@ public class InvitationServiceImpl implements InvitationService {
         // 2. 요청자가 팀장(OWNER)인지 확인
         memberValidator.validateTeamOwner(invitation.getTeamId(), userId, ErrorCode.TEAM_ACCESS_DENIED);
 
+        // 팀 이름 조회
+        TeamVo team = teamMapper.findTeamByTeamId(invitation.getTeamId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.TEAM_NOT_FOUND));
+
+        // 조회한 팀 이름을 invitation 객체에 설정
+        invitation.setTeamName(team.getName());
+
+        // 알림 내용 변경
+        cancelNotification(invitation);
+
         // 3. 초대 삭제
         invitationMapper.deleteInvitation(invitationId);
 
@@ -375,6 +385,46 @@ public class InvitationServiceImpl implements InvitationService {
                 // 3. RedisUtil을 사용하여 해당 인덱스의 데이터 업데이트
                 redisUtil.updateListIndex(key, i, updatedNoti);
                 break; // 처리 완료 후 루프 종료
+            }
+        }
+    }
+
+    /**
+     * 초대 취소 시 알림 문구 변경
+     */
+    private void cancelNotification(InvitationVo invitation) {
+        Long receiverId = invitation.getInviteeId();
+        String token = invitation.getToken();
+
+        // 해당 유저의 알림 목록 Redis Key
+        String key = RedisKeyType.NOTIFICATION.getKey(String.valueOf(receiverId));
+
+        // 1. Redis에서 알림 목록 조회
+        List<NotificationDto> notifications = redisUtil.getList(key, NotificationDto.class);
+
+        if (notifications == null || notifications.isEmpty()) return;
+
+        // 2. 해당 초대(Token)와 연결된 알림 찾기
+        for (int i = 0; i < notifications.size(); i++) {
+            NotificationDto noti = notifications.get(i);
+
+            // 타입이 'TEAM_INVITE'이고 토큰이 일치하는 경우
+            if (NotificationType.TEAM_INVITE.equals(noti.getType()) &&
+                    token.equals(noti.getToken())) {
+
+                // 3. 내용 수정 (Builder 패턴 사용)
+                NotificationDto updatedNoti = noti.toBuilder()
+                        .message("'" + invitation.getTeamName() + "' 팀 초대가 만료되거나 취소되었습니다.")
+                        .type(NotificationType.INVITE_CANCELED) // 타입 변경 (취소됨)
+                        .token(null) // 클릭해서 들어가지 못하게 토큰(링크) 제거
+                        .build();
+
+                // 4. Redis 리스트의 해당 인덱스 업데이트
+                redisUtil.updateListIndex(key, i, updatedNoti);
+
+                // 소켓으로 실시간 알림 목록 갱신 요청
+                // socketSender.sendSocketMessage(receiverId, "NOTIFICATION_UPDATE", null);
+                break;
             }
         }
     }
