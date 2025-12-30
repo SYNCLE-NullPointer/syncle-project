@@ -71,12 +71,19 @@
           AND user_id = #{userId}
     </update>
 
-    <!-- 본인이 관리자인 팀 개수 조회 -->
-    <select id="countOwnerByUserId" resultType="int">
-        SELECT COUNT(*)
+    <!-- 본인이 오너인 팀 ID 목록 -->
+    <select id="findTeamIdsByOwnerId" resultType="long">
+        SELECT team_id
         FROM team_member
-        WHERE user_id = #{userId}
-          AND role = 'OWNER'
+        WHERE user_id = #{userId} AND role = 'OWNER'
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 특정 팀의 멤버 수 -->
+    <select id="countMembersByTeamId" resultType="int">
+        SELECT count(*)
+        FROM team_member
+        WHERE team_id = #{teamId}
           AND deleted_at IS NULL
     </select>
 

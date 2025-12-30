@@ -82,12 +82,19 @@
           AND user_id = #{userId}
     </update>
 
-    <!-- 본인이 관리자인 보드 개수 조회 -->
-    <select id="countOwnerByUserId" resultType="int">
-        SELECT COUNT(*)
+    <!-- 본인이 오너인 보드 ID 목록 -->
+    <select id="findBoardIdsByOwnerId" resultType="long">
+        SELECT board_id
         FROM board_member
-        WHERE user_id = #{userId}
-          AND role = 'OWNER'
+        WHERE user_id = #{userId} AND role = 'OWNER'
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 특정 보드의 멤버 수 -->
+    <select id="countMembersByBoardId" resultType="int">
+        SELECT count(*)
+        FROM board_member
+        WHERE board_id = #{boardId}
           AND deleted_at IS NULL
     </select>
 

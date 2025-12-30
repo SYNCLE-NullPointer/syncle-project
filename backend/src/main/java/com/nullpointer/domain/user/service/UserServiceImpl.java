@@ -2,9 +2,11 @@ package com.nullpointer.domain.user.service;
 
 import com.nullpointer.domain.auth.dto.request.AuthRequest;
 import com.nullpointer.domain.auth.dto.request.PasswordRequest;
+import com.nullpointer.domain.board.mapper.BoardMapper;
 import com.nullpointer.domain.file.service.S3FileStorageService;
 import com.nullpointer.domain.member.mapper.BoardMemberMapper;
 import com.nullpointer.domain.member.mapper.TeamMemberMapper;
+import com.nullpointer.domain.team.mapper.TeamMapper;
 import com.nullpointer.domain.user.dto.request.UpdateProfileRequest;
 import com.nullpointer.domain.user.dto.response.UserProfileResponse;
 import com.nullpointer.domain.user.dto.response.UserSummaryResponse;
@@ -32,7 +34,8 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final TeamMemberMapper teamMemberMapper;
     private final BoardMemberMapper boardMemberMapper;
-
+    private final BoardMapper boardMapper;
+    private final TeamMapper teamMapper;
     private final S3FileStorageService fileStorageService;
     private final PasswordEncoder passwordEncoder;
     private final RedisUtil redisUtil;
@@ -168,11 +171,23 @@ public class UserServiceImpl implements UserService {
         userMapper.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 2. [검증] 관리자(OWNER) 권한 보유 여부 확인
-        // 본인이 OWNER인 팀이나 보드가 하나라도 있으면 탈퇴 불가능
-        if (teamMemberMapper.countOwnerByUserId(userId) > 0 ||
-                boardMemberMapper.countOwnerByUserId(userId) > 0) {
-            throw new BusinessException(ErrorCode.OWNER_MUST_TRANSFER_BEFORE_LEAVE);
+        // 2. [팀 검증] 내가 오너인 팀들 중, '나 외에 다른 멤버'가 있는 팀이 있는지 확인
+        List<Long> ownedTeamIds = teamMemberMapper.findTeamIdsByOwnerId(userId);
+        for (Long teamId : ownedTeamIds) {
+            int memberCount = teamMemberMapper.countMembersByTeamId(teamId);
+            if (memberCount > 1) {
+                // 나 말고 다른 사람이 있으면 권한 이임 필수
+                throw new BusinessException(ErrorCode.OWNER_MUST_TRANSFER_BEFORE_LEAVE);
+            }
+        }
+
+        // 2-2 [보드 검증] 내가 오너인 보드들 중, '나 외에 다른 멤버'가 있는 보드가 있는지 확인
+        List<Long> ownedBoardIds = boardMemberMapper.findBoardIdsByOwnerId(userId);
+        for (Long boardId : ownedBoardIds) {
+            int memberCount = boardMemberMapper.countMembersByBoardId(boardId);
+            if (memberCount > 1) {
+                throw new BusinessException(ErrorCode.OWNER_MUST_TRANSFER_BEFORE_LEAVE);
+            }
         }
 
         // a. [멤버십 정리] 모든 팀/보드에서 탈퇴 처리 (Soft Delete)
@@ -231,11 +246,23 @@ public class UserServiceImpl implements UserService {
         userMapper.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 2. [검증] 관리자(OWNER) 권한 보유 여부 확인
-        // 본인이 OWNER인 팀이나 보드가 하나라도 있으면 탈퇴 불가능
-        if (teamMemberMapper.countOwnerByUserId(userId) > 0 ||
-                boardMemberMapper.countOwnerByUserId(userId) > 0) {
-            throw new BusinessException(ErrorCode.OWNER_MUST_TRANSFER_BEFORE_LEAVE);
+        // 2. [팀 검증] 내가 오너인 팀들 중, '나 외에 다른 멤버'가 있는 팀이 있는지 확인
+        List<Long> ownedTeamIds = teamMemberMapper.findTeamIdsByOwnerId(userId);
+        for (Long teamId : ownedTeamIds) {
+            int memberCount = teamMemberMapper.countMembersByTeamId(teamId);
+            if (memberCount > 1) {
+                // 나 말고 다른 사람이 있으면 권한 이임 필수
+                throw new BusinessException(ErrorCode.OWNER_MUST_TRANSFER_BEFORE_LEAVE);
+            }
+        }
+
+        // 2-2 [보드 검증] 내가 오너인 보드들 중, '나 외에 다른 멤버'가 있는 보드가 있는지 확인
+        List<Long> ownedBoardIds = boardMemberMapper.findBoardIdsByOwnerId(userId);
+        for (Long boardId : ownedBoardIds) {
+            int memberCount = boardMemberMapper.countMembersByBoardId(boardId);
+            if (memberCount > 1) {
+                throw new BusinessException(ErrorCode.OWNER_MUST_TRANSFER_BEFORE_LEAVE);
+            }
         }
 
         // 2) Soft Delete
