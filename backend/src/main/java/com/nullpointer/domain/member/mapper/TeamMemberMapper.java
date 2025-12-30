@@ -31,8 +31,11 @@ public interface TeamMemberMapper {
     // 팀 탈퇴
     void deleteTeamMember(@Param("teamId") Long teamId, @Param("userId") Long memberId);
 
-    // 본인이 관리자인 팀 개수 조회
-    int countOwnerByUserId(Long userId);
+    // 본인이 오너인 팀 ID 목록
+    List<Long> findTeamIdsByOwnerId(Long userId);
+
+    // 특정 팀의 멤버 수
+    int countMembersByTeamId(Long teamId);
 
     // 회원 탈퇴 시 소속한 모든 팀 일괄 탈퇴
     void deleteAllByUserId(Long userId);
@@ -48,4 +51,5 @@ public interface TeamMemberMapper {
 
     // 탈퇴 팀 멤버 복구
     void restoreMember(@Param("teamId") Long teamId, @Param("userId") Long userId, @Param("role") Role role);
+
 }
