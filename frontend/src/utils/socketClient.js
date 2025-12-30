@@ -16,7 +16,8 @@ export const socketClient = {
       client.deactivate() // 다르면 재연결
     }
 
-    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+    const baseURL =
+      import.meta.env.VITE_API_BASE_URL || 'http://192.168.0.31:8080'
     const socketURL = baseURL.replace(/^http/, 'ws') + '/ws'
 
     client = new Client({
