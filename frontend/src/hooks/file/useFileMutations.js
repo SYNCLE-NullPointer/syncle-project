@@ -75,14 +75,8 @@ export const useFileMutations = (boardId) => {
   const uploadFileMutation = useMutation({
     mutationFn: ({ cardId, file }) => boardApi.uploadFile(cardId, file),
     onSuccess: (response, { cardId, listId }) => {
-      const newFile = response.data.data // FileResponse 객체
+      queryClient.invalidateQueries(['files', cardId])
 
-      // (1) 파일 목록 쿼리 캐시 직접 업데이트
-      queryClient.setQueryData(['files', cardId], (oldFiles) => {
-        return oldFiles ? [...oldFiles, newFile] : [newFile]
-      })
-
-      // (2) 보드 데이터 및 스토어 업데이트
       if (boardId) {
         queryClient.setQueryData(queryKey, (oldBoard) => {
           if (!oldBoard) return oldBoard
@@ -90,15 +84,12 @@ export const useFileMutations = (boardId) => {
           const newColumns = { ...oldBoard.columns }
           const targetList = { ...newColumns[listId] }
 
-          // 타겟 리스트가 존재할 때만 처리
           if (targetList) {
             targetList.tasks = targetList.tasks.map((task) => {
               if (task.id === cardId) {
                 return {
                   ...task,
-                  files: [...(task.files || []), newFile],
-                  // 만약 첨부파일 개수를 표시하는 필드가 있다면 업데이트 (예: attachmentCount)
-                  attachmentCount: (task.files?.length || 0) + 1,
+                  attachmentCount: (task.attachmentCount || 0) + 1,
                 }
               }
               return task
@@ -108,20 +99,8 @@ export const useFileMutations = (boardId) => {
 
           const newBoard = { ...oldBoard, columns: newColumns }
 
-          // Zustand 동기화
+          // Zustand 스토어 업데이트
           useBoardStore.setState({ activeBoard: newBoard })
-
-          const { selectedCard } = useBoardStore.getState()
-          if (selectedCard?.id === cardId) {
-            useBoardStore.setState({
-              selectedCard: {
-                ...selectedCard,
-                files: [...(selectedCard.files || []), newFile],
-                attachmentCount: (selectedCard.files?.length || 0) + 1,
-              },
-            })
-          }
-
           return newBoard
         })
       }
