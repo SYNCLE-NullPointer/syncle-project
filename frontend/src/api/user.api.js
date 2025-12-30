@@ -22,12 +22,14 @@ export const userApi = {
   // 프로필 이미지 변경
   uploadImage: (file, fileType) => {
     const formData = new FormData()
-    formData.append('file', file)
+
+    const filename = file.name || 'profile_image.jpg'
+    formData.append('file', file, filename)
     formData.append('fileType', fileType)
 
     return api.post('/files/upload', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined,
       },
     })
   },
