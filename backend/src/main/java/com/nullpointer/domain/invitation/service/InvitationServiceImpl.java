@@ -201,6 +201,9 @@ public class InvitationServiceImpl implements InvitationService {
 
         // 6. Redis 정리
         redisUtil.deleteData(RedisKeyType.INVITATION.getKey(token));
+
+        // 소켓 전송
+        socketSender.sendTeamSocketMessage(invitation.getTeamId(), "TEAM_MEMBER_ACCEPT", loginUserId, null);
     }
 
     // ========================================================

@@ -16,6 +16,7 @@ function TeamBoardPage() {
   const { data: team, isLoading, refetch } = useTeamDetailQuery(teamId)
   // 보드 생성 권한 정보 조회
   const { canCreateBoard, canManageTeam } = useTeamPermission(team)
+
   if (isLoading) return <div>Loading...</div>
   if (!team) return <div>팀 정보를 불러올 수 없습니다.</div>
 
