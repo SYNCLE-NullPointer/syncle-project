@@ -174,6 +174,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
 
         // [알림] 관리자/추방 대상에게 알림 발송
         publishMemberEvent(actor, receiverId, receiverNickname, team, notificationType);
+
+        // 소켓 전송
+        socketSender.sendTeamSocketMessage(teamId, "TEAM_MEMBER_LEAVE", userId, null);
+
     }
 
     /**

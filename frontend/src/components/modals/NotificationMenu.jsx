@@ -67,7 +67,10 @@ function NotificationMenu({ onClose, anchorEl }) {
 
         <button
           className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-blue-500 transition-colors hover:bg-gray-200 hover:text-blue-700"
-          onClick={() => markAllAsRead()}
+          onClick={() => {
+            markAllAsRead()
+            onClose()
+          }}
         >
           <Check size={12} />
           모두 읽음
