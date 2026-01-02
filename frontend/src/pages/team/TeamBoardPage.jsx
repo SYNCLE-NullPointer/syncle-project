@@ -7,6 +7,7 @@ import { useTeamDetailQuery } from '../../hooks/team/useTeamQuery'
 import { Plus } from 'lucide-react'
 import { getTeamColorClass } from '../../constants/themeConstants'
 import useTeamPermission from '../../hooks/team/useTeamPermission'
+import ImportantNoticeWidget from '../../components/team/ImportantNoticeWidget'
 
 function TeamBoardPage() {
   // URL에서 teamId 추출
@@ -47,6 +48,11 @@ function TeamBoardPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* 중요 공지 위젯 */}
+          <div className="shrink-0">
+            <ImportantNoticeWidget teamId={teamId} />
           </div>
         </section>
 

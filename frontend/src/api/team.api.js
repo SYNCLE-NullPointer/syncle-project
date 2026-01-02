@@ -26,4 +26,23 @@ export const teamApi = {
   // 팀 멤버별 참여 보드 조회
   getMemberParticipatedBoards: (teamId, memberId) =>
     api.get(`/teams/${teamId}/members/${memberId}/boards`),
+
+  // 공지사항 목록 조회
+  getTeamNotices: (teamId) => api.get(`/teams/${teamId}/notices`),
+
+  // 공지사항 상세 조회 (조회수 증가 포함)
+  getTeamNoticeDetail: (teamId, noticeId) =>
+    api.get(`/teams/${teamId}/notices/${noticeId}`),
+
+  // 공지사항 등록
+  createTeamNotice: (teamId, data) =>
+    api.post(`/teams/${teamId}/notices`, data),
+
+  // 공지사항 수정 (PATCH)
+  updateTeamNotice: (teamId, noticeId, data) =>
+    api.patch(`/teams/${teamId}/notices/${noticeId}`, data),
+
+  // 공지사항 삭제
+  deleteTeamNotice: (teamId, noticeId) =>
+    api.delete(`/teams/${teamId}/notices/${noticeId}`),
 }
