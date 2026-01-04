@@ -24,7 +24,7 @@ const ImportantNoticeWidget = ({ teamId }) => {
       className="group animate-in fade-in slide-in-from-right-4 relative flex w-72 max-w-xs cursor-pointer items-center gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2.5 shadow-sm transition-all duration-200 hover:border-orange-300 hover:bg-orange-100"
     >
       {/* 아이콘 영역 */}
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-orange-100 bg-white text-orange-500 shadow-sm">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-orange-100 bg-white text-orange-500 shadow-sm">
         <Megaphone className="h-4 w-4" />
       </div>
 
@@ -44,7 +44,7 @@ const ImportantNoticeWidget = ({ teamId }) => {
       </div>
 
       {/* 화살표 (Hover시 약간 이동하는 애니메이션) */}
-      <div className="flex-shrink-0 text-gray-400 transition-all duration-200 group-hover:translate-x-1 group-hover:text-orange-500">
+      <div className="shrink-0 text-gray-400 transition-all duration-200 group-hover:translate-x-1 group-hover:text-orange-500">
         <ChevronRight className="h-5 w-5" />
       </div>
 
