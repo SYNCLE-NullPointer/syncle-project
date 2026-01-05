@@ -17,6 +17,9 @@ export const teamApi = {
   removeTeamMember: (teamId, userId) =>
     api.delete(`/teams/${teamId}/members/${userId}`),
 
+  // 팀 멤버 전체 조회
+  getTeamMembers: (teamId) => api.get(`/teams/${teamId}/members`),
+
   // 팀 멤버 관리
   changeMemberRole: (teamId, userId, newRole) =>
     api.patch(`/teams/${teamId}/members/${userId}`, { role: newRole }),

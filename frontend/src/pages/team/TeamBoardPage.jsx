@@ -30,7 +30,7 @@ function TeamBoardPage() {
     <main className="flex-1 overflow-y-auto bg-white p-8">
       <div className="mx-auto max-w-5xl">
         {/* --- 1. 팀 헤더 --- */}
-        <section className="flex items-center gap-6">
+        <section className="flex items-center justify-between gap-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div

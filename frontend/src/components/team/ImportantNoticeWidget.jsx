@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTeamNotices } from '../../hooks/team/useTeamNotice'
+import { useTeamNoticesQuery } from '../../hooks/team/useTeamQuery'
 import { Megaphone, ChevronRight } from 'lucide-react'
 import { formatDate } from '../../utils/dateUtils'
 
@@ -8,7 +8,7 @@ const ImportantNoticeWidget = ({ teamId }) => {
   const navigate = useNavigate()
 
   // React Query를 통해 데이터 조회 (캐시 활용)
-  const { data: notices } = useTeamNotices(teamId)
+  const { data: notices } = useTeamNoticesQuery(teamId)
 
   // 1. 중요 공지(isImportant === true) 중 가장 최신 것 1개 찾기
   // (백엔드 정렬 순서에 의존하거나, 안전하게 sort 후 find 사용)

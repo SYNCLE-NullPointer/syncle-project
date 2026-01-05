@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
-  useTeamNotices,
-  useDeleteTeamNotice,
-} from '../../hooks/team/useTeamNotice'
-import { useTeamMemberInfo } from '../../hooks/useTeamMemberInfo'
+  useTeamNoticesQuery,
+  useMyTeamInfoQuery,
+} from '../../hooks/team/useTeamQuery'
+import { useDeleteTeamNotice } from '../../hooks/team/useTeamMutations'
 import NoticeWriteModal from '../../components/team/NoticeWriteModal'
-import { formatDate } from '../../utils/dateUtil'
+import { formatDate } from '../../utils/dateUtils'
 import defaultProfile from '../../assets/images/default.png'
 
 import {
@@ -18,16 +18,22 @@ import {
   Clock,
   ClipboardList,
 } from 'lucide-react'
+import { useAuthQuery } from '../../hooks/auth/useAuthQuery'
 
 const TeamNoticePage = () => {
   const { teamId } = useParams()
 
+  // 내 정보(로그인 유저) 가져오기
+  const { data: userInfo } = useAuthQuery()
+  const myUserId = userInfo?.id
+
   // 1. React Query Hooks
-  const { data: notices, isLoading, isError } = useTeamNotices(teamId)
-  const { mutate: deleteNotice } = useDeleteTeamNotice(teamId)
+  const { data: notices, isLoading, isError } = useTeamNoticesQuery(teamId)
+  const { mutate: deleteNotice, isPending: isDeleting } =
+    useDeleteTeamNotice(teamId)
 
   // 2. 권한 및 상태 관리
-  const { role } = useTeamMemberInfo(teamId)
+  const { role } = useMyTeamInfoQuery(teamId, myUserId)
   const isOwner = role === 'OWNER'
 
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -52,8 +58,14 @@ const TeamNoticePage = () => {
     setIsModalOpen(true)
   }
 
-  if (isLoading)
-    return <div className="p-8 text-center text-gray-500">로딩 중...</div>
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+      </div>
+    )
+  }
+
   if (isError)
     return (
       <div className="p-8 text-center text-red-500">
@@ -62,15 +74,16 @@ const TeamNoticePage = () => {
     )
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-gray-50 p-6">
-      <div className="mx-auto max-w-6xl">
+    <main className="flex-1 overflow-y-auto bg-white p-8">
+      <div className="mx-auto w-full max-w-5xl space-y-6">
         {/* 페이지 헤더 */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mt-8 flex items-center justify-between px-2">
           <div>
-            <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-800">
-              <Megaphone className="h-6 w-6 text-blue-500" />팀 공지사항
+            <h1 className="flex items-center gap-2 text-3xl font-bold text-gray-900">
+              {/* 아이콘 크기 조정 및 정렬 */}
+              <Megaphone className="h-7 w-7 text-blue-500" />팀 공지사항
             </h1>
-            <p className="mt-1 ml-8 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-gray-500">
               팀원들에게 중요한 소식을 전하세요.
             </p>
           </div>
@@ -78,7 +91,7 @@ const TeamNoticePage = () => {
           {isOwner && (
             <button
               onClick={handleCreate}
-              className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 hover:bg-blue-700"
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:cursor-pointer hover:bg-blue-700 hover:shadow-md"
             >
               <Plus className="h-4 w-4" />
               공지 작성
@@ -87,7 +100,7 @@ const TeamNoticePage = () => {
         </div>
 
         {/* 공지사항 목록 */}
-        <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
           {notices && notices.length > 0 ? (
             <ul className="divide-y divide-gray-100">
               {notices.map((notice) => (
@@ -123,7 +136,7 @@ const TeamNoticePage = () => {
                           <img
                             src={notice.writerProfile || defaultProfile}
                             alt={notice.writerName}
-                            className="h-5 w-5 rounded-full border border-gray-200 object-cover"
+                            className="h-5 w-5 rounded-full border border-gray-300 object-cover"
                           />
                           <span className="font-medium text-gray-600">
                             {notice.writerName}
@@ -154,6 +167,7 @@ const TeamNoticePage = () => {
                         </button>
                         <button
                           onClick={(e) => handleDelete(notice.id, e)}
+                          disabled={isDeleting}
                           className="rounded p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
                           title="삭제"
                         >
@@ -201,7 +215,7 @@ const TeamNoticePage = () => {
           noticeToEdit={selectedNotice}
         />
       )}
-    </div>
+    </main>
   )
 }
 
