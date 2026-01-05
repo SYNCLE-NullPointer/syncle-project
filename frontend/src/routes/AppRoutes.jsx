@@ -14,7 +14,6 @@ import CalendarPage from '../pages/user/CalendarPage'
 import EmailVerificationPage from '../pages/auth/EmailVerificationPage'
 import BoardJoinPage from '../pages/auth/BoardJoinPage'
 import GlobalSocketWrapper from '../layouts/GlobalSocketWrapper'
-import SupportPage from '../pages/support/SupportPage'
 
 export default function AppRoutes() {
   return (
@@ -37,7 +36,6 @@ export default function AppRoutes() {
             <Route path="/teams/*" element={<TeamRoutes />} />
             <Route path="/calendar/*" element={<CalendarPage />} />
             <Route path="/notifications/*" element={<NotificationPage />} />
-            <Route path="/support" element={<SupportPage />} />
           </Route>
 
           {/* ProfileLayout을 사용하는 페이지 */}

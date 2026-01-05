@@ -99,7 +99,7 @@ function ProfileMenu({ onClose, anchorEl }) {
           </button>
 
           <button
-            onClick={() => navigate('/support')}
+            onClick={() => navigate('/profile/support')}
             className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
           >
             <HelpCircle size={20} className="text-gray-500" />

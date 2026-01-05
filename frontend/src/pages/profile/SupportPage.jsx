@@ -5,6 +5,7 @@ import { sendInquiry } from '../../api/support.api'
 import { useToast } from '../../hooks/useToast'
 import FormInput from '../../components/common/FormInput'
 import FormButton from '../../components/common/FormButton'
+import { MessageSquare } from 'lucide-react'
 
 const INQUIRY_TYPES = [
   { value: 'ACCOUNT', label: '계정 관련' },
@@ -51,10 +52,23 @@ const SupportPage = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl p-6">
-      <h1 className="mb-6 text-2xl font-bold text-gray-800">문의하기</h1>
+    <div className="animate-fade-in mx-auto w-full max-w-4xl space-y-6 p-6 pb-20">
+      {/* 1. 페이지 헤더 (다른 설정 페이지와 통일) */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">문의하기</h1>
+        <p className="mt-2 text-gray-500">
+          서비스 이용 중 궁금한 점이나 건의사항을 남겨주세요.
+        </p>
+      </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      {/* 2. 컨텐츠 카드 (rounded-2xl, border-gray-300 적용) */}
+      <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-sm">
+        {/* 카드 내부 헤더 */}
+        <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
+          <MessageSquare size={20} className="text-gray-500" />
+          문의 작성
+        </h3>
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* 문의 유형 */}
           <div className="flex flex-col gap-2">
@@ -65,7 +79,7 @@ const SupportPage = () => {
               name="type"
               value={formData.type}
               onChange={handleChange}
-              className="focus:ring-primary-500 w-full rounded-md border border-gray-300 bg-white p-2 focus:ring-2 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
               {INQUIRY_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -93,16 +107,17 @@ const SupportPage = () => {
               name="content"
               value={formData.content}
               onChange={handleChange}
-              className="focus:ring-primary-500 h-64 w-full resize-none rounded-md border border-gray-300 p-3 focus:ring-2 focus:outline-none"
+              className="h-64 w-full resize-none rounded-lg border border-gray-300 p-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               placeholder="문의하실 내용을 자세히 적어주세요."
             />
           </div>
 
-          <div className="mt-4 flex justify-end gap-3">
+          {/* 버튼 영역 */}
+          <div className="mt-2 flex justify-end gap-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="rounded-md px-4 py-2 text-gray-600 transition-colors hover:bg-gray-100"
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
             >
               취소
             </button>

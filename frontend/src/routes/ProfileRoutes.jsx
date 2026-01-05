@@ -5,6 +5,7 @@ import ProfilePage from '../pages/profile/ProfilePage'
 import SecurityPage from '../pages/profile/SecurityPage'
 import ActivityPage from '../pages/profile/ActivityPage'
 import NotificationSettingPage from '../pages/profile/NotificationSettingPage'
+import SupportPage from '../pages/profile/SupportPage'
 
 export default function ProfileRoutes() {
   return (
@@ -14,6 +15,7 @@ export default function ProfileRoutes() {
         <Route path="security" element={<SecurityPage />} />
         <Route path="activity" element={<ActivityPage />} />
         <Route path="notification" element={<NotificationSettingPage />} />
+        <Route path="support" element={<SupportPage />} />
       </Route>
     </Routes>
   )

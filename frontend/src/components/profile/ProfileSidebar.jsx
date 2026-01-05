@@ -5,6 +5,7 @@ import {
   ActivityIcon,
   Bell,
   ChevronLeft,
+  HelpCircle,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -43,6 +44,11 @@ export default function ProfileSidebar() {
       label: '알림 설정',
       path: '/profile/notification',
       icon: <Bell size={24} />,
+    },
+    {
+      label: '문의하기',
+      path: '/profile/support',
+      icon: <HelpCircle size={24} />,
     },
   ]
 
