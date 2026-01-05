@@ -99,11 +99,11 @@ const NoticeWriteModal = ({
     return (
       <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm duration-200">
         <div
-          className="animate-in zoom-in-95 w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl duration-200"
+          className="animate-in zoom-in-95 h-auto max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
             <h2 className="flex items-center gap-2 text-xl font-bold text-gray-800">
               공지사항 상세
             </h2>
@@ -157,7 +157,7 @@ const NoticeWriteModal = ({
             </div>
 
             {/* 본문 내용 */}
-            <div className="min-h-[200px] text-base leading-relaxed whitespace-pre-wrap text-gray-700">
+            <div className="w-full rounded-xl border border-gray-100 bg-gray-50 p-6 text-base leading-relaxed whitespace-pre-wrap text-gray-700">
               {noticeToEdit.content}
             </div>
           </div>
@@ -170,11 +170,11 @@ const NoticeWriteModal = ({
   return (
     <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm duration-200">
       <div
-        className="animate-in zoom-in-95 w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl duration-200"
+        className="animate-in zoom-in-95 h-auto max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
           <h2 className="flex items-center gap-2 text-xl font-bold text-gray-800">
             {isEditMode ? '공지사항 수정' : '새 공지사항 작성'}
           </h2>
@@ -220,7 +220,7 @@ const NoticeWriteModal = ({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="상세 내용을 입력하세요..."
-              className="min-h-[200px] w-full resize-none rounded-lg border border-gray-300 px-4 py-3 transition-all outline-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              className="min-h-[150px] w-full resize-y rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
