@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nullpointer.domain.team.mapper.TeamMapper">
+
+    <!-- 팀 생성 -->
+    <insert id="insertTeam" parameterType="TeamVo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO team (name,
+                          description,
+                          board_create_role)
+        VALUES (#{name},
+                #{description},
+                #{boardCreateRole})
+    </insert>
+
+    <!-- 본인 소속 팀 전체 조회 -->
+    <select id="findTeamByUserId" parameterType="Long" resultType="TeamVo">
+        SELECT a.id,
+               a.name,
+               b.role
+        FROM team a,
+             team_member b
+        WHERE a.id = b.team_id
+          AND b.user_id = #{id}
+          AND a.deleted_at IS NULL
+          AND b.deleted_at IS NULL
+    </select>
+
+    <!-- 팀 상세 조회 -->
+    <select id="findTeamByTeamId" parameterType="Long" resultType="TeamVo">
+        SELECT id,
+               name,
+               description,
+               board_create_role
+        FROM team
+        WHERE id = #{id}
+    </select>
+
+    <!-- 팀 정보 수정 -->
+    <update id="updateTeam" parameterType="TeamVo">
+        UPDATE team
+        SET name        = #{name},
+            description = #{description},
+            board_create_role = #{boardCreateRole}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 팀 삭제 -->
+    <update id="deleteTeam">
+        UPDATE team
+        SET deleted_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

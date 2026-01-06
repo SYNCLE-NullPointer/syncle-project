@@ -1,0 +1,100 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { teamApi } from '../../api/team.api'
+import { useToast } from '../useToast'
+
+export const useTeamMutations = () => {
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+
+  // 팀 생성
+  const createTeamMutation = useMutation({
+    mutationFn: teamApi.createTeam,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] }) // 팀 목록 갱신
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // 대시보드 갱신
+      navigate('/dashboard')
+    },
+    onError: (err) => alert(err.response?.data?.message || '팀 생성 실패'),
+  })
+
+  // 팀 정보 수정
+  const updateTeamMutation = useMutation({
+    mutationFn: ({ teamId, data }) => teamApi.updateTeam(teamId, data),
+    onSuccess: (res, { teamId }) => {
+      queryClient.invalidateQueries({ queryKey: ['team', Number(teamId)] })
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      showToast('팀 정보가 수정되었습니다.', 'success')
+    },
+    onError: (err) => alert(err.response?.data?.message || '팀 수정 실패'),
+  })
+
+  // 팀 삭제
+  const deleteTeamMutation = useMutation({
+    mutationFn: (teamId) => teamApi.deleteTeam(teamId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      showToast('팀이 삭제되었습니다.', 'success')
+      navigate('/dashboard')
+    },
+    onError: (err) => alert(err.response?.data?.message || '팀 삭제 실패'),
+  })
+
+  return {
+    createTeam: createTeamMutation.mutate,
+    updateTeam: updateTeamMutation.mutate,
+    deleteTeam: deleteTeamMutation.mutate,
+  }
+}
+
+// 공지사항 생성 Hook
+export const useCreateTeamNotice = (teamId) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data) => teamApi.createTeamNotice(teamId, data),
+    onSuccess: () => {
+      // v5 권장: invalidateQueries도 객체 형태로 전달
+      queryClient.invalidateQueries({ queryKey: ['teamNotices', teamId] })
+    },
+  })
+}
+
+// 공지사항 수정 Hook
+export const useUpdateTeamNotice = (teamId) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ noticeId, data }) =>
+      teamApi.updateTeamNotice(teamId, noticeId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamNotices', teamId] })
+    },
+  })
+}
+
+// 공지사항 삭제 Hook
+export const useDeleteTeamNotice = (teamId) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (noticeId) => teamApi.deleteTeamNotice(teamId, noticeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamNotices', teamId] })
+    },
+  })
+}
+
+// 조회수 증가
+export const useIncreaseTeamNoticeView = (teamId) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (noticeId) => teamApi.increaseViewCount(teamId, noticeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamNotices', teamId] })
+    },
+  })
+}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nullpointer.domain.board.mapper.BoardSettingMapper">
+
+<insert id="insertBoardSettings" parameterType="BoardSettingVo">
+    INSERT INTO board_setting (
+    board_id,
+    invitation_permission,
+    board_sharing_permission,
+    list_edit_permission,
+    card_delete_permission
+    ) VALUES (
+    #{boardId},
+    #{invitationPermission},
+    #{boardSharingPermission},
+    #{listEditPermission},
+    #{cardDeletePermission}
+    )
+</insert>
+
+<select id="findBoardSettingsByBoardId" resultType="BoardSettingVo">
+SELECT
+board_id AS boardId,
+invitation_permission AS invitationPermission,
+board_sharing_permission AS boardSharingPermission,
+list_edit_permission AS listEditPermission,
+card_delete_permission AS cardDeletePermission
+FROM board_setting
+WHERE board_id = #{boardId}
+</select>
+
+<update id="updateBoardSettings" parameterType="BoardSettingVo">
+UPDATE board_setting
+SET
+invitation_permission = #{invitationPermission},
+board_sharing_permission = #{boardSharingPermission},
+list_edit_permission = #{listEditPermission},
+card_delete_permission = #{cardDeletePermission}
+WHERE board_id = #{boardId}
+</update>
+
+</mapper>

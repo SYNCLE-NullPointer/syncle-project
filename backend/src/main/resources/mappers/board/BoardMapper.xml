@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nullpointer.domain.board.mapper.BoardMapper">
+
+    <!-- 보드 생성 -->
+    <insert id="insertBoard" parameterType="BoardVo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO board (title,
+                           team_id,
+                           description,
+                           visibility)
+        VALUES (#{title},
+                #{teamId},
+                #{description},
+                #{visibility})
+    </insert>
+
+    <!-- 보드 생성 시 생성자를 BoardMember 테이블에 OWNER로 등록 -->
+    <insert id="insertBoardMember">
+        INSERT INTO board_member (board_id,
+                                  user_id,
+                                  role)
+        VALUES (#{boardId},
+                #{userId},
+                #{role})
+    </insert>
+
+    <!-- 내 보드 목록 조회-->
+    <select id="findBoardByUserId" parameterType="Long" resultType="BoardVo">
+        SELECT t.id                      AS teamId,
+               t.name                    AS teamName,
+               t.board_create_role       AS boardCreateRole,
+               tm.role                   AS teamRole,
+               b.id,
+               b.title,
+               b.description,
+               b.visibility,
+               (bf.board_id IS NOT NULL) AS isFavorite,
+               bf.favorited_at,
+               FALSE                     AS isGuest
+        FROM team t
+                 INNER JOIN team_member tm ON t.id = tm.team_id AND tm.user_id = #{id} AND tm.deleted_at IS NULL
+                 LEFT JOIN board b ON t.id = b.team_id
+            AND b.deleted_at IS NULL
+            AND (
+                                          b.visibility = 'PUBLIC'
+                                              OR (b.visibility = 'PRIVATE' AND EXISTS (SELECT 1
+                                                                                       FROM board_member bm
+                                                                                       WHERE bm.board_id = b.id
+                                                                                         AND bm.user_id = #{id}
+                                                                                         AND bm.deleted_at IS NULL))
+                                          )
+                 LEFT JOIN board_favorite bf ON b.id = bf.board_id AND bf.user_id = #{id}
+        WHERE t.deleted_at IS NULL
+
+        UNION ALL
+
+        SELECT t.id                      AS teamId,
+               t.name                    AS teamName,
+               t.board_create_role       AS boardCreateRole,
+               tm.role                   AS teamRole,
+               b.id,
+               b.title,
+               b.description,
+               b.visibility,
+               (bf.board_id IS NOT NULL) AS isFavorite,
+               bf.favorited_at,
+               TRUE                      AS isGuest
+        FROM board b
+                 INNER JOIN team t ON b.team_id = t.id
+                 INNER JOIN board_member bm ON b.id = bm.board_id AND bm.user_id = #{id} AND bm.deleted_at IS NULL
+                 LEFT JOIN team_member tm ON t.id = tm.team_id AND tm.user_id = #{id} AND tm.deleted_at IS NULL
+                 LEFT JOIN board_favorite bf ON b.id = bf.board_id AND bf.user_id = #{id}
+        WHERE b.deleted_at IS NULL
+          AND t.deleted_at IS NULL
+          AND tm.user_id IS NULL
+    </select>
+
+    <!-- 특정 팀 보드 목록 (+즐겨찾기) 조회 -->
+    <select id="findBoardWithFavoriteStatus" resultType="BoardResponse">
+        SELECT b.id,
+               b.title,
+               b.description,
+               b.visibility,
+               IF(bf.board_id IS NOT NULL, true, false) AS isFavorite
+        FROM board b
+                 LEFT JOIN board_member bm
+                           ON b.id = bm.board_id
+                               AND bm.user_id = #{userId} -- 중복 보드 조회 방지를 위해 '내' 정보 표시 조건 추가
+                 LEFT JOIN board_favorite bf
+                           ON b.id = bf.board_id
+                               AND bf.user_id = #{userId}
+        WHERE b.team_id = #{teamId}
+          AND b.deleted_at IS NULL
+          AND (b.visibility = 'PUBLIC' OR b.visibility = 'PRIVATE' AND bm.user_id IS NOT NULL)
+--         ORDER BY b.created_at DESC
+    </select>
+
+    <!-- 보드 상세 조회 -->
+    <select id="findBoardByBoardId" parameterType="Long" resultType="BoardVo">
+        SELECT b.id,
+               b.team_id AS teamId,
+               t.name    AS teamName,
+               b.title,
+               b.description,
+               b.visibility
+        FROM board b
+                 LEFT JOIN team t ON b.team_id = t.id
+        WHERE b.id = #{id}
+          AND b.deleted_at IS NULL
+    </select>
+
+    <!-- 보드 페이지 조회 -->
+    <resultMap id="BoardDetailMap" type="BoardViewResponse">
+        <id property="id" column="board_id"/>
+        <result property="title" column="board_title"/>
+        <result property="description" column="board_desc"/>
+        <result property="visibility" column="board_visibility"/>
+        <result property="teamId" column="team_id"/>
+        <result property="teamName" column="team_name"/>
+
+        <collection property="lists" ofType="ListWithCardsResponse">
+            <id property="id" column="list_id"/>
+            <result property="title" column="list_title"/>
+            <result property="orderIndex" column="list_order"/>
+            <result property="isArchived" column="list_is_archived"/>
+
+            <collection property="cards" ofType="CardResponse">
+                <id property="id" column="card_id"/>
+                <result property="title" column="card_title"/>
+                <result property="description" column="card_desc"/>
+                <result property="priority" column="card_priority"/>
+                <result property="orderIndex" column="card_order"/>
+                <result property="startDate" column="card_start_date"/>
+                <result property="dueDate" column="card_due_date"/>
+                <result property="isComplete" column="card_is_complete"/>
+                <result property="label" column="card_label"/>
+                <result property="labelColor" column="card_label_color"/>
+                <result property="isArchived" column="card_is_archived"/>
+                <result property="commentCount" column="card_comment_count"/>
+
+                <result property="assigneeId" column="assignee_id"/>
+                <result property="assigneeName" column="assignee_name"/>
+                <result property="assigneeProfileImg" column="assignee_img"/>
+                <result property="isAssigneeLeft" column="is_assignee_left"/>
+
+                <collection property="checklists" ofType="ChecklistVo">
+                    <id property="id" column="check_id"/>
+                    <result property="cardId" column="card_id"/>
+                    <result property="title" column="check_title"/>
+                    <result property="done" column="check_done"/>
+                </collection>
+
+                <collection property="files" ofType="FileResponse">
+                    <id property="id" column="file_id"/>
+                    <result property="cardId" column="file_card_id"/>
+                    <result property="fileName" column="file_file_name"/>
+                    <result property="filePath" column="file_file_path"/>
+                    <result property="fileSize" column="file_file_size"/>
+                    <result property="createdAt" column="file_created_at"/>
+                </collection>
+
+                <collection property="comments" ofType="CommentResponse"
+                            javaType="java.util.List">
+                    <id property="id" column="comment_id"/>
+                    <result property="writerId" column="comment_writer_id"/>
+                    <result property="parentId" column="comment_parent_id"/>
+                    <result property="content" column="comment_content"/>
+                    <result property="writerName" column="comment_writer_name"/>
+                    <result property="writerProfileImg" column="comment_writer_img"/>
+                    <result property="isWriterLeft" column="is_writer_left"/>
+                    <result property="createdAt" column="comment_created_at"/>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="findBoardWithListsAndCards" resultMap="BoardDetailMap">
+        SELECT b.id           AS board_id,
+               b.title        AS board_title,
+               b.description  AS board_desc,
+               b.visibility   AS board_visibility,
+               b.team_id      AS team_id,
+               t.name         AS team_name,
+
+               l.id           AS list_id,
+               l.title        AS list_title,
+               l.order_index  AS list_order,
+               l.is_archived  AS list_is_archived,
+
+               c.id           AS card_id,
+               c.title        AS card_title,
+               c.description  AS card_desc,
+               c.priority     AS card_priority,
+               c.order_index  AS card_order,
+               c.start_date   AS card_start_date,
+               c.due_date     AS card_due_date,
+               c.is_complete  As card_is_complete,
+               c.label        AS card_label,
+               c.label_color  AS card_label_color,
+               c.is_archived  AS card_is_archived,
+
+               -- 담당자 정보 (user 테이블 조인)
+               u.id           AS assignee_id,
+               u.nickname     AS assignee_name,
+               u.profile_img  AS assignee_img,
+               (CASE
+                    WHEN c.id IS NULL THEN NULL
+                    WHEN c.assignee_id IS NULL THEN false
+                    WHEN b.visibility = 'PRIVATE' THEN (bm_chk.user_id IS NULL OR bm_chk.deleted_at IS NOT NULL)
+                    ELSE (tm_chk.user_id IS NULL OR tm_chk.deleted_at IS NOT NULL)
+                   END)       AS is_assignee_left,
+
+               -- 체크리스트 (checklist 테이블 조인)
+               ck.id          AS check_id,
+               ck.title       AS check_title,
+               ck.done        AS check_done,
+
+               -- 첨부파일 (file 테이블 조인)
+               f.id           AS file_id,
+               f.card_id      AS file_card_id,
+               f.file_name    AS file_file_name,
+               f.file_path    AS file_file_path,
+               f.file_size    AS file_file_size,
+               f.created_at   AS file_created_at,
+
+               -- 댓글 (comment 테이블 조인)
+               cmt.id         AS comment_id,
+               cmt.writer_id  AS comment_writer_id,
+               cmt.parent_id  AS comment_parent_id,
+               cmt.content    AS comment_content,
+               cmt.created_at AS comment_created_at,
+               w.nickname     AS comment_writer_name,
+               w.profile_img  AS comment_writer_img,
+               (CASE
+                    WHEN cmt.id IS NULL THEN NULL -- ★ 댓글 자체가 없으면 NULL 반환 (MyBatis 객체 생성 방지)
+                    WHEN cmt.writer_id IS NULL THEN false -- 댓글은 있는데 작성자 정보가 없는 경우 (예외처리)
+                    WHEN b.visibility = 'PRIVATE' THEN (bm_writer.user_id IS NULL OR bm_writer.deleted_at IS NOT NULL)
+                    ELSE (tm_writer.user_id IS NULL OR tm_writer.deleted_at IS NOT NULL)
+                   END)       AS is_writer_left,
+
+               -- 댓글 수 (서브쿼리)
+               (CASE
+                    WHEN c.id IS NULL
+                        THEN NULL
+                    ELSE
+                        (SELECT COUNT(*)
+                         FROM comment cm
+                         WHERE cm.card_id = c.id)
+                   END)       AS card_comment_count
+        FROM board b
+                 JOIN team t
+                      ON b.team_id = t.id
+            -- 리스트가 없어도 보드는 나와야 하므로 LEFT JOIN
+                 LEFT JOIN list l
+                           ON b.id = l.board_id
+                               AND l.deleted_at IS NULL
+            -- 카드가 없어도 리스트는 나와야 하므로 LEFT JOIN
+                 LEFT JOIN card c
+                           ON l.id = c.list_id
+                               AND c.deleted_at IS NULL
+            -- 담당자가 없어도 카드는 나와야 하므로 LEFT JOIN
+                 LEFT JOIN user u
+                           ON c.assignee_id = u.id
+            -- (1) 담당자 탈퇴 여부 확인용 조인
+                 LEFT JOIN board_member bm_chk
+                           ON b.id = bm_chk.board_id AND c.assignee_id = bm_chk.user_id
+                 LEFT JOIN team_member tm_chk
+                           ON t.id = tm_chk.team_id AND c.assignee_id = tm_chk.user_id
+            -- 체크리스트 LEFT JOIN
+                 LEFT JOIN check_list ck
+                           ON c.id = ck.card_id
+                               AND ck.deleted_at IS NULL
+            -- 파일 LEFT JOIN
+                 LEFT JOIN file f
+                           ON c.id = f.card_id
+                               AND f.deleted_at IS NULL
+            -- 댓글 LEFT JOIN
+                 LEFT JOIN comment cmt
+                           ON c.id = cmt.card_id
+                               AND cmt.deleted_at IS NULL
+                 LEFT JOIN user w
+                           ON cmt.writer_id = w.id
+            -- (2) 댓글 작성자 탈퇴 여부 확인용 조인
+            -- 댓글 작성자(cmt.writer_id)가 보드 멤버인지 확인
+                 LEFT JOIN board_member bm_writer
+                           ON b.id = bm_writer.board_id AND cmt.writer_id = bm_writer.user_id
+            -- 댓글 작성자(cmt.writer_id)가 팀 멤버인지 확인
+                 LEFT JOIN team_member tm_writer
+                           ON t.id = tm_writer.team_id AND cmt.writer_id = tm_writer.user_id
+
+        WHERE b.id = #{boardId}
+          AND b.deleted_at IS NULL
+
+        -- 정렬: 리스트 순서 -> 카드 순서
+        ORDER BY l.order_index ASC,
+                 c.order_index ASC
+    </select>
+
+    <!-- 보드 정보 수정 -->
+    <update id="updateBoard" parameterType="BoardVo">
+        UPDATE board
+        SET title       = #{title},
+            description = #{description},
+            visibility  = #{visibility}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 보드 삭제 -->
+    <update id="deleteBoard">
+        UPDATE board
+        SET deleted_at = NOW()
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 팀 삭제 시 하위 보드 삭제 -->
+    <update id="deleteAllBoardsByTeamId">
+        UPDATE board
+        SET deleted_at = NOW()
+        WHERE team_id = #{teamId}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 보드 개수 체크 -->
+    <select id="countBoardByTeamId">
+        SELECT COUNT(*)
+        FROM board
+        WHERE team_id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 소속 멤버 보드 조회 -->
+    <select id="findMemberBoard" resultType="BoardVo">
+        SELECT b.id,
+               b.title,
+               b.visibility
+        FROM board b
+                 LEFT JOIN board_member bm
+                           ON b.id = bm.board_id
+                               AND bm.user_id = #{userId}
+                               AND bm.deleted_at IS NULL
+        WHERE b.team_id = #{teamId}
+          AND b.deleted_at IS NULL
+          AND (b.visibility = 'PUBLIC' OR (b.visibility = 'PRIVATE' AND bm.user_id IS NOT NULL))
+    </select>
+
+    <!-- 보드 즐겨찾기 갯수 확인 -->
+    <select id="countFavorite" resultType="int">
+        SELECT COUNT(*)
+        FROM board_favorite
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 보드 유무 확인 -->
+    <select id="existsFavorite" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM board_favorite
+        WHERE board_id = #{boardId}
+          AND user_id = #{userId}
+    </select>
+
+    <!-- 보드 즐겨찾기 추가 -->
+    <insert id="insertFavorite">
+        INSERT INTO board_favorite (board_id,
+                                    user_id,
+                                    favorited_at)
+        VALUES (#{boardId},
+                #{userId},
+                NOW())
+    </insert>
+
+    <!-- 보드 즐겨찾기 삭제 -->
+    <delete id="deleteFavorite">
+        DELETE
+        FROM board_favorite
+        WHERE board_id = #{boardId}
+          AND user_id = #{userId}
+    </delete>
+
+    <!-- Public 보드 검색-->
+    <select id="searchPublicBoards" resultType="BoardResponse">
+        SELECT b.id,
+        b.title,
+        b.description,
+        b.visibility,
+        FALSE AS isFavorite,
+        -- 소유자 정보 조회 추가
+        u.nickname AS ownerName,
+        u.email AS ownerEmail,
+        u.profile_img AS ownerProfileImg
+        FROM board b
+        LEFT JOIN board_member bm ON b.id = bm.board_id AND bm.role = 'OWNER'
+        LEFT JOIN user u ON bm.user_id = u.id
+        WHERE b.deleted_at IS NULL
+        AND b.visibility = 'PUBLIC'
+        <if test="keyword != null and keyword != ''">
+            AND b.title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY b.created_at DESC
+    </select>
+
+</mapper>

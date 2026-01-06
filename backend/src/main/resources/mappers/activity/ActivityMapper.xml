@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nullpointer.domain.activity.mapper.ActivityMapper">
+
+    <!-- 공통 WHERE 절 -->
+    <sql id="searchCriteria">
+        <where>
+            <if test="userId != null">AND l.user_id = #{userId}</if>
+            <if test="teamId != null">AND l.team_id = #{teamId}</if>
+            <if test="boardId != null">AND l.board_id = #{boardId}</if>
+            <if test="keyword != null">
+                AND (l.description LIKE CONCAT('%', #{keyword}, '%')
+                OR l.target_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="type != null">AND l.type = #{type}</if>
+            <if test="startDate != null">AND l.created_at &gt;= #{startDate}</if>
+            <if test="endDate != null">AND l.created_at &lt;= #{endDate}</if>
+        </where>
+    </sql>
+
+    <!-- 통계 조회 -->
+    <select id="getStats" resultType="ActivityStatsResponse" useCache="false">
+        SELECT
+        COUNT(CASE WHEN type = 'CREATE_CARD' THEN 1 END) AS createdCards7,
+        COUNT(CASE WHEN type = 'COMPLETE_CARD' THEN 1 END) AS completedTasks7,
+        COUNT(CASE WHEN type = 'ADD_COMMENT' THEN 1 END) AS comments7
+        FROM activity_log l
+        <where>
+            <if test="userId != null">AND l.user_id = #{userId}</if>
+            <if test="teamId != null">AND l.team_id = #{teamId}</if>
+            <if test="boardId != null">AND l.board_id = #{boardId}</if>
+
+            AND l.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        </where>
+    </select>
+
+    <!-- 인기 보드 조회 ('내'가 로그를 많이 남긴 보드) -->
+    <select id="findTopActiveBoards" resultType="TopBoardResponse">
+        SELECT b.id,
+        b.title,
+        b.description,
+        b.created_at,
+        COUNT(l.id) as activity_count
+        FROM board b
+        JOIN board_member bm ON b.id = bm.board_id
+        AND bm.user_id = #{userId}
+        LEFT JOIN activity_log l ON b.id = l.board_id
+        AND l.user_id = #{userId}
+        AND l.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        <where>
+            b.deleted_at IS NULL AND bm.deleted_at IS NULL
+            <!-- 팀 기준 인기보드 -->
+            <if test="teamId != null">AND b.team_id = #{teamId}</if>
+        </where>
+        GROUP BY b.id
+        ORDER BY activity_count DESC, b.created_at DESC
+        LIMIT 3
+    </select>
+
+    <!-- 로그 조회 (프로필 페이지) -->
+    <select id="searchActivities" resultType="ActivityLogResponse">
+        SELECT l.id,
+        l.type,
+        l.target_name AS targetName,
+        l.description,
+        l.created_at AS createdAt,
+        u.nickname AS actorName,
+        b.title AS boardTitle,
+        t.name AS teamName
+        FROM activity_log l
+        JOIN user u ON l.user_id = u.id
+        LEFT JOIN board b ON l.board_id = b.id
+        LEFT JOIN team t ON l.team_id = t.id
+        <include refid="searchCriteria"/>
+        ORDER BY l.created_at DESC
+    </select>
+
+    <!-- 로그 조회 (보드 페이지) -->
+    <select id="findLogsByBoardIdCursor" resultType="ActivityLogResponse">
+        SELECT l.id,
+        l.type,
+        l.target_name AS targetName,
+        l.description,
+        l.created_at AS createdAt,
+        u.nickname AS actorName,
+        u.profile_img AS actorProfileImg,
+        b.title AS boardTitle,
+        t.name AS teamName
+        FROM activity_log l
+        LEFT JOIN user u ON l.user_id = u.id
+        LEFT JOIN board b ON l.board_id = b.id
+        LEFT JOIN team t ON l.team_id = t.id
+        WHERE l.board_id = #{boardId}
+        <if test="cursorId != null">
+            AND l.id &lt; #{cursorId}
+        </if>
+        ORDER BY l.id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 로그 저장 -->
+    <insert id="saveLog">
+        INSERT INTO activity_log (user_id,
+                                  team_id,
+                                  board_id,
+                                  type,
+                                  target_id,
+                                  target_name,
+                                  description,
+                                  created_at)
+        VALUES (#{userId},
+                #{teamId},
+                #{boardId},
+                #{type},
+                #{targetId},
+                #{targetName},
+                #{description},
+                NOW())
+    </insert>
+
+</mapper>
