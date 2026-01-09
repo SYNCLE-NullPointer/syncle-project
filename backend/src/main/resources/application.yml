@@ -6,7 +6,7 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:local}
 
   config:
-    import: application-secret.yml
+    import: optional:application-secret.yml
 
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
@@ -73,8 +73,6 @@ logging:
     com.nullpointer: DEBUG
     org.mybatis: DEBUG
     org.springframework.jdbc.core: DEBUG
-
-
 # ==========================================
 # [추가] 배포(Dev) 전용 설정 영역
 # "---" 아래의 내용은 profile이 'dev'일 때만 적용됩니다.
