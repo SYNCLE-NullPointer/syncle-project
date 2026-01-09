@@ -1,0 +1,85 @@
+name: Deploy to EC2 (Lab Env)
+
+on:
+  push:
+    branches: ["main"] # main 브랜치 푸시 시 동작
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 내려받기
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      # 2. Java 세팅 (Backend)
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      # 3. Node.js 세팅 (Frontend)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # 4. [Frontend] 비밀 파일 생성 (.env)
+      # 등록해둔 Secret 내용을 파일로 만듭니다.
+      - name: Create .env for Frontend
+        run: |
+          echo "${{ secrets.ENV_PRODUCTION }}" > ./syncle/lab/application/frontend-ui/.env.production
+
+      # 5. [Frontend] 빌드
+      # vite.config 설정 덕분에 빌드 결과물은 자동으로 Backend static 폴더로 들어갑니다.
+      - name: Build Frontend
+        working-directory: ./syncle/lab/application/frontend-ui
+        run: |
+          npm install
+          npm run build
+
+      # 6. [Backend] 빌드 (Gradle)
+      # Frontend 빌드 결과물이 포함된 상태로 jar가 생성됩니다.
+      - name: Build Backend
+        working-directory: ./syncle/lab/application/backend-api
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests
+
+      # 7. [Backend] 배포용 비밀 파일 생성 (Runner 내부 임시)
+      # EC2로 보내기 전에 Runner에서 미리 파일을 만들어 둡니다.
+      - name: Create Secret YML
+        run: |
+          echo "${{ secrets.APP_SECRET_YML }}" > ./application-secret.yml
+
+      # 8. EC2로 파일 전송 (SCP)
+      # jar 파일과 secret 파일을 EC2로 복사합니다.
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "./nullpointer/lab/application/backend-api/target/*.jar, ./application-secret.yml"
+          target: "/home/ubuntu/app"
+          strip_components: 4 # 경로 뎁스 제거 옵션 (상황에 따라 조절 필요)
+
+      # 9. EC2에서 서버 재시작 (SSH)
+      - name: Restart Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # 기존 프로세스 종료
+            fuser -k 8080/tcp || true
+
+            # 파일 이동 정리 (scp로 넘어온 파일 위치 정리)
+            mv /home/ubuntu/app/application-secret.yml /home/ubuntu/application-secret.yml
+            mv /home/ubuntu/app/*.jar /home/ubuntu/app.jar
+
+            # 서버 실행 (외부 설정 파일 참조)
+            sudo systemctl restart syncle
