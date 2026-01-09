@@ -30,12 +30,12 @@ jobs:
       # 등록해둔 Secret 내용을 파일로 만듭니다.
       - name: Create .env for Frontend
         run: |
-          echo "${{ secrets.ENV_PRODUCTION }}" > ./syncle/lab/application/frontend-ui/.env.production
+          echo "${{ secrets.ENV_PRODUCTION }}" > ./syncle-project/lab/application/frontend-ui/.env.production
 
       # 5. [Frontend] 빌드
       # vite.config 설정 덕분에 빌드 결과물은 자동으로 Backend static 폴더로 들어갑니다.
       - name: Build Frontend
-        working-directory: ./syncle/lab/application/frontend-ui
+        working-directory: ./syncle-project/lab/application/frontend-ui
         run: |
           npm install
           npm run build
@@ -43,7 +43,7 @@ jobs:
       # 6. [Backend] 빌드 (Gradle)
       # Frontend 빌드 결과물이 포함된 상태로 jar가 생성됩니다.
       - name: Build Backend
-        working-directory: ./syncle/lab/application/backend-api
+        working-directory: ./syncle-project/lab/application/backend-api
         run: |
           chmod +x mvnw
           ./mvnw clean package -DskipTests
@@ -82,4 +82,4 @@ jobs:
             mv /home/ubuntu/app/*.jar /home/ubuntu/app.jar
 
             # 서버 실행 (외부 설정 파일 참조)
-            sudo systemctl restart syncle
+            sudo systemctl restart syncle-project
