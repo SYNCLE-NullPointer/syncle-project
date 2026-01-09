@@ -30,20 +30,20 @@ jobs:
       # 등록해둔 Secret 내용을 파일로 만듭니다.
       - name: Create .env for Frontend
         run: |
-          echo "${{ secrets.ENV_PRODUCTION }}" > ./syncle-project/lab/application/frontend-ui/.env.production
+          echo "${{ secrets.ENV_PRODUCTION }}" > ./frontend/.env.production
 
       # 5. [Frontend] 빌드
       # vite.config 설정 덕분에 빌드 결과물은 자동으로 Backend static 폴더로 들어갑니다.
       - name: Build Frontend
-        working-directory: ./syncle-project/lab/application/frontend-ui
+        working-directory: ./frontend
         run: |
           npm install
           npm run build
 
-      # 6. [Backend] 빌드 (Gradle)
+      # 6. [Backend] 빌드 (Maven)
       # Frontend 빌드 결과물이 포함된 상태로 jar가 생성됩니다.
       - name: Build Backend
-        working-directory: ./syncle-project/lab/application/backend-api
+        working-directory: ./backend
         run: |
           chmod +x mvnw
           ./mvnw clean package -DskipTests
@@ -62,9 +62,9 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "./nullpointer/lab/application/backend-api/target/*.jar, ./application-secret.yml"
+          source: "./backend/target/*.jar, ./application-secret.yml"
           target: "/home/ubuntu/app"
-          strip_components: 4 # 경로 뎁스 제거 옵션 (상황에 따라 조절 필요)
+          strip_components: 2 # backend/target/ 2단계를 떼고 파일만 보냄
 
       # 9. EC2에서 서버 재시작 (SSH)
       - name: Restart Server
